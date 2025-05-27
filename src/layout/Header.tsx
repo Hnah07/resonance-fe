@@ -1,4 +1,4 @@
-import { Switch } from "@/components/ui/switch";
+import { ThemeSwitch } from "@/components/ThemeSwitch";
 import Image from "next/image";
 
 const Header = () => {
@@ -9,7 +9,7 @@ const Header = () => {
         <h1 className="text-xl">Resonance</h1>
       </div>
       <div>
-        <Switch />
+        <ThemeSwitch />
       </div>
     </header>
   );
