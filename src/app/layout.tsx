@@ -11,14 +11,15 @@ export const metadata: Metadata = {
   },
 };
 
-const rootLayout = ({ children }: { children: React.ReactNode }) => {
+const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html>
-      <Header />
-      <body>
+    <html lang="en">
+      <body className="p-4">
+        <Header />
         <main>{children}</main>
       </body>
     </html>
   );
 };
-export default rootLayout;
+
+export default RootLayout;
