@@ -1,6 +1,7 @@
-import Header from "@/layout/Header";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import Header from "@/layout/Header";
+import Footer from "@/layout/Footer";
 
 import { Metadata } from "next";
 
@@ -24,6 +25,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Header />
           <main>{children}</main>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
