@@ -1,5 +1,6 @@
 import Header from "@/layout/Header";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 import { Metadata } from "next";
 
@@ -15,8 +16,15 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
       <body className="p-4">
-        <Header />
-        <main>{children}</main>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Header />
+          <main>{children}</main>
+        </ThemeProvider>
       </body>
     </html>
   );
