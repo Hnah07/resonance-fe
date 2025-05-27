@@ -6,9 +6,9 @@ const Header = () => {
     <header className="flex justify-between items-center w-full">
       <div className="flex items-center gap-2">
         <Image src="/favicon.ico" alt="logo" width={50} height={50} />
-        <h1 className="text-xl">Resonance</h1>
+        <h1 className="text-xl font-semibold">Resonance</h1>
       </div>
-      <div>
+      <div className="flex items-center">
         <ThemeSwitch />
       </div>
     </header>
