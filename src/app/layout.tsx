@@ -1,7 +1,9 @@
-import Header from "@/layout/Header";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import Header from "@/layout/Header";
 
 import { Metadata } from "next";
+import BottomNavbar from "@/layout/BottomNavBar";
 
 export const metadata: Metadata = {
   title: "Resonance",
@@ -13,10 +15,18 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html lang="en">
-      <body className="p-4">
-        <Header />
-        <main>{children}</main>
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Header />
+          <main>{children}</main>
+          <BottomNavbar />
+        </ThemeProvider>
       </body>
     </html>
   );
