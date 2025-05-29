@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Image from "next/image";
 import { LuMapPin, LuX, LuCalendar, LuUsers } from "react-icons/lu";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // Example genres - these will be fetched from the database later on
 const genres = [
@@ -29,10 +29,30 @@ const artists = ["Arctic Monkeys", "The Strokes", "Vampire Weekend"];
 export function ConcertCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [isArtistsOpen, setIsArtistsOpen] = useState(false);
-  const visibleGenres = genres.slice(0, 3);
-  const hiddenGenres = genres.slice(3);
-  const visibleArtists = artists.slice(0, 2);
-  const hiddenArtists = artists.slice(2);
+  const [visibleArtistCount, setVisibleArtistCount] = useState(2);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const badgeRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const calculateVisibleBadges = () => {
+      if (!containerRef.current || !badgeRef.current) return;
+
+      const containerWidth = containerRef.current.offsetWidth;
+      const badgeWidth = badgeRef.current.offsetWidth;
+      const gap = 8; // 2rem gap (gap-2 = 0.5rem = 8px)
+      const maxBadges = Math.floor((containerWidth + gap) / (badgeWidth + gap));
+
+      // Always show at least 2 badges, and at most all badges
+      setVisibleArtistCount(Math.max(2, Math.min(maxBadges, artists.length)));
+    };
+
+    calculateVisibleBadges();
+    window.addEventListener("resize", calculateVisibleBadges);
+    return () => window.removeEventListener("resize", calculateVisibleBadges);
+  }, []);
+
+  const visibleArtists = artists.slice(0, visibleArtistCount);
+  const hiddenArtists = artists.slice(visibleArtistCount);
 
   return (
     <div className="flex justify-center w-full mb-6">
@@ -60,10 +80,11 @@ export function ConcertCard() {
             <p className="text-sm text-foreground">12 June 2025</p>
           </div>
           <p className="text-sm mb-2 text-foreground">Artists</p>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {visibleArtists.map((artist) => (
+          <div ref={containerRef} className="flex flex-wrap gap-2 mb-4">
+            {visibleArtists.map((artist, index) => (
               <span
                 key={artist}
+                ref={index === 0 ? badgeRef : undefined}
                 className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs border-muted text-foreground"
               >
                 {artist}
@@ -101,7 +122,7 @@ export function ConcertCard() {
           </div>
           <p className="text-sm mb-2 text-foreground">Genres</p>
           <div className="flex flex-wrap gap-2 mb-2">
-            {visibleGenres.map((genre) => (
+            {genres.map((genre) => (
               <span
                 key={genre}
                 className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-gradient-to-r from-accent-pink/20 to-accent-cyan/20 text-accent-pink border-accent-pink/30"
@@ -109,11 +130,11 @@ export function ConcertCard() {
                 {genre}
               </span>
             ))}
-            {hiddenGenres.length > 0 && (
+            {genres.length > 3 && (
               <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
                 <AlertDialogTrigger asChild>
                   <button className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-gradient-to-r from-accent-pink/20 to-accent-cyan/20 text-accent-pink border-accent-pink/30 hover:from-accent-pink/30 hover:to-accent-cyan/30">
-                    +{hiddenGenres.length}
+                    +{genres.length - 3}
                   </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
