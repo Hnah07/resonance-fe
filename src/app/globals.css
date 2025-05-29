@@ -7,7 +7,7 @@
   /* Light mode (default) */
   --primary: #f80386;
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.95 0.02 240);
   --accent-pink: #f80386;
   --accent-cyan: #04cefe;
   --text: #00072e;
@@ -69,6 +69,8 @@ body {
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-pink: var(--accent-pink);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -93,13 +95,13 @@ body {
   --primary: #04cefe;
   --primary-foreground: #00072e;
   --background: #00072e;
-  --background-secondary: #001a4d; /* Slightly lighter blue for dark mode */
+  --background-secondary: #001a4d;
   --foreground: #ffffff;
   --card: #00072e;
   --card-foreground: #ffffff;
   --popover: #00072e;
   --popover-foreground: #ffffff;
-  --secondary: oklch(0.269 0 0);
+  --secondary: oklch(0.3 0.02 240);
   --secondary-foreground: #ffffff;
   --muted: oklch(0.269 0 0);
   --muted-foreground: #ffffff;
@@ -124,6 +126,7 @@ body {
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Note: --accent-cyan and --accent-pink are intentionally not overridden here */
 }
 
 @layer base {
