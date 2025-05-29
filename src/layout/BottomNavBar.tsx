@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LuClock,
   LuHouse,
@@ -40,6 +41,29 @@ const navItems = [
 
 const BottomNavbar = () => {
   const pathname = usePathname();
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Hide the bottom navbar when the keyboard is visible
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      const isKeyboardOpen = window.visualViewport
+        ? window.visualViewport.height < window.innerHeight * 0.8
+        : false;
+      setIsKeyboardVisible(isKeyboardOpen);
+    };
+
+    window.visualViewport?.addEventListener("resize", handleResize);
+    window.visualViewport?.addEventListener("scroll", handleResize);
+
+    handleResize();
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("scroll", handleResize);
+    };
+  }, []);
 
   const isActive = (path: string) => {
     return pathname === path;
@@ -47,7 +71,9 @@ const BottomNavbar = () => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-background shadow-lg border-t border-border z-50 py-2"
+      className={`fixed bottom-0 left-0 right-0 bg-background shadow-lg border-t border-border z-50 py-2 transition-transform duration-200 ${
+        isKeyboardVisible ? "translate-y-full" : "translate-y-0"
+      }`}
       role="navigation"
       aria-label="main navigation"
     >
