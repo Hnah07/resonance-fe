@@ -39,6 +39,8 @@ const artists = [
   "Arcade Fire",
 ];
 
+// TODO: if there is no concert image, use a placeholder image
+
 export function ConcertCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [isArtistsOpen, setIsArtistsOpen] = useState(false);
