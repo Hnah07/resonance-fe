@@ -1,9 +1,9 @@
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Header from "@/layout/Header";
-import Footer from "@/layout/Footer";
 
 import { Metadata } from "next";
+import BottomNavbar from "@/layout/BottomNavBar";
 
 export const metadata: Metadata = {
   title: "Resonance",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="p-4">
+      <body>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -25,7 +25,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
         >
           <Header />
           <main>{children}</main>
-          <Footer />
+          <BottomNavbar />
         </ThemeProvider>
       </body>
     </html>
