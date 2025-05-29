@@ -46,7 +46,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
           disableTransitionOnChange
         >
           <Header />
-          <main className="mx-auto max-w-2xl px-4">{children}</main>
+          <main className="mx-auto max-w-2xl px-4 pb-24">{children}</main>
           <BottomNavbar />
         </ThemeProvider>
       </body>
