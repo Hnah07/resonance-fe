@@ -18,6 +18,7 @@ const config: Config = {
         secondary: "var(--secondary)",
         muted: "var(--muted)",
         accent: "var(--accent)",
+        "text-secondary": "var(--text-secondary)",
         "accent-cyan": "var(--accent-cyan)",
         "accent-pink": "var(--accent-pink)",
         destructive: "var(--destructive)",

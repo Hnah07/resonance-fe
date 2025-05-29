@@ -15,14 +15,17 @@ const DiscoverPage = () => {
       <div className="flex flex-col items-center mb-12">
         <div className="flex flex-col items-center">
           <h1 className="text-4xl font-bold">Discover Concerts</h1>
-          <p className="text-lg text-gray-500">Find live music near you</p>
+          <p className="text-lg text-text-secondary">
+            Find live music near you
+          </p>
         </div>
       </div>
       <div className="flex items-center justify-between w-full">
         <div className="flex flex-row items-center gap-2">
           <LuMapPin className="text-2xl stroke-accent-cyan" />
-          <p className="text-lg text-gray-500">Location</p>
+          <p className="text-lg text-text-secondary">Location</p>
         </div>
+
         {/* add alert dialog for filters on genres, locations, date, time */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -40,17 +43,17 @@ const DiscoverPage = () => {
             <div className="flex flex-col gap-2">
               <div className="flex flex-row items-center gap-2">
                 <LuMapPin className="text-2xl stroke-accent-cyan" />
-                <p className="text-lg text-gray-500">Location</p>
+                <p className="text-lg text-text-secondary">Location</p>
               </div>
               {/* genres */}
               <div className="flex flex-row items-center gap-2">
                 <LuMusic className="text-2xl stroke-accent-cyan" />
-                <p className="text-lg text-gray-500">Genres</p>
+                <p className="text-lg text-text-secondary">Genres</p>
               </div>
               {/* date */}
               <div className="flex flex-row items-center gap-2">
                 <LuCalendar className="text-2xl stroke-accent-cyan" />
-                <p className="text-lg text-gray-500">Date</p>
+                <p className="text-lg text-text-secondary">Date</p>
               </div>
             </div>
             <AlertDialogFooter>

@@ -7,7 +7,7 @@
   /* Light mode (default) */
   --primary: #f80386;
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
+  --secondary: oklch(0.95 0.02 240);
   --accent-pink: #f80386;
   --accent-cyan: #04cefe;
   --text: #00072e;
@@ -95,13 +95,13 @@ body {
   --primary: #04cefe;
   --primary-foreground: #00072e;
   --background: #00072e;
-  --background-secondary: #001a4d; /* Slightly lighter blue for dark mode */
+  --background-secondary: #001a4d;
   --foreground: #ffffff;
   --card: #00072e;
   --card-foreground: #ffffff;
   --popover: #00072e;
   --popover-foreground: #ffffff;
-  --secondary: oklch(0.269 0 0);
+  --secondary: oklch(0.3 0.02 240);
   --secondary-foreground: #ffffff;
   --muted: oklch(0.269 0 0);
   --muted-foreground: #ffffff;
