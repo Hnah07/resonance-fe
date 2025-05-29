@@ -1,6 +1,6 @@
 "use client";
 
-import { LuMapPin, LuRefreshCw, LuSearch } from "react-icons/lu";
+import { LuMapPin, LuRefreshCw, LuSearch, LuX } from "react-icons/lu";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -8,6 +8,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
   AlertDialogFooter,
+  AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +23,11 @@ const LocationSelector = () => {
         </button>
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <AlertDialogHeader>
+        <AlertDialogHeader className="flex flex-row items-center justify-between">
           <AlertDialogTitle>Set location</AlertDialogTitle>
+          <AlertDialogCancel className="rounded-full p-1 hover:bg-muted">
+            <LuX className="h-4 w-4" />
+          </AlertDialogCancel>
         </AlertDialogHeader>
         <div className="space-y-4 py-4">
           <div className="relative">
