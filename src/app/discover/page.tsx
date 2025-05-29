@@ -11,8 +11,8 @@ const DiscoverPage = () => {
       </div>
       <div className="flex flex-col items-center">
         <div className="flex flex-row items-center gap-2">
-          <LuMapPin className="text-2xl text-accent-cyan" />
-          <p className="text-lg text-gray-500">Antwerp</p>
+          <LuMapPin className="text-2xl stroke-accent-cyan" />
+          <p className="text-lg text-gray-500">Location</p>
         </div>
       </div>
     </>
