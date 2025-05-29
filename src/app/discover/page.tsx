@@ -1,6 +1,7 @@
-import { LuCalendar, LuFilter, LuMapPin, LuMusic } from "react-icons/lu";
+import { LuCalendar, LuFilter, LuMapPin, LuMusic, LuX } from "react-icons/lu";
 import {
   AlertDialog,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
@@ -8,6 +9,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ConcertCard } from "@/components/ConcertCard";
 
 const DiscoverPage = () => {
   return (
@@ -20,7 +22,7 @@ const DiscoverPage = () => {
           </p>
         </div>
       </div>
-      <div className="flex items-center justify-between w-full">
+      <div className="flex items-center justify-between w-full mb-12">
         <div className="flex flex-row items-center gap-2">
           <LuMapPin className="text-2xl stroke-accent-cyan" />
           <p className="text-lg text-text-secondary">Location</p>
@@ -37,8 +39,11 @@ const DiscoverPage = () => {
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
-            <AlertDialogHeader>
+            <AlertDialogHeader className="flex flex-row items-center justify-between">
               <AlertDialogTitle>Filters</AlertDialogTitle>
+              <AlertDialogCancel className="rounded-full p-1 hover:bg-muted">
+                <LuX className="h-4 w-4" />
+              </AlertDialogCancel>
             </AlertDialogHeader>
             <div className="flex flex-col gap-2">
               <div className="flex flex-row items-center gap-2">
@@ -62,6 +67,9 @@ const DiscoverPage = () => {
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <ConcertCard />
+      <ConcertCard />
+      <ConcertCard />
     </>
   );
 };
