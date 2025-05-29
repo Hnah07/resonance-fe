@@ -1,4 +1,13 @@
-import { LuMapPin } from "react-icons/lu";
+import { LuCalendar, LuFilter, LuMapPin, LuMusic } from "react-icons/lu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 const DiscoverPage = () => {
   return (
@@ -9,11 +18,46 @@ const DiscoverPage = () => {
           <p className="text-lg text-gray-500">Find live music near you</p>
         </div>
       </div>
-      <div className="flex flex-col items-center">
+      <div className="flex items-center justify-between w-full">
         <div className="flex flex-row items-center gap-2">
           <LuMapPin className="text-2xl stroke-accent-cyan" />
           <p className="text-lg text-gray-500">Location</p>
         </div>
+        {/* add alert dialog for filters on genres, locations, date, time */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="flex flex-row items-center gap-2 bg-accent-cyan text-white"
+            >
+              <LuFilter /> Filters
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Filters</AlertDialogTitle>
+            </AlertDialogHeader>
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-row items-center gap-2">
+                <LuMapPin className="text-2xl stroke-accent-cyan" />
+                <p className="text-lg text-gray-500">Location</p>
+              </div>
+              {/* genres */}
+              <div className="flex flex-row items-center gap-2">
+                <LuMusic className="text-2xl stroke-accent-cyan" />
+                <p className="text-lg text-gray-500">Genres</p>
+              </div>
+              {/* date */}
+              <div className="flex flex-row items-center gap-2">
+                <LuCalendar className="text-2xl stroke-accent-cyan" />
+                <p className="text-lg text-gray-500">Date</p>
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <Button>Apply</Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </>
   );
