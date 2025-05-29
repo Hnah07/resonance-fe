@@ -1,6 +1,8 @@
-import { LuMapPin } from "react-icons/lu";
+"use client";
+
 import { ConcertCard } from "@/components/ConcertCard";
 import { FilterDialog } from "@/components/FilterDialog";
+import LocationSelector from "@/components/LocationSelector";
 
 const DiscoverPage = () => {
   const handleApplyFilters = () => {
@@ -18,12 +20,8 @@ const DiscoverPage = () => {
           </p>
         </div>
       </div>
-      <div className="flex items-center justify-between w-full mb-12">
-        <div className="flex flex-row items-center gap-2">
-          <LuMapPin className="text-2xl stroke-accent-cyan" />
-          <p className="text-lg text-text-secondary">Location</p>
-        </div>
-
+      <div className="flex justify-between w-full mb-12">
+        <LocationSelector />
         <FilterDialog onApply={handleApplyFilters} />
       </div>
       <ConcertCard />
