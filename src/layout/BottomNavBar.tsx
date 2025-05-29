@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -43,6 +42,10 @@ const BottomNavbar = () => {
   const pathname = usePathname();
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
+  const isActive = (path: string) => {
+    return pathname === path || pathname?.startsWith(`${path}/`);
+  };
+
   // Hide the bottom navbar when the keyboard is visible
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -64,10 +67,6 @@ const BottomNavbar = () => {
       window.visualViewport?.removeEventListener("scroll", handleResize);
     };
   }, []);
-
-  const isActive = (path: string) => {
-    return pathname === path;
-  };
 
   return (
     <nav
