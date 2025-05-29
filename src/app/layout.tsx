@@ -1,7 +1,9 @@
-import Header from "@/layout/Header";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import Header from "@/layout/Header";
 
 import { Metadata } from "next";
+import BottomNavbar from "@/layout/BottomNavBar";
 
 export const metadata: Metadata = {
   title: "Resonance",
@@ -11,14 +13,23 @@ export const metadata: Metadata = {
   },
 };
 
-const rootLayout = ({ children }: { children: React.ReactNode }) => {
+const RootLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <html>
-      <Header />
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <main>{children}</main>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Header />
+          <main>{children}</main>
+          <BottomNavbar />
+        </ThemeProvider>
       </body>
     </html>
   );
 };
-export default rootLayout;
+
+export default RootLayout;
