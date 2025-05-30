@@ -4,10 +4,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LuHeart, LuMapPin, LuMessageCircle } from "react-icons/lu";
 import { MoreHorizontal } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArtistBadges } from "./ArtistBadges";
 import { StarRating, formatRelativeTime } from "@/lib/helpers";
+import { ExpandableImage } from "./ExpandableImage";
+import Image from "next/image";
 
 interface CheckInCardProps {
   user: {
@@ -102,15 +103,7 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       </div>
 
       {/* Concert Image */}
-      <div className="relative">
-        <Image
-          src={concert.image}
-          alt={`${concert.event} concert`}
-          width={600}
-          height={400}
-          className="w-full h-80 object-cover"
-        />
-      </div>
+      <ExpandableImage src={concert.image} alt={`${concert.event} concert`} />
 
       {/* Check-in Content */}
       <div className="p-4">
