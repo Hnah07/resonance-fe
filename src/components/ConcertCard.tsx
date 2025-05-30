@@ -2,24 +2,19 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogTrigger,
-  AlertDialogCancel,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Dialog,
   DialogContent,
   DialogClose,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
+import { DetailsButton } from "@/components/ui/details-button";
+import { InterestedCounter } from "@/components/InterestedCounter";
+import { GenreBadges } from "@/components/GenreBadges";
+import { ArtistBadges } from "@/components/ArtistBadges";
 import Image from "next/image";
-import { LuMapPin, LuX, LuCalendar, LuUsers } from "react-icons/lu";
+import { LuMapPin, LuX, LuCalendar } from "react-icons/lu";
 import { useState } from "react";
-import { useBadgeCalculation } from "@/lib/hooks/useBadgeCalculation";
 
 // Example genres - these will be fetched from the database later on
 const genres = [
@@ -45,23 +40,7 @@ const artists = [
 // TODO: if there is no concert image, use a placeholder image
 
 export function ConcertCard() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isArtistsOpen, setIsArtistsOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const {
-    visibleItems: visibleArtists,
-    hiddenItems: hiddenArtists,
-    containerRef: artistsContainerRef,
-    badgeRef: artistBadgeRef,
-  } = useBadgeCalculation({ items: artists });
-
-  const {
-    visibleItems: visibleGenres,
-    hiddenItems: hiddenGenres,
-    containerRef: genresContainerRef,
-    badgeRef: genreBadgeRef,
-  } = useBadgeCalculation({ items: genres });
 
   return (
     <div className="flex justify-center w-full mb-6">
@@ -110,105 +89,15 @@ export function ConcertCard() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-row items-center gap-2">
               <LuCalendar className="text-2xl stroke-accent-cyan" />
-              <p className="text-lg text-text-secondary">Artists</p>
+              <p>12 June 2025</p>
             </div>
-            <div ref={artistsContainerRef} className="flex flex-wrap gap-2">
-              {visibleArtists.map((artist) => (
-                <span
-                  key={artist}
-                  ref={artistBadgeRef}
-                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs border-muted text-foreground"
-                >
-                  {artist}
-                </span>
-              ))}
-              {hiddenArtists.length > 0 && (
-                <AlertDialog
-                  open={isArtistsOpen}
-                  onOpenChange={setIsArtistsOpen}
-                >
-                  <AlertDialogTrigger asChild>
-                    <button className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs border-muted text-foreground hover:bg-muted">
-                      +{hiddenArtists.length}
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <div className="p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <AlertDialogTitle>All Artists</AlertDialogTitle>
-                        <AlertDialogCancel className="rounded-full p-1 hover:bg-muted">
-                          <LuX className="h-4 w-4" />
-                        </AlertDialogCancel>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {artists.map((artist) => (
-                          <span
-                            key={artist}
-                            className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs border-muted text-foreground"
-                          >
-                            {artist}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
-            <p className="text-sm mb-2 text-foreground">Genres</p>
-            <div ref={genresContainerRef} className="flex flex-wrap gap-2 mb-2">
-              {visibleGenres.map((genre) => (
-                <span
-                  key={genre}
-                  ref={genreBadgeRef}
-                  className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-gradient-to-r from-accent-pink/20 to-accent-cyan/20 text-accent-pink border-accent-pink/30"
-                >
-                  {genre}
-                </span>
-              ))}
-              {hiddenGenres.length > 0 && (
-                <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-                  <AlertDialogTrigger asChild>
-                    <button className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-gradient-to-r from-accent-pink/20 to-accent-cyan/20 text-accent-pink border-accent-pink/30 hover:from-accent-pink/30 hover:to-accent-cyan/30">
-                      +{hiddenGenres.length}
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <div className="p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <AlertDialogTitle>All Genres</AlertDialogTitle>
-                        <AlertDialogCancel className="rounded-full p-1 hover:bg-muted">
-                          <LuX className="h-4 w-4" />
-                        </AlertDialogCancel>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {genres.map((genre) => (
-                          <span
-                            key={genre}
-                            className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-gradient-to-r from-accent-pink/20 to-accent-cyan/20 text-accent-pink border-accent-pink/30"
-                          >
-                            {genre}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
+            <ArtistBadges artists={artists} />
+            <GenreBadges genres={genres} />
           </div>
           <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center space-x-2 text-foreground text-sm">
-              <LuUsers className="w-4 h-4" />
-              <span>156 interested</span>
-            </div>
+            <InterestedCounter count={156} />
             <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                className="border-accent-cyan/50 text-accent-cyan hover:bg-accent-cyan/10"
-              >
-                Details
-              </Button>
+              <DetailsButton>Details</DetailsButton>
               <GradientButton>Check In</GradientButton>
             </div>
           </div>
