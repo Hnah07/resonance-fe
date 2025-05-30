@@ -26,7 +26,7 @@ interface CheckInCardProps {
   };
   concert: {
     id: string;
-    name: string;
+    event: string;
     location: string;
     city: string;
     image: string;
@@ -90,7 +90,7 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-bold text-lg text-slate-800 dark:text-white">
-              {concert.name}
+              {concert.event}
             </h4>
             <div className="flex items-center space-x-1">
               <LuMapPin className="w-4 h-4" />
@@ -112,7 +112,7 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       <div className="relative">
         <Image
           src={concert.image}
-          alt={`${concert.name} concert`}
+          alt={`${concert.event} concert`}
           width={600}
           height={400}
           className="w-full h-80 object-cover"

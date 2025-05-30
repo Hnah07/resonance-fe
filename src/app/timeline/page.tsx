@@ -13,13 +13,30 @@ const TimelinePage = () => {
         user={{ id: "1", name: "John Doe" }}
         concert={{
           id: "1",
-          name: "Graspop Metal Meeting",
+          event: "Graspop Metal Meeting",
           image: "/summer-festival.jpg",
           location: "Dessel",
           city: "Belgium",
           date: "2025-06-21",
           rating: 3.5,
-          artists: ["Sabaton", "Arch Enemy", "Children of Bodom"],
+          artists: [
+            "Sabaton",
+            "Arch Enemy",
+            "Children of Bodom",
+            "Korn",
+            "Iron Maiden",
+            "Slipknot",
+            "Lorna Shore",
+            "Nine Inch Nails",
+            "System of a Down",
+            "Linkin Park",
+            "Disturbed",
+            "Avenged Sevenfold",
+            "Megadeth",
+            "Anthrax",
+            "Slayer",
+            "Metallica",
+          ],
           genres: ["Metal", "Rock", "Folk"],
         }}
         checkIn={{
