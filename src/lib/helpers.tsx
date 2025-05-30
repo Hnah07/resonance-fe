@@ -47,3 +47,36 @@ export function StarRating({ rating, className }: StarRatingProps) {
     </div>
   );
 }
+
+export function formatRelativeTime(date: string, time: string): string {
+  const checkInDateTime = new Date(`${date}T${time}`);
+  const now = new Date();
+  const diffInMinutes = Math.floor(
+    (now.getTime() - checkInDateTime.getTime()) / (1000 * 60)
+  );
+
+  if (diffInMinutes < 1) {
+    return "just now";
+  }
+
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} minute${diffInMinutes === 1 ? "" : "s"} ago`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours} hour${diffInHours === 1 ? "" : "s"} ago`;
+  }
+
+  // If more than 24 hours, return the formatted date and time
+  return `${formatDate(date)} ${time}`;
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}

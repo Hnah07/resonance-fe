@@ -17,7 +17,7 @@ const TimelinePage = () => {
           image: "/summer-festival.jpg",
           location: "Dessel",
           city: "Belgium",
-          date: "2025-06-21",
+          date: "2025-05-30",
           rating: 3.5,
           artists: [
             "Sabaton",
@@ -41,7 +41,8 @@ const TimelinePage = () => {
         }}
         checkIn={{
           id: "1",
-          date: "2025-06-21",
+          date: "2025-05-30",
+          time: "16:00",
           comment: "Damn, what a festival!",
           likes: 10,
           comments: 5,

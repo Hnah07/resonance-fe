@@ -7,16 +7,7 @@ import { MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArtistBadges } from "./ArtistBadges";
-import { StarRating } from "@/lib/helpers";
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
+import { StarRating, formatRelativeTime } from "@/lib/helpers";
 
 interface CheckInCardProps {
   user: {
@@ -39,6 +30,7 @@ interface CheckInCardProps {
   checkIn: {
     id: string;
     date: string;
+    time: string;
     comment: string;
     likes: number;
     comments: number;
@@ -73,7 +65,7 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
               </h3>
             </Link>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {formatDate(checkIn.date)}
+              {formatRelativeTime(checkIn.date, checkIn.time)}
             </p>
           </div>
         </div>
