@@ -2,12 +2,12 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LuHeart, LuMessageCircle, LuStar } from "react-icons/lu";
+import { LuHeart, LuMapPin, LuMessageCircle } from "react-icons/lu";
 import { MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { ArtistBadges } from "./ArtistBadges";
+import { StarRating } from "@/lib/helpers";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -22,12 +22,13 @@ interface CheckInCardProps {
   user: {
     id: string;
     name: string;
-    image: string;
+    image?: string;
   };
   concert: {
     id: string;
     name: string;
-    venue: string;
+    location: string;
+    city: string;
     image: string;
     date: string;
     rating: number;
@@ -54,7 +55,7 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             className="hover:opacity-80 transition-opacity"
           >
             <Image
-              src={user.image}
+              src={user.image || "/placeholder-avatar-user.jpg"}
               alt={user.name}
               width={40}
               height={40}
@@ -91,23 +92,14 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             <h4 className="font-bold text-lg text-slate-800 dark:text-white">
               {concert.name}
             </h4>
-            <p className="text-slate-600 dark:text-slate-400">
-              {concert.venue}
-            </p>
+            <div className="flex items-center space-x-1">
+              <LuMapPin className="w-4 h-4" />
+              <p className="text-slate-600 dark:text-slate-400">
+                {concert.location}, {concert.city}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center space-x-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <LuStar
-                key={i}
-                className={cn(
-                  "w-4 h-4",
-                  i < concert.rating
-                    ? "text-yellow-400 fill-yellow-400"
-                    : "text-slate-300 dark:text-slate-600"
-                )}
-              />
-            ))}
-          </div>
+          <StarRating rating={concert.rating} />
         </div>
       </div>
 
