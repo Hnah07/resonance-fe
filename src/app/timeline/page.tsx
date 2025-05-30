@@ -45,7 +45,20 @@ const TimelinePage = () => {
           time: "16:00",
           comment: "Damn, what a festival!",
           likes: 10,
-          comments: 5,
+          comments: [
+            {
+              id: "1",
+              user: { id: "1", name: "John Doe" },
+              text: "Damn, what a festival!",
+              date: "2025-05-30",
+            },
+            {
+              id: "2",
+              user: { id: "2", name: "Jane Doe" },
+              text: "I loved it!",
+              date: "2025-05-30",
+            },
+          ],
         }}
       />
     </>

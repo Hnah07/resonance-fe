@@ -2,12 +2,13 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LuHeart, LuMapPin, LuMessageCircle } from "react-icons/lu";
+import { LuMapPin } from "react-icons/lu";
 import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { ArtistBadges } from "./ArtistBadges";
 import { StarRating, formatRelativeTime } from "@/lib/helpers";
 import { ExpandableImage } from "./ExpandableImage";
+import { CheckInComment } from "./CheckInComment";
 import Image from "next/image";
 
 interface CheckInCardProps {
@@ -34,13 +35,46 @@ interface CheckInCardProps {
     time: string;
     comment: string;
     likes: number;
-    comments: number;
+    comments: {
+      id: string;
+      user: {
+        id: string;
+        name: string;
+        image?: string;
+      };
+      text: string;
+      date: string;
+    }[];
   };
 }
 
 export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
+  // Mock comments data for now
+  const mockComments = [
+    {
+      id: "1",
+      user: {
+        id: "user1",
+        name: "John Doe",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      text: "Amazing show! The energy was incredible.",
+      date: "2 hours ago",
+    },
+    {
+      id: "2",
+      user: {
+        id: "user2",
+        name: "Jane Smith",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      text: "Best concert of the year!",
+      date: "3 hours ago",
+    },
+  ];
+
   return (
-    <Card className=" rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm gap-2 py-2">
+    <Card className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm gap-2 py-2">
       {/* User Profile Section */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -105,24 +139,20 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       {/* Concert Image */}
       <ExpandableImage src={concert.image} alt={`${concert.event} concert`} />
 
-      {/* Check-in Content */}
-      <div className="p-4">
-        <p className="text-slate-700 dark:text-slate-300 mb-4">
-          {checkIn.comment}
-        </p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-2 text-slate-500 hover:text-[#FF0086] transition-colors">
-              <LuHeart className="w-5 h-5 text-[#FF0086] fill-[#FF0086]" />
-              <span className="text-sm">{checkIn.likes}</span>
-            </button>
-            <button className="flex items-center space-x-2 text-slate-500 hover:text-[#03D1FE] transition-colors">
-              <LuMessageCircle className="w-5 h-5" />
-              <span className="text-sm">{checkIn.comments}</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Check-in Comment */}
+      <CheckInComment
+        comment={checkIn.comment}
+        likes={checkIn.likes}
+        comments={mockComments}
+        onLike={() => {
+          // TODO: Implement like functionality
+          console.log("Like clicked");
+        }}
+        onComment={() => {
+          // TODO: Implement comment functionality
+          console.log("Comment clicked");
+        }}
+      />
     </Card>
   );
 }
