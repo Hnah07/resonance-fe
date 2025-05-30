@@ -10,7 +10,7 @@ const TimelinePage = () => {
         <GradientButton>+ Check In</GradientButton>
       </div>
       <CheckInCard
-        user={{ id: "1", name: "John Doe" }}
+        user={{ id: "1", name: "John Doe", username: "john_doe" }}
         concert={{
           id: "1",
           event: "Graspop Metal Meeting",

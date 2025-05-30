@@ -21,7 +21,8 @@ function formatDate(dateString: string): string {
 interface CheckInCardProps {
   user: {
     id: string;
-    name: string;
+    name?: string;
+    username: string;
     image?: string;
   };
   concert: {
@@ -56,7 +57,7 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
           >
             <Image
               src={user.image || "/placeholder-avatar-user.jpg"}
-              alt={user.name}
+              alt={user.name || user.username}
               width={40}
               height={40}
               className="w-10 h-10 rounded-full object-cover border-2 border-[#03D1FE]/20"
@@ -68,7 +69,7 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
               className="hover:opacity-80 transition-opacity"
             >
               <h3 className="font-semibold text-slate-800 dark:text-white">
-                {user.name}
+                {user.name || user.username}
               </h3>
             </Link>
             <p className="text-sm text-slate-500 dark:text-slate-400">
