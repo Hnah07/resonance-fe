@@ -70,7 +70,7 @@ const BottomNavbar = () => {
 
   return (
     <nav
-      className={`fixed bottom-0 left-0 right-0 bg-background shadow-lg border-t border-border z-50 py-2 transition-transform duration-200 ${
+      className={`fixed bottom-0 left-0 right-0  dark:bg-blue-950/60 backdrop-blur-lg shadow-lg border-t border-border z-50 py-2 transition-transform duration-200 ${
         isKeyboardVisible ? "translate-y-full" : "translate-y-0"
       }`}
       role="navigation"
