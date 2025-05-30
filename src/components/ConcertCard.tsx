@@ -14,6 +14,8 @@ import {
   DialogClose,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { GradientButton } from "@/components/ui/gradient-button";
 import Image from "next/image";
 import { LuMapPin, LuX, LuCalendar, LuUsers } from "react-icons/lu";
 import { useState } from "react";
@@ -201,12 +203,13 @@ export function ConcertCard() {
               <span>156 interested</span>
             </div>
             <div className="flex space-x-2">
-              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border bg-background hover:text-accent-foreground h-9 rounded-md px-3 border-accent-cyan/50 text-accent-cyan hover:bg-accent-cyan/10">
+              <Button
+                variant="outline"
+                className="border-accent-cyan/50 text-accent-cyan hover:bg-accent-cyan/10"
+              >
                 Details
-              </button>
-              <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary hover:bg-primary/90 h-9 rounded-md px-3 bg-gradient-to-r from-accent-pink/80 to-accent-cyan/80 hover:from-accent-pink/90 hover:to-accent-cyan/90 text-white">
-                Check In
-              </button>
+              </Button>
+              <GradientButton>Check In</GradientButton>
             </div>
           </div>
         </CardContent>
