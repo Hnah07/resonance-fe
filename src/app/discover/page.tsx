@@ -3,6 +3,7 @@
 import { ConcertCard } from "@/components/ConcertCard";
 import { FilterDialog } from "@/components/FilterDialog";
 import LocationSelector from "@/components/LocationSelector";
+import { PageHeader } from "@/components/PageHeader";
 
 const DiscoverPage = () => {
   const handleApplyFilters = () => {
@@ -12,14 +13,10 @@ const DiscoverPage = () => {
 
   return (
     <>
-      <div className="flex flex-col items-center mb-12">
-        <div className="flex flex-col items-center">
-          <h1 className="text-4xl font-bold">Discover Concerts</h1>
-          <p className="text-lg text-text-secondary">
-            Find live music near you
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Discover Concerts"
+        subtitle="Find live music near you"
+      />
       <div className="flex justify-between w-full mb-12">
         <LocationSelector />
         <FilterDialog onApply={handleApplyFilters} />
