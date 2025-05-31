@@ -1,25 +1,15 @@
 "use client";
 
 import { LikeButton } from "./LikeButton";
-import { CommentsSection } from "./CommentsSection";
-
-interface Comment {
-  id: string;
-  user: {
-    id: string;
-    name: string;
-    image?: string;
-  };
-  text: string;
-  date: string;
-}
+import { CommentButton } from "./CommentButton";
+import { Comment } from "@/types/comment";
 
 interface CheckInCommentProps {
   comment: string;
   likes: number;
   comments: Comment[];
   onLike?: () => void;
-  onComment?: () => void;
+  onComment?: (comment: Comment) => void;
 }
 
 export function CheckInComment({
@@ -35,10 +25,10 @@ export function CheckInComment({
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <LikeButton count={likes} onClick={onLike} />
-          <CommentsSection
-            comments={comments}
+          <CommentButton
             count={comments.length}
-            onComment={onComment}
+            onAddComment={onComment || (() => {})}
+            comments={comments}
           />
         </div>
       </div>

@@ -1,9 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { LuMapPin } from "react-icons/lu";
-import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { ArtistBadges } from "./ArtistBadges";
 import { StarRating, formatRelativeTime } from "@/lib/helpers";
@@ -59,7 +57,8 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         image: "/placeholder-avatar-user.jpg",
       },
       text: "Amazing show! The energy was incredible.",
-      date: "2 hours ago",
+      date: "2025-05-30",
+      time: "10:00",
     },
     {
       id: "2",
@@ -69,7 +68,52 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         image: "/placeholder-avatar-user.jpg",
       },
       text: "Best concert of the year!",
-      date: "3 hours ago",
+      date: "2025-05-30",
+      time: "11:00",
+    },
+    {
+      id: "3",
+      user: {
+        id: "user3",
+        name: "John Doe",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      text: "I loved it!",
+      date: "2025-05-30",
+      time: "12:00",
+    },
+    {
+      id: "4",
+      user: {
+        id: "user4",
+        name: "John Doe",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      text: "I loved it!",
+      date: "2025-05-30",
+      time: "13:00",
+    },
+    {
+      id: "5",
+      user: {
+        id: "user5",
+        name: "John Doe",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      text: "I loved it!",
+      date: "2025-05-30",
+      time: "14:00",
+    },
+    {
+      id: "6",
+      user: {
+        id: "user6",
+        name: "John Doe",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      text: "I loved it!",
+      date: "2025-05-31",
+      time: "15:00",
     },
   ];
 
@@ -104,13 +148,6 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </Button>
       </div>
 
       {/* Concert Info Section */}
@@ -150,9 +187,18 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
           // TODO: Implement like functionality
           console.log("Like clicked");
         }}
-        onComment={() => {
-          // TODO: Implement comment functionality
-          console.log("Comment clicked");
+        onComment={(Comments: {
+          id: string;
+          user: { id: string; name: string; image?: string };
+          text: string;
+          date: string;
+        }) => {
+          checkIn.comments.push({
+            id: Comments.id,
+            user: Comments.user,
+            text: Comments.text,
+            date: Comments.date,
+          });
         }}
       />
     </Card>
