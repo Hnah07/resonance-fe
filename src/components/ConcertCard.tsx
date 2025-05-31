@@ -32,7 +32,7 @@ const artists = [
 
 // TODO: if there is no concert image, use a placeholder image
 
-export function ConcertCard() {
+function ConcertCard() {
   return (
     <div className="flex justify-center w-full mb-6">
       <Card className="w-full sm:w-full max-w-sm sm:max-w-none overflow-hidden rounded-2xl shadow-lg !p-0 !gap-0">
@@ -72,3 +72,5 @@ export function ConcertCard() {
     </div>
   );
 }
+
+export default ConcertCard;

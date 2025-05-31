@@ -1,6 +1,6 @@
 "use client";
 
-import { ConcertCard } from "@/components/ConcertCard";
+import ConcertCard from "@/components/ConcertCard";
 import { FilterDialog } from "@/components/FilterDialog";
 import LocationSelector from "@/components/LocationSelector";
 import { PageHeader } from "@/components/PageHeader";
@@ -21,9 +21,11 @@ const DiscoverPage = () => {
         <LocationSelector />
         <FilterDialog onApply={handleApplyFilters} />
       </div>
-      <ConcertCard />
-      <ConcertCard />
-      <ConcertCard />
+      <div className="space-y-6">
+        <ConcertCard />
+        <ConcertCard />
+        <ConcertCard />
+      </div>
     </>
   );
 };
