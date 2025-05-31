@@ -137,7 +137,9 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       </div>
 
       {/* Concert Image */}
-      <ExpandableImage src={concert.image} alt={`${concert.event} concert`} />
+      <div className="relative w-full h-[300px]">
+        <ExpandableImage src={concert.image} alt={`${concert.event} concert`} />
+      </div>
 
       {/* Check-in Comment */}
       <CheckInComment
