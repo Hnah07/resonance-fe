@@ -48,7 +48,7 @@ interface CheckInCardProps {
   };
 }
 
-export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
+function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
   // Mock comments data for now
   const mockComments = [
     {
@@ -158,3 +158,5 @@ export function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
     </Card>
   );
 }
+
+export default CheckInCard;

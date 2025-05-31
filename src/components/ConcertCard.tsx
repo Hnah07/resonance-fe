@@ -41,7 +41,6 @@ function ConcertCard() {
             src="/summer-festival.jpg"
             alt="Summer Music Festival"
             className="object-cover"
-            priority
           />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent text-white p-4">
             <h3 className="text-lg font-semibold">Summer Music Festival</h3>
