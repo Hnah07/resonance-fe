@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const Header = () => {
   return (
-    <header className="sticky top-0 bg-background shadow-lg border-b border-border mb-12 z-50">
+    <header className="sticky top-0 bg-white dark:bg-blue-950 shadow-lg border-b border-border mb-12 z-50">
       <div className="flex justify-center">
         <div className="flex justify-between items-center w-full max-w-2xl px-0 py-0 mx-0 my-0">
           <div className="flex items-center gap-2 ml-3 pb-1 mb-1 mt-2 pt-1">
