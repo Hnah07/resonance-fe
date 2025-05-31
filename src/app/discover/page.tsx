@@ -14,6 +14,26 @@ const ConcertCard = dynamic(() => import("@/components/ConcertCard"), {
   ssr: false,
 });
 
+const concert = {
+  id: "1",
+  event: "Summer Music Festival",
+  location: "Antwerp",
+  city: "Antwerp",
+  country: "Belgium",
+  image: "/summer-festival.jpg",
+  date: "12 June 2025",
+  artists: [
+    "Arctic Monkeys",
+    "The Strokes",
+    "Vampire Weekend",
+    "The Maccabees",
+    "Pulp",
+    "Arcade Fire",
+  ],
+  genres: ["Rock", "Indie", "Pop", "Electronic", "Hip Hop", "Jazz", "Blues"],
+  interestedCount: 156,
+};
+
 const DiscoverPage = () => {
   const [visibleCards, setVisibleCards] = useState(1);
   const { ref, inView } = useInView({
@@ -48,7 +68,7 @@ const DiscoverPage = () => {
       <div className="space-y-6">
         {Array.from({ length: visibleCards }).map((_, index) => (
           <Suspense key={index} fallback={<CardSkeleton />}>
-            <ConcertCard />
+            <ConcertCard concert={concert} />
           </Suspense>
         ))}
         <div ref={ref} className="h-4" /> {/* Intersection observer target */}
