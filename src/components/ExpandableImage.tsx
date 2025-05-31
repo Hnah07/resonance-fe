@@ -28,14 +28,14 @@ export function ExpandableImage({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <div
-        className="relative cursor-pointer"
+        className="relative cursor-pointer w-full h-full"
         onClick={() => setIsDialogOpen(true)}
       >
         <Image
           src={src}
           alt={alt}
-          width={600}
-          height={400}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className={className}
           priority={priority}
         />

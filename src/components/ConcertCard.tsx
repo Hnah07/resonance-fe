@@ -36,7 +36,7 @@ export function ConcertCard() {
   return (
     <div className="flex justify-center w-full mb-6">
       <Card className="w-full sm:w-full max-w-sm sm:max-w-none overflow-hidden rounded-2xl shadow-lg !p-0 !gap-0">
-        <div className="relative aspect-[4/3] sm:aspect-[16/6]">
+        <div className="relative w-full h-[300px] sm:h-[400px] md:h-[400px]">
           <ExpandableImage
             src="/summer-festival.jpg"
             alt="Summer Music Festival"
