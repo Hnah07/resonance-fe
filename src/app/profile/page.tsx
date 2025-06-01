@@ -70,7 +70,12 @@ const ProfilePage = () => {
         image: "/placeholder-concert.jpg",
         date: "2024-02-20",
         rating: 4,
-        artists: ["Martin Garrix", "David Guetta", "Armin van Buuren"],
+        artists: [
+          "Johan Gielen",
+          "Martin Garrix",
+          "David Guetta",
+          "Armin van Buuren",
+        ],
         genres: ["EDM", "House", "Trance"],
       },
       checkIn: {

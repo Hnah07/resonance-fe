@@ -23,7 +23,7 @@ export function DetailsButton({
       className={cn(
         "relative transition-all duration-200",
         isActive
-          ? "bg-gradient-to-r from-accent-pink to-accent-cyan text-white border-transparent hover:opacity-90"
+          ? "bg-gradient-to-r from-accent-pink to-accent-cyan text-white border-0 hover:opacity-90"
           : "border-accent-cyan/50 text-accent-cyan hover:bg-accent-cyan/10",
         variant === "outline" &&
           !isActive &&
