@@ -80,3 +80,35 @@ function formatDate(dateString: string): string {
     year: "numeric",
   });
 }
+
+export function formatEventDate(dateString: string): string {
+  const eventDate = new Date(dateString);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // Reset time part for date comparison
+  eventDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  tomorrow.setHours(0, 0, 0, 0);
+  yesterday.setHours(0, 0, 0, 0);
+
+  if (eventDate.getTime() === today.getTime()) {
+    return "Today";
+  }
+  if (eventDate.getTime() === tomorrow.getTime()) {
+    return "Tomorrow";
+  }
+  if (eventDate.getTime() === yesterday.getTime()) {
+    return "Yesterday";
+  }
+
+  // If not one of the relative dates, format as "31 May 2025"
+  return eventDate.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
