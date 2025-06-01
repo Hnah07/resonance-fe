@@ -36,6 +36,43 @@ const CheckInPage = () => {
         ]}
         genres={["Deathcore", "Metalcore", "Metal", "Rock", "Alternative"]}
       />
+      <SuggestionCard
+        id="2"
+        event="Wacken Open Air"
+        date="2025-08-02"
+        city="Wacken"
+        country="Germany"
+        artists={[
+          "Sabaton",
+          "Arch Enemy",
+          "Children of Bodom",
+          "Dimmu Borgir",
+          "Rammstein",
+          "Iron Maiden",
+        ]}
+        genres={["Metal", "Rock", "Alternative"]}
+      />
+      <SuggestionCard
+        id="3"
+        event="Glastonbury"
+        date="2025-06-26"
+        city="Pilton"
+        country="United Kingdom"
+        artists={[
+          "The Strokes",
+          "Fontaines D.C.",
+          "The 1975",
+          "The Killers",
+          "The Weeknd",
+          "The Cure",
+          "The Smiths",
+          "The Beatles",
+          "The Rolling Stones",
+          "The Who",
+          "The Doors",
+        ]}
+        genres={["Rock", "Indie", "Pop", "Alternative", "Punk", "Glam"]}
+      />
     </>
   );
 };

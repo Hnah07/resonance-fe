@@ -29,7 +29,7 @@ function SuggestionCard({
 }: SuggestionCardProps) {
   return (
     <>
-      <Card>
+      <Card className="mb-4">
         <CardContent className="flex flex-col gap-4">
           <CardHeader className="flex flex-row items-center w-full justify-between gap-2 p-0">
             <CardTitle className="text-xl">{event}</CardTitle>
