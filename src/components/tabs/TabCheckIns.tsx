@@ -99,6 +99,9 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
         onGenreChange={setSelectedGenre}
         onRatingChange={setSelectedRating}
         onSortChange={setSortBy}
+        onArtistChange={() => {}}
+        onLocationChange={() => {}}
+        onCountryChange={() => {}}
       />
       <div className="space-y-6">
         {filteredAndSortedCheckIns.map((checkIn) => (
