@@ -1,6 +1,12 @@
+"use client";
+
 import { PageHeader } from "@/components/PageHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatCard } from "@/components/StatCard";
+import { TabCheckIns } from "@/components/tabs/TabCheckIns";
+import { TabPhotos } from "@/components/tabs/TabPhotos";
+import { TabStats } from "@/components/tabs/TabStats";
+import { TabFriends } from "@/components/tabs/TabFriends";
 import Image from "next/image";
 import {
   LuMapPin,
@@ -11,6 +17,8 @@ import {
   LuStar,
   LuTicket,
 } from "react-icons/lu";
+import { DetailsButton } from "@/components/ui/details-button";
+import { useState } from "react";
 
 interface ProfilePageProps {
   //   id: string;
@@ -20,6 +28,70 @@ interface ProfilePageProps {
 }
 
 const ProfilePage = ({ image }: ProfilePageProps) => {
+  const [activeTab, setActiveTab] = useState<
+    "check-ins" | "photos" | "stats" | "friends"
+  >("check-ins");
+
+  // Mock data for check-ins
+  const mockCheckIns = [
+    {
+      user: {
+        id: "1",
+        name: "John Doe",
+        username: "johndoe",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      concert: {
+        id: "1",
+        event: "Metallica World Tour 2024",
+        location: "Sportpaleis",
+        city: "Antwerp",
+        image: "/placeholder-concert.jpg",
+        date: "2024-03-15",
+        rating: 5,
+        artists: ["Metallica", "Five Finger Death Punch"],
+        genres: ["Metal", "Heavy Metal"],
+      },
+      checkIn: {
+        id: "1",
+        date: "2024-03-15",
+        time: "20:00",
+        comment:
+          "Incredible show! The energy was amazing and the setlist was perfect. James Hetfield's voice was on point!",
+        likes: 42,
+        comments: [],
+      },
+    },
+    {
+      user: {
+        id: "1",
+        name: "John Doe",
+        username: "johndoe",
+        image: "/placeholder-avatar-user.jpg",
+      },
+      concert: {
+        id: "2",
+        event: "Tomorrowland 2024",
+        location: "De Schorre",
+        city: "Boom",
+        image: "/placeholder-concert.jpg",
+        date: "2024-02-20",
+        rating: 4,
+        artists: ["Martin Garrix", "David Guetta", "Armin van Buuren"],
+        genres: ["EDM", "House", "Trance"],
+      },
+      checkIn: {
+        id: "2",
+        date: "2024-02-20",
+        time: "14:00",
+        comment:
+          "Best festival experience ever! The production was mind-blowing and the atmosphere was electric.",
+        likes: 89,
+        comments: [],
+      },
+    },
+  ];
+
   return (
     <>
       <div className="flex items-center gap-2 mb-4 justify-center">
@@ -47,7 +119,7 @@ const ProfilePage = ({ image }: ProfilePageProps) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+      <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
         <StatCard
           icon={<LuCalendar className="w-6 h-6" />}
           title="Concerts This Year"
@@ -84,6 +156,40 @@ const ProfilePage = ({ image }: ProfilePageProps) => {
           value="De Grootste Zaal ter Wereld"
           details="You've visited this venue 8 times, making it your most frequented concert location."
         />
+      </div>
+      <div className="flex gap-4 justify-center mb-8">
+        <DetailsButton
+          isActive={activeTab === "check-ins"}
+          onClick={() => setActiveTab("check-ins")}
+        >
+          Check-Ins
+        </DetailsButton>
+        <DetailsButton
+          isActive={activeTab === "photos"}
+          onClick={() => setActiveTab("photos")}
+        >
+          Photos
+        </DetailsButton>
+        <DetailsButton
+          isActive={activeTab === "stats"}
+          onClick={() => setActiveTab("stats")}
+        >
+          Stats
+        </DetailsButton>
+        <DetailsButton
+          isActive={activeTab === "friends"}
+          onClick={() => setActiveTab("friends")}
+        >
+          Friends
+        </DetailsButton>
+      </div>
+
+      {/* Tab Contents */}
+      <div className="max-w-2xl mx-auto">
+        {activeTab === "check-ins" && <TabCheckIns checkIns={mockCheckIns} />}
+        {activeTab === "photos" && <TabPhotos />}
+        {activeTab === "stats" && <TabStats />}
+        {activeTab === "friends" && <TabFriends />}
       </div>
     </>
   );
