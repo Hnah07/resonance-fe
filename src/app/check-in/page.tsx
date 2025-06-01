@@ -1,3 +1,4 @@
+import AddConcertCard from "@/components/AddConcertCard";
 import { PageHeader } from "@/components/PageHeader";
 import SuggestionCard from "@/components/SuggestionCard";
 import { Input } from "@/components/ui/input";
@@ -73,6 +74,7 @@ const CheckInPage = () => {
         ]}
         genres={["Rock", "Indie", "Pop", "Alternative", "Punk", "Glam"]}
       />
+      <AddConcertCard />
     </>
   );
 };
