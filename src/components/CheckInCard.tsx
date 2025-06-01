@@ -170,7 +170,7 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
 
       {/* Artists seen */}
       <div className="px-4 pb-2">
-        <ArtistBadges artists={concert.artists} />
+        <ArtistBadges title="Artists seen" artists={concert.artists} />
       </div>
 
       {/* Concert Image */}

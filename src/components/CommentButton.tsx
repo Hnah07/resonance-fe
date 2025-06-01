@@ -56,7 +56,7 @@ export function CommentButton({
         <Button
           variant="ghost"
           size="icon"
-          className="flex items-center text-slate-500 hover:text-[#03D1FE] transition-colors"
+          className="flex items-center text-slate-500 hover:text-[#03D1FE] hover:bg-transparent transition-colors"
         >
           <LuMessageCircle className="w-5 h-5" />
           <span className="text-sm">{count}</span>

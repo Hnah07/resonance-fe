@@ -13,12 +13,14 @@ import { LuX } from "react-icons/lu";
 import { cn } from "@/lib/utils";
 
 interface ArtistBadgesProps {
+  title: string;
   artists: string[];
   className?: string;
   showTitle?: boolean;
 }
 
 export function ArtistBadges({
+  title,
   artists,
   className,
   showTitle = true,
@@ -33,7 +35,7 @@ export function ArtistBadges({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {showTitle && <p className="text-sm text-foreground">Artists</p>}
+      {showTitle && <p className="text-sm text-foreground">{title}</p>}
       <div ref={artistsContainerRef} className="flex flex-wrap gap-2">
         {visibleArtists.map((artist) => (
           <span
