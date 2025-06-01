@@ -20,14 +20,7 @@ import {
 import { DetailsButton } from "@/components/ui/details-button";
 import { useState } from "react";
 
-interface ProfilePageProps {
-  //   id: string;
-  //   name: string;
-  //   bio: string;
-  image: string;
-}
-
-const ProfilePage = ({ image }: ProfilePageProps) => {
+const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState<
     "check-ins" | "photos" | "stats" | "friends"
   >("check-ins");
@@ -91,6 +84,8 @@ const ProfilePage = ({ image }: ProfilePageProps) => {
       },
     },
   ];
+
+  const image = "/placeholder-avatar-user.jpg";
 
   return (
     <>
