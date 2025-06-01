@@ -52,7 +52,7 @@ function ConcertCard({ concert }: ConcertCardProps) {
               <LuCalendar className="text-2xl stroke-accent-cyan" />
               <p>{concert.date}</p>
             </div>
-            <ArtistBadges artists={concert.artists} />
+            <ArtistBadges title="Artists" artists={concert.artists} />
             <GenreBadges genres={concert.genres} />
           </div>
           <div className="flex items-center justify-between pt-2">
