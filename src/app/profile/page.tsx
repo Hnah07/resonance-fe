@@ -152,28 +152,32 @@ const ProfilePage = () => {
           details="You've visited this venue 8 times, making it your most frequented concert location."
         />
       </div>
-      <div className="flex gap-4 justify-center mb-8">
+      <div className="flex flex-wrap gap-2 justify-center mb-8 px-4">
         <DetailsButton
           isActive={activeTab === "check-ins"}
           onClick={() => setActiveTab("check-ins")}
+          className="min-w-[100px]"
         >
           Check-Ins
         </DetailsButton>
         <DetailsButton
           isActive={activeTab === "photos"}
           onClick={() => setActiveTab("photos")}
+          className="min-w-[100px]"
         >
           Photos
         </DetailsButton>
         <DetailsButton
           isActive={activeTab === "stats"}
           onClick={() => setActiveTab("stats")}
+          className="min-w-[100px]"
         >
           Stats
         </DetailsButton>
         <DetailsButton
           isActive={activeTab === "friends"}
           onClick={() => setActiveTab("friends")}
+          className="min-w-[100px]"
         >
           Friends
         </DetailsButton>
