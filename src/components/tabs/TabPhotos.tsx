@@ -133,8 +133,8 @@ export function TabPhotos() {
           </DialogHeader>
           <div className="relative w-full h-[200px] sm:h-[250px] mb-4">
             <Image
-              src={selectedCheckIn?.concert.image || ""}
-              alt={selectedCheckIn?.concert.event || ""}
+              src={selectedCheckIn?.concert.image || "/placeholder-concert.jpg"}
+              alt={selectedCheckIn?.concert.event || "Concert image"}
               fill
               className="object-cover rounded-lg"
               sizes="(max-width: 425px) 95vw, 425px"
