@@ -20,6 +20,15 @@ export function ExpandableImage({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Don't render the image component if src is empty
+  if (!src) {
+    return (
+      <div className={`${className} bg-muted flex items-center justify-center`}>
+        <span className="text-muted-foreground">No image available</span>
+      </div>
+    );
+  }
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <div
