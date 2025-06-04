@@ -8,6 +8,7 @@ import { ArtistBadges } from "@/components/ArtistBadges";
 import { ExpandableImage } from "@/components/ExpandableImage";
 import { LuMapPin, LuCalendar } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
+import { formatEventDate } from "@/lib/helpers";
 
 function ConcertCard({ concert }: { concert: ConcertProperties }) {
   return (
@@ -35,7 +36,7 @@ function ConcertCard({ concert }: { concert: ConcertProperties }) {
           <div className="flex flex-col gap-4">
             <div className="flex flex-row items-center gap-2">
               <LuCalendar className="text-2xl stroke-accent-cyan" />
-              <p>{new Date(concert.date).toLocaleDateString()}</p>
+              <p>{formatEventDate(concert.date)}</p>
             </div>
             {concert.artists.length > 0 && (
               <ArtistBadges title="Artists" artists={concert.artists} />
