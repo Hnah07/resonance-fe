@@ -43,11 +43,9 @@ function ConcertCard({ concert }: { concert: ConcertProperties }) {
             {concert.genres.length > 0 && (
               <GenreBadges genres={concert.genres} />
             )}
-          </div>
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex space-x-2">
-              <DetailsButton>Details</DetailsButton>
-              <GradientButton>Check In</GradientButton>
+            <div className="flex space-x-2 pt-2">
+              <DetailsButton className="flex-1">Details</DetailsButton>
+              <GradientButton className="flex-1">Check In</GradientButton>
             </div>
           </div>
         </CardContent>
