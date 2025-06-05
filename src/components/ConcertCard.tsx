@@ -8,7 +8,7 @@ import { ArtistBadges } from "@/components/ArtistBadges";
 import { ExpandableImage } from "@/components/ExpandableImage";
 import { LuMapPin, LuCalendar } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
-import { formatEventDate } from "@/lib/helpers";
+import { formatEventDate, getEventDisplay } from "@/lib/helpers";
 
 function ConcertCard({ concert }: { concert: ConcertProperties }) {
   return (
@@ -17,12 +17,14 @@ function ConcertCard({ concert }: { concert: ConcertProperties }) {
         <div className="relative w-full h-[300px] sm:h-[400px] md:h-[400px] bg-gray-800">
           <ExpandableImage
             src={concert.image}
-            alt={`${concert.event} at ${concert.location}`}
+            alt={`${getEventDisplay(concert.event, concert.date)} at ${
+              concert.location
+            }`}
             className="object-cover w-full h-full"
           />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent text-white p-4">
             <h3 className="text-lg font-semibold text-white">
-              {concert.event}
+              {getEventDisplay(concert.event, concert.date)}
             </h3>
             <div className="flex flex-row items-center gap-2">
               <LuMapPin className="text-sm text-white" />

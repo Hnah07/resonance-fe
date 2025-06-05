@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import https from "https";
-import { ApiConcertResponse } from "@/types/concert";
+import { ApiConcertResponse, ApiLocationResponse } from "@/types/concert";
+import { ApiArtistResponse, ApiGenreResponse } from "@/types/artists";
 
 export async function GET() {
   const token = process.env.API_TOKEN?.trim();
@@ -75,21 +76,38 @@ export async function GET() {
     // Fetch artists and genres for each concert
     const concertsWithDetails = await Promise.all(
       concerts.map(async (concert) => {
+        // Initialize location details
+        let locationDetails = { city: "", country: "" };
+
         try {
           // Fetch artists
           const artistsData = (await makeRequest(
             `/api/concerts/${concert.id}/artists`
-          )) as {
-            data: Array<{ id: string; name: string }>;
-          };
+          )) as ApiArtistResponse;
+
+          // Fetch location details if location is an object
+          if (typeof concert.location === "object" && concert.location.id) {
+            try {
+              const locationData = (await makeRequest(
+                `/api/locations/${concert.location.id}`
+              )) as ApiLocationResponse;
+              locationDetails = {
+                city: locationData.data.city || "",
+                country: locationData.data.country || "",
+              };
+            } catch (error) {
+              console.error(
+                `Error fetching location details for concert ${concert.id}:`,
+                error
+              );
+            }
+          }
 
           // Fetch genres for each artist
           const artistGenresPromises = artistsData.data.map(async (artist) => {
             const genresData = (await makeRequest(
               `/api/artists/${artist.id}/genres`
-            )) as {
-              data: Array<{ id: string; name: string }>;
-            };
+            )) as ApiGenreResponse;
             return genresData.data.map((genre) => genre.name);
           });
 
@@ -99,28 +117,74 @@ export async function GET() {
 
           return {
             id: concert.id,
-            event: concert.event.name,
-            location: concert.location.name,
-            city: concert.location.city,
-            country: concert.location.country,
+            event:
+              typeof concert.event === "string"
+                ? concert.event
+                : {
+                    id: concert.event.id,
+                    name: concert.event.name,
+                    type: concert.event.type,
+                    description: concert.event.description,
+                    start_date: concert.event.start_date,
+                    end_date: concert.event.end_date,
+                    image: concert.event.image,
+                  },
+            location:
+              typeof concert.location === "string"
+                ? concert.location
+                : concert.location.name,
+            city: locationDetails.city,
+            country: locationDetails.country,
             date: concert.date,
-            image: concert.event.image || "",
+            image:
+              typeof concert.event === "string"
+                ? concert.image || ""
+                : concert.event.image || concert.image || "",
             artists: artistsData.data?.map((artist) => artist.name) || [],
             genres: uniqueGenres,
           };
         } catch (error) {
           console.error(
-            `Error fetching details for concert ${concert.id} (${concert.event.name}):`,
+            `Error fetching details for concert ${concert.id} (${
+              typeof concert.event === "string"
+                ? concert.event
+                : concert.event.name
+            }):`,
             error
           );
           return {
             id: concert.id,
-            event: concert.event.name,
-            location: concert.location.name,
-            city: concert.location.city,
-            country: concert.location.country,
+            event:
+              typeof concert.event === "string"
+                ? concert.event
+                : concert.event.name,
+            location:
+              typeof concert.location === "string"
+                ? concert.location
+                : concert.location.name,
+            city: locationDetails.city,
+            country: locationDetails.country,
             date: concert.date,
-            image: "",
+            start_date:
+              typeof concert.event === "string"
+                ? concert.date
+                : concert.event.start_date,
+            end_date:
+              typeof concert.event === "string"
+                ? concert.date
+                : concert.event.end_date,
+            description:
+              typeof concert.event === "string"
+                ? ""
+                : concert.event.description,
+            type:
+              typeof concert.event === "string"
+                ? "concert"
+                : concert.event.type,
+            image:
+              typeof concert.event === "string"
+                ? ""
+                : concert.event.image || "",
             artists: [],
             genres: [],
           };

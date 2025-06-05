@@ -40,7 +40,6 @@ const DiscoverPage = () => {
         setError(
           err instanceof Error ? err.message : "Failed to fetch concerts"
         );
-        console.error("Error fetching concerts:", err);
       } finally {
         setLoading(false);
       }

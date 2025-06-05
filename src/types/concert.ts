@@ -1,11 +1,23 @@
+export type EventType = "concert" | "festival" | "tour" | "other";
+
+export interface Event {
+  id: string;
+  name: string;
+  type: EventType;
+  description: string;
+  start_date: string;
+  end_date: string;
+  image?: string;
+}
+
 export interface ConcertProperties {
   id: string; // UUID format
-  event: string;
+  event: Event | string; // Either a full Event object or just the event name
   location: string;
   city: string;
   country: string;
   image: string;
-  date: string;
+  date: string; // The specific date of this concert
   artists: string[];
   genres: string[];
   //   interestedCount?: number;
@@ -18,11 +30,11 @@ export interface ConcertResponse {
 
 export interface ApiConcert {
   id: string;
-  event: string;
-  location: string;
+  event: string | Event; // Either a full Event object or just the event name
+  location: string | { id: string; name: string; type: string; image?: string };
   city: string;
   country: string;
-  date: string;
+  date: string; // The specific date of this concert
   image?: string;
   artists?: string[];
   genres?: string[];
@@ -49,5 +61,16 @@ export interface ApiConcertResponse {
     per_page: number;
     to: number;
     total: number;
+  };
+}
+
+export interface ApiLocationResponse {
+  data: {
+    id: string;
+    name: string;
+    city: string;
+    country: string;
+    type: string;
+    image?: string;
   };
 }

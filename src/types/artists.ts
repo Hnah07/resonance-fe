@@ -40,3 +40,7 @@ export interface ApiArtistResponse {
     total: number;
   };
 }
+
+export interface ApiGenreResponse {
+  data: Genre[];
+}

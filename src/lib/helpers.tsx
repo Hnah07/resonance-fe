@@ -1,4 +1,5 @@
 import { Star, StarHalf } from "lucide-react";
+import { Event } from "@/types/concert";
 
 interface StarRatingProps {
   rating: number;
@@ -111,4 +112,20 @@ export function formatEventDate(dateString: string): string {
     month: "long",
     year: "numeric",
   });
+}
+
+export function formatEventYear(dateString: string): string {
+  const eventDate = new Date(dateString);
+  return eventDate.getFullYear().toString();
+}
+
+export function getEventDisplay(event: Event | string, date: string): string {
+  if (typeof event === "string") return event;
+
+  // Only show year for festivals
+  if (event.type === "festival") {
+    return `${event.name} ${formatEventYear(date)}`;
+  }
+
+  return event.name;
 }
