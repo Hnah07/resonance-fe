@@ -19,7 +19,8 @@ export async function GET() {
     const makeRequest = (path: string) => {
       return new Promise((resolve, reject) => {
         const options = {
-          hostname: "resonance-be.ddev.site",
+          hostname:
+            process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
           path,
           method: "GET",
           headers: {
