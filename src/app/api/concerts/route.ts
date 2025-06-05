@@ -6,10 +6,6 @@ import { ApiArtistResponse, ApiGenreResponse } from "@/types/artists";
 export async function GET(request: Request) {
   const token = process.env.API_TOKEN?.trim();
   const { searchParams } = new URL(request.url);
-  console.log(
-    "Concerts API route - Search params:",
-    Object.fromEntries(searchParams.entries())
-  );
 
   if (!token) {
     console.error("API token is missing in server-side route");
@@ -22,7 +18,6 @@ export async function GET(request: Request) {
   try {
     // Create a promise-based request function
     const makeRequest = (path: string) => {
-      console.log("Making request to backend:", path);
       return new Promise((resolve, reject) => {
         const options = {
           hostname:
@@ -45,7 +40,6 @@ export async function GET(request: Request) {
           });
 
           res.on("end", () => {
-            console.log("Backend response status:", res.statusCode);
             if (res.statusCode && res.statusCode >= 400) {
               console.error("Backend error response:", data);
               reject(
@@ -58,7 +52,6 @@ export async function GET(request: Request) {
 
             try {
               const jsonData = JSON.parse(data);
-              console.log("Backend response data:", jsonData);
               resolve(jsonData);
             } catch {
               reject(new Error(`Failed to parse response: ${data}`));
@@ -79,34 +72,9 @@ export async function GET(request: Request) {
     const apiPath = `/api/concerts${
       searchParams.toString() ? `?${searchParams.toString()}` : ""
     }`;
-    console.log("Final backend API path:", apiPath);
-    console.log(
-      "Search params being sent to backend:",
-      Object.fromEntries(searchParams.entries())
-    );
 
     // Fetch concerts with query parameters
     const concertsData = (await makeRequest(apiPath)) as ApiConcertResponse;
-    console.log(
-      "Raw concerts data from backend:",
-      JSON.stringify(concertsData, null, 2)
-    );
-
-    // Log the location details of each concert to verify filtering
-    console.log(
-      "Concert locations:",
-      concertsData.data.map((concert) => ({
-        id: concert.id,
-        location:
-          typeof concert.location === "object"
-            ? {
-                id: concert.location.id,
-                name: concert.location.name,
-                city: concert.location.city,
-              }
-            : concert.location,
-      }))
-    );
 
     const concerts = concertsData.data;
     const links = concertsData.links;

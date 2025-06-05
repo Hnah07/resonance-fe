@@ -97,7 +97,6 @@ export async function getAllConcerts(
   try {
     const baseUrl = getBaseUrl();
     const token = process.env.API_TOKEN?.trim();
-    console.log("Filters received in getAllConcerts:", filters);
 
     if (!token) {
       throw new Error("API token is missing");
@@ -123,26 +122,20 @@ export async function getAllConcerts(
       }
       // Get the first location from the array
       const firstLocation = location[0];
-      console.log("Location data received:", firstLocation);
       // Use location parameter for name-based filtering
       queryParams.append("location", firstLocation.name);
-      console.log("Added location to query params:", firstLocation.name);
     }
 
     // Handle city filter
     if (filters?.city && filters.city !== "all") {
       queryParams.append("city", filters.city);
-      console.log("Added city to query params:", filters.city);
     }
 
     // Handle genre filter
     if (filters?.genres && filters.genres.length > 0) {
-      console.log("Processing genres:", filters.genres);
-
       try {
         // Fetch all genres first
         const allGenres = await fetchAllGenres(token);
-        console.log("Fetched all genres:", allGenres.length);
 
         // Find matching genre IDs
         const genreIds = filters.genres.map((genreName) => {
@@ -151,7 +144,6 @@ export async function getAllConcerts(
             console.error("No matching genre found for:", genreName);
             throw new Error(`No matching genre found for: ${genreName}`);
           }
-          console.log(`Found genre ID for ${genreName}:`, matchingGenre.id);
           return matchingGenre.id;
         });
 
@@ -162,10 +154,6 @@ export async function getAllConcerts(
           if (filters.genreFilterMode) {
             queryParams.set("filter_mode", filters.genreFilterMode);
           }
-          console.log("Added genre filtering params:", {
-            genre_ids: genreIdsString,
-            filter_mode: filters.genreFilterMode || "any",
-          });
         }
       } catch (error) {
         console.error("Error processing genres:", error);
@@ -176,27 +164,22 @@ export async function getAllConcerts(
     // Handle other filters
     if (filters?.eventType && filters.eventType !== "all") {
       queryParams.append("type", filters.eventType);
-      console.log("Added type to query params:", filters.eventType);
     }
     if (filters?.dateFrom) {
       queryParams.append("date_from", filters.dateFrom);
-      console.log("Added date_from to query params:", filters.dateFrom);
     }
     if (filters?.dateTo) {
       queryParams.append("date_to", filters.dateTo);
-      console.log("Added date_to to query params:", filters.dateTo);
     }
 
     const queryString = queryParams.toString();
     const url = `${baseUrl}/api/concerts${
       queryString ? `?${queryString}` : ""
     }`;
-    console.log("Final concerts API URL:", url);
 
     const res = await fetch(url, {
       cache: "no-store",
     });
-    console.log("Concerts API response status:", res.status);
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => null);
@@ -209,7 +192,6 @@ export async function getAllConcerts(
     }
 
     const data = await res.json();
-    console.log("Concerts data received:", data);
     return { concerts: data.concerts };
   } catch (error) {
     console.error("Error in getAllConcerts:", error);
