@@ -21,6 +21,7 @@ interface Filters {
   location: { id: string; name: string; city: string; country: string } | null;
   city: { id: string; name: string; city: string; country: string } | null;
   genres: string[];
+  genreFilterMode: "any" | "all";
   eventType: string;
 }
 
@@ -38,6 +39,7 @@ export default function DiscoverPage() {
     location: null,
     city: null,
     genres: [],
+    genreFilterMode: "any",
     eventType: "all",
   });
 
@@ -85,7 +87,8 @@ export default function DiscoverPage() {
         const { concerts, error } = await fetchConcerts({
           location: filters.location?.name,
           city: filters.city?.city,
-          genre: filters.genres.join(","),
+          genres: filters.genres,
+          genreFilterMode: filters.genreFilterMode,
           eventType:
             filters.eventType !== "all" ? filters.eventType : undefined,
           dateFrom: filters.dateRange.from?.toISOString(),

@@ -28,6 +28,7 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useState, useEffect } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
+import { Switch } from "@/components/ui/switch";
 
 interface FilterOptions {
   locations: string[];
@@ -55,6 +56,7 @@ interface FilterDialogProps {
       country: string;
     } | null;
     genres: string[];
+    genreFilterMode: "any" | "all";
     eventType: string;
   }) => void;
 }
@@ -81,6 +83,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     country: string;
   } | null>(null);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [genreFilterMode, setGenreFilterMode] = useState<"any" | "all">("any");
   const [eventType, setEventType] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -125,6 +128,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
       location,
       city,
       genres: selectedGenres,
+      genreFilterMode,
       eventType,
     });
     setOpen(false);
@@ -135,6 +139,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     setLocation(null);
     setCity(null);
     setSelectedGenres([]);
+    setGenreFilterMode("any");
     setEventType("all");
   };
 
@@ -206,6 +211,21 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
               emptyMessage="No genres found."
               disabled={isLoading}
             />
+            {selectedGenres.length > 0 && (
+              <div className="flex items-center justify-between mt-2">
+                <Label className="text-sm text-muted-foreground">
+                  {genreFilterMode === "any"
+                    ? "Show concerts where any artist has any selected genre"
+                    : "Show concerts where all artists have all selected genres"}
+                </Label>
+                <Switch
+                  checked={genreFilterMode === "all"}
+                  onCheckedChange={(checked) =>
+                    setGenreFilterMode(checked ? "all" : "any")
+                  }
+                />
+              </div>
+            )}
           </div>
 
           {/* Event Type Filter */}

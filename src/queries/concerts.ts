@@ -1,6 +1,6 @@
 import { ApiConcert } from "@/types/concert";
 import { fetchLocation } from "@/app/actions";
-import { fetchGenre } from "@/app/actions";
+import https from "https";
 
 // Get the base URL for the current environment
 const getBaseUrl = () => {
@@ -19,10 +19,76 @@ const getBaseUrl = () => {
 export interface ConcertFilters {
   location?: string;
   city?: string;
-  genre?: string;
+  genres?: string[];
+  genreFilterMode?: "any" | "all";
   eventType?: string;
   dateFrom?: string;
   dateTo?: string;
+}
+
+// Helper function to fetch all genres across pages
+async function fetchAllGenres(
+  token: string
+): Promise<{ id: string; genre: string }[]> {
+  const allGenres: { id: string; genre: string }[] = [];
+  let currentPage = 1;
+  let hasMorePages = true;
+
+  while (hasMorePages) {
+    const response = await new Promise<{
+      data: { id: string; genre: string }[];
+      meta: { current_page: number; last_page: number };
+    }>((resolve, reject) => {
+      const options = {
+        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        path: `/api/genres?page=${currentPage}`,
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        rejectUnauthorized: false,
+      };
+
+      const req = https.request(options, (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(
+              new Error(
+                `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
+              )
+            );
+            return;
+          }
+          try {
+            resolve(JSON.parse(data));
+          } catch {
+            reject(new Error(`Failed to parse response: ${data}`));
+          }
+        });
+      });
+
+      req.on("error", (error) => {
+        reject(error);
+      });
+
+      req.end();
+    });
+
+    allGenres.push(...response.data);
+
+    if (response.meta.current_page >= response.meta.last_page) {
+      hasMorePages = false;
+    } else {
+      currentPage++;
+    }
+  }
+
+  return allGenres;
 }
 
 export async function getAllConcerts(
@@ -30,7 +96,12 @@ export async function getAllConcerts(
 ): Promise<{ concerts: ApiConcert[] }> {
   try {
     const baseUrl = getBaseUrl();
+    const token = process.env.API_TOKEN?.trim();
     console.log("Filters received in getAllConcerts:", filters);
+
+    if (!token) {
+      throw new Error("API token is missing");
+    }
 
     // Build query string from filters
     const queryParams = new URLSearchParams();
@@ -65,22 +136,41 @@ export async function getAllConcerts(
     }
 
     // Handle genre filter
-    if (filters?.genre && filters.genre !== "all") {
-      console.log("Fetching genre data for:", filters.genre);
-      // Use server action to fetch genre
-      const { genre, error: genreError } = await fetchGenre(filters.genre);
-      if (genreError) {
-        console.error("Error fetching genre:", genreError);
-        throw new Error(`Failed to fetch genre: ${genreError}`);
+    if (filters?.genres && filters.genres.length > 0) {
+      console.log("Processing genres:", filters.genres);
+
+      try {
+        // Fetch all genres first
+        const allGenres = await fetchAllGenres(token);
+        console.log("Fetched all genres:", allGenres.length);
+
+        // Find matching genre IDs
+        const genreIds = filters.genres.map((genreName) => {
+          const matchingGenre = allGenres.find((g) => g.genre === genreName);
+          if (!matchingGenre) {
+            console.error("No matching genre found for:", genreName);
+            throw new Error(`No matching genre found for: ${genreName}`);
+          }
+          console.log(`Found genre ID for ${genreName}:`, matchingGenre.id);
+          return matchingGenre.id;
+        });
+
+        if (genreIds.length > 0) {
+          // Join all genre IDs with commas
+          const genreIdsString = genreIds.join(",");
+          queryParams.set("genre_ids", genreIdsString);
+          if (filters.genreFilterMode) {
+            queryParams.set("filter_mode", filters.genreFilterMode);
+          }
+          console.log("Added genre filtering params:", {
+            genre_ids: genreIdsString,
+            filter_mode: filters.genreFilterMode || "any",
+          });
+        }
+      } catch (error) {
+        console.error("Error processing genres:", error);
+        throw error;
       }
-      if (!genre) {
-        console.error("No genre data found for:", filters.genre);
-        throw new Error(`No genre found for: ${filters.genre}`);
-      }
-      console.log("Genre data received:", genre);
-      // Use genre_id parameter as per API docs
-      queryParams.append("genre_id", genre.id);
-      console.log("Added genre_id to query params:", genre.id);
     }
 
     // Handle other filters
