@@ -180,6 +180,10 @@ export async function getAllConcerts(
 
     const res = await fetch(url, {
       cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!res.ok) {
