@@ -1,15 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ConcertCard from "@/components/ConcertCard";
 import { FilterDialog } from "@/components/FilterDialog";
+import LocationSelector from "@/components/LocationSelector";
 import { fetchConcerts } from "@/app/actions";
 import { ConcertProperties } from "@/types/concert";
+import { PageHeader } from "@/components/PageHeader";
+import dynamic from "next/dynamic";
+import { useInView } from "react-intersection-observer";
+import CardSkeleton from "@/components/CardSkeleton";
+import { Suspense } from "react";
+
+const ConcertCard = dynamic(() => import("@/components/ConcertCard"), {
+  loading: () => <CardSkeleton />,
+  ssr: false,
+});
 
 export default function DiscoverPage() {
   const [concerts, setConcerts] = useState<ConcertProperties[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [visibleCards, setVisibleCards] = useState(6);
+  const { ref, inView } = useInView({
+    threshold: 0,
+    triggerOnce: false,
+  });
 
   // Fetch concerts on mount
   useEffect(() => {
@@ -32,6 +47,15 @@ export default function DiscoverPage() {
 
     loadConcerts();
   }, []);
+
+  // Load more cards when scrolling
+  useEffect(() => {
+    if (inView && !isLoading && visibleCards < concerts.length) {
+      setTimeout(() => {
+        setVisibleCards((prev) => Math.min(prev + 6, concerts.length));
+      }, 500);
+    }
+  }, [inView, isLoading, visibleCards, concerts.length]);
 
   const handleApplyFilters = async (filters: {
     dateRange: { from: Date | undefined; to: Date | undefined };
@@ -101,20 +125,37 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Discover Concerts</h1>
-        <FilterDialog onApply={handleApplyFilters} />
-      </div>
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {concerts.map((concert) => (
-            <ConcertCard key={concert.id} concert={concert} />
-          ))}
+    <>
+      <div className="flex flex-col gap-4 mb-8">
+        <PageHeader
+          title="Discover Concerts"
+          subtitle="Find the best concerts in your area"
+        />
+        <div className="flex justify-between items-center">
+          <LocationSelector />
+          <FilterDialog onApply={handleApplyFilters} />
         </div>
-      )}
-    </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        {isLoading ? (
+          // Show 6 skeleton cards while loading
+          Array.from({ length: 6 }).map((_, index) => (
+            <CardSkeleton key={index} />
+          ))
+        ) : (
+          // Show actual cards with lazy loading
+          <>
+            {concerts.slice(0, visibleCards).map((concert) => (
+              <Suspense key={concert.id} fallback={<CardSkeleton />}>
+                <ConcertCard concert={concert} />
+              </Suspense>
+            ))}
+            {visibleCards < concerts.length && (
+              <div ref={ref} className="h-4" />
+            )}
+          </>
+        )}
+      </div>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Header from "@/layout/Header";
 import { Metadata, Viewport } from "next";
 import BottomNavbar from "@/layout/BottomNavBar";
+import { Container } from "@/components/ui/container";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -46,7 +47,9 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
           disableTransitionOnChange
         >
           <Header />
-          <main className="mx-auto max-w-2xl px-4 pb-24">{children}</main>
+          <Container className="pb-24">
+            <main>{children}</main>
+          </Container>
           <BottomNavbar />
         </ThemeProvider>
       </body>

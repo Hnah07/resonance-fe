@@ -13,7 +13,7 @@ const CheckInCard = dynamic(() => import("@/components/CheckInCard"), {
 });
 
 const TimelinePage = () => {
-  const [visibleCards, setVisibleCards] = useState(1);
+  const [visibleCards, setVisibleCards] = useState(6);
   const { ref, inView } = useInView({
     threshold: 0,
     triggerOnce: false,
@@ -22,13 +22,13 @@ const TimelinePage = () => {
   useEffect(() => {
     if (inView && visibleCards < 10) {
       setTimeout(() => {
-        setVisibleCards((prev) => prev + 1);
+        setVisibleCards((prev) => Math.min(prev + 6, 10));
       }, 500);
     }
   }, [inView, visibleCards]);
 
   // This will be from the API
-  const hasCheckIns = true; // For now hardcoded to show the "no check-ins" message
+  const hasCheckIns = true;
 
   return (
     <>
@@ -37,11 +37,11 @@ const TimelinePage = () => {
         <GradientButton>+ Check In</GradientButton>
       </div>
       {hasCheckIns ? (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           {Array.from({ length: visibleCards }).map((_, index) => (
             <Suspense key={index} fallback={<CardSkeleton />}>
               <CheckInCard
-                user={{ id: "1", name: "Jan Lebbe", username: "kathedraaltje" }}
+                user={{ id: "1", name: "Jan Lebbe", username: "j_lebbe" }}
                 concert={{
                   id: "1",
                   event: "Graspop Metal Meeting",
@@ -94,7 +94,7 @@ const TimelinePage = () => {
               />
             </Suspense>
           ))}
-          <div ref={ref} className="h-4" />
+          {visibleCards < 10 && <div ref={ref} className="h-4" />}
         </div>
       ) : (
         <div className="text-center text-gray-600 mt-8">

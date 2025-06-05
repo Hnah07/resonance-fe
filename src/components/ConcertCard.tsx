@@ -14,7 +14,7 @@ function ConcertCard({ concert }: { concert: ConcertProperties }) {
   return (
     <div className="flex justify-center w-full mb-6">
       <Card className="w-full sm:w-full max-w-sm sm:max-w-none overflow-hidden rounded-2xl shadow-lg !p-0 !gap-0">
-        <div className="relative w-full h-[300px] sm:h-[400px] md:h-[400px] bg-gray-800">
+        <div className="relative w-full h-[300px] sm:h-[250px] md:h-[280px] bg-gray-800">
           <ExpandableImage
             src={concert.image}
             alt={`${getEventDisplay(concert.event, concert.date)} at ${
