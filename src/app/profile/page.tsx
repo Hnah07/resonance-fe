@@ -37,8 +37,12 @@ const ProfilePage = () => {
       concert: {
         id: "1",
         event: "Metallica World Tour 2024",
-        location: "Sportpaleis",
+        location: {
+          id: "1",
+          name: "Sportpaleis",
+        },
         city: "Antwerp",
+        country: "Belgium",
         image: "/placeholder-concert.jpg",
         date: "2024-03-15",
         rating: 5,
@@ -65,8 +69,12 @@ const ProfilePage = () => {
       concert: {
         id: "2",
         event: "Tomorrowland 2024",
-        location: "De Schorre",
+        location: {
+          id: "2",
+          name: "De Schorre",
+        },
         city: "Boom",
+        country: "Belgium",
         image: "/placeholder-concert.jpg",
         date: "2024-02-20",
         rating: 4,

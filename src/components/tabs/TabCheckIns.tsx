@@ -15,7 +15,10 @@ interface TabCheckInsProps {
     concert: {
       id: string;
       event: string;
-      location: string;
+      location: {
+        id: string;
+        name: string;
+      };
       city: string;
       image: string;
       date: string;

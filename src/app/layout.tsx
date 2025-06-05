@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Header from "@/layout/Header";
 import { Metadata, Viewport } from "next";
 import BottomNavbar from "@/layout/BottomNavBar";
+import { Container } from "@/components/ui/container";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   description: "Your Digital Memory Book for Live Music",
   manifest: "/manifest.json",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+    process.env.FRONTEND_URL || "https://resonance-lake.vercel.app"
   ),
   appleWebApp: {
     capable: true,
@@ -46,7 +47,9 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
           disableTransitionOnChange
         >
           <Header />
-          <main className="mx-auto max-w-2xl px-4 pb-24">{children}</main>
+          <Container className="pb-24">
+            <main>{children}</main>
+          </Container>
           <BottomNavbar />
         </ThemeProvider>
       </body>

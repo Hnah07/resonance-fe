@@ -12,6 +12,7 @@ const Header = () => {
               alt="logo resonance"
               width={50}
               height={50}
+              priority
             />
             <h1 className="text-xl font-semibold text-foreground">Resonance</h1>
           </div>

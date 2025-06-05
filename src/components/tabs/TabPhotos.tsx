@@ -22,7 +22,10 @@ const checkIns = [
     concert: {
       id: "1",
       event: "Metallica World Tour 2024",
-      location: "Sportpaleis",
+      location: {
+        id: "1",
+        name: "Sportpaleis",
+      },
       city: "Antwerp",
       country: "Belgium",
       image: "/placeholder-concert.jpg",
@@ -50,7 +53,10 @@ const checkIns = [
     concert: {
       id: "2",
       event: "Tomorrowland 2024",
-      location: "De Schorre",
+      location: {
+        id: "2",
+        name: "De Schorre",
+      },
       city: "Boom",
       country: "Belgium",
       image: "/summer-festival.jpg",
@@ -147,7 +153,7 @@ export function TabPhotos() {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <LuMapPin className="w-4 h-4 flex-shrink-0" />
-              {selectedCheckIn?.concert.location},{" "}
+              {selectedCheckIn?.concert.location.name},{" "}
               {selectedCheckIn?.concert.city},{" "}
               {selectedCheckIn?.concert.country}
             </div>

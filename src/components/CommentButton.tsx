@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import { formatRelativeTime } from "@/lib/helpers";
 import { Comment } from "@/types/comment";
+import Image from "next/image";
 
 interface CommentButtonProps {
   count: number;
@@ -94,10 +95,12 @@ export function CommentButton({
               .map((comment) => (
                 <div key={comment.id} className="flex gap-3">
                   <div className="flex-shrink-0">
-                    <img
+                    <Image
                       src={comment.user.image || "/placeholder-avatar-user.jpg"}
                       alt={comment.user.name}
-                      className="w-8 h-8 rounded-full object-cover"
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
                     />
                   </div>
                   <div className="flex-1">
