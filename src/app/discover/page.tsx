@@ -1,133 +1,120 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { useState, useEffect } from "react";
+import ConcertCard from "@/components/ConcertCard";
 import { FilterDialog } from "@/components/FilterDialog";
-import LocationSelector from "@/components/LocationSelector";
-import { PageHeader } from "@/components/PageHeader";
-import CardSkeleton from "@/components/CardSkeleton";
-import { useInView } from "react-intersection-observer";
-import { useEffect, useState, Suspense } from "react";
+import { fetchConcerts } from "@/app/actions";
 import { ConcertProperties } from "@/types/concert";
-import { getAllConcerts } from "@/queries/concerts";
-import { mapConcertFromApi } from "@/lib/mappers";
 
-// Dynamically import ConcertCard with a loading placeholder
-const ConcertCard = dynamic(() => import("@/components/ConcertCard"), {
-  loading: () => <CardSkeleton />,
-  ssr: false,
-});
-
-const DiscoverPage = () => {
+export default function DiscoverPage() {
   const [concerts, setConcerts] = useState<ConcertProperties[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [visibleCards, setVisibleCards] = useState(1);
-  const { ref, inView } = useInView({
-    threshold: 0,
-    triggerOnce: false,
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch concerts when component mounts
+  // Fetch concerts on mount
   useEffect(() => {
-    const fetchConcerts = async () => {
+    const loadConcerts = async () => {
       try {
-        setLoading(true);
-        const response = await getAllConcerts();
-        const mappedConcerts = response.concerts.map(mapConcertFromApi);
-        setConcerts(mappedConcerts);
-        setError(null);
-      } catch (err) {
+        const { concerts, error } = await fetchConcerts();
+        if (error) {
+          setError(error);
+        } else {
+          setConcerts(concerts);
+        }
+      } catch (error) {
         setError(
-          err instanceof Error ? err.message : "Failed to fetch concerts"
+          error instanceof Error ? error.message : "Failed to load concerts"
         );
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchConcerts();
+    loadConcerts();
   }, []);
 
-  // Handle infinite scroll
-  useEffect(() => {
-    if (inView && visibleCards < concerts.length) {
-      // Add a small delay to make the loading state more visible
-      setTimeout(() => {
-        setVisibleCards((prev) => prev + 1);
-      }, 500);
-    }
-  }, [inView, visibleCards, concerts.length]);
+  const handleApplyFilters = async (filters: {
+    dateRange: { from: Date | undefined; to: Date | undefined };
+    location: string;
+    genre: string;
+    eventType: string;
+  }) => {
+    setIsLoading(true);
+    try {
+      const { concerts: filteredConcerts, error } = await fetchConcerts();
+      if (error) {
+        setError(error);
+        return;
+      }
 
-  const handleApplyFilters = () => {
-    // TODO: Implement filter logic
+      let filtered = [...filteredConcerts];
+
+      // Apply location filter
+      if (filters.location !== "all") {
+        filtered = filtered.filter(
+          (concert) =>
+            concert.city.toLowerCase() === filters.location.toLowerCase()
+        );
+      }
+
+      // Apply genre filter
+      if (filters.genre !== "all") {
+        filtered = filtered.filter((concert) =>
+          concert.genres.some(
+            (genre) => genre.toLowerCase() === filters.genre.toLowerCase()
+          )
+        );
+      }
+
+      // Apply event type filter
+      if (filters.eventType !== "all") {
+        filtered = filtered.filter((concert) =>
+          typeof concert.event === "string"
+            ? filters.eventType === "concert"
+            : concert.event.type.toLowerCase() ===
+              filters.eventType.toLowerCase()
+        );
+      }
+
+      // Apply date range filter
+      if (filters.dateRange.from || filters.dateRange.to) {
+        filtered = filtered.filter((concert) => {
+          const concertDate = new Date(concert.date);
+          const from = filters.dateRange.from || new Date(0);
+          const to = filters.dateRange.to || new Date(8640000000000000); // Max date
+          return concertDate >= from && concertDate <= to;
+        });
+      }
+
+      setConcerts(filtered);
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Failed to apply filters"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <>
-        <PageHeader
-          title="Discover Concerts"
-          subtitle="Find live music near you"
-        />
-        <div className="flex justify-between w-full mb-12">
-          <LocationSelector />
-          <FilterDialog onApply={handleApplyFilters} />
-        </div>
-        <div className="space-y-6">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <CardSkeleton key={index} />
-          ))}
-        </div>
-      </>
-    );
-  }
-
   if (error) {
-    return (
-      <>
-        <PageHeader
-          title="Discover Concerts"
-          subtitle="Find live music near you"
-        />
-        <div className="flex justify-between w-full mb-12">
-          <LocationSelector />
-          <FilterDialog onApply={handleApplyFilters} />
-        </div>
-        <div className="text-center text-red-500 p-4">
-          <p>Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Try Again
-          </button>
-        </div>
-      </>
-    );
+    return <div>Error: {error}</div>;
   }
 
   return (
-    <>
-      <PageHeader
-        title="Discover Concerts"
-        subtitle="Find live music near you"
-      />
-      <div className="flex justify-between w-full mb-12">
-        <LocationSelector />
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Discover Concerts</h1>
         <FilterDialog onApply={handleApplyFilters} />
       </div>
-      <div className="space-y-6">
-        {concerts.slice(0, visibleCards).map((concert) => (
-          <Suspense key={concert.id} fallback={<CardSkeleton />}>
-            <ConcertCard concert={concert} />
-          </Suspense>
-        ))}
-        {visibleCards < concerts.length && (
-          <div ref={ref} className="h-4" /> // Intersection observer target
-        )}
-      </div>
-    </>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {concerts.map((concert) => (
+            <ConcertCard key={concert.id} concert={concert} />
+          ))}
+        </div>
+      )}
+    </div>
   );
-};
-
-export default DiscoverPage;
+}
