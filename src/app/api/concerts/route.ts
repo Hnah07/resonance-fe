@@ -79,24 +79,15 @@ export async function GET(request: Request) {
     // Filter concerts by city if city parameter is present
     let filteredConcerts = concertsData.data;
     const cityFilter = searchParams.get("city");
-    console.log("City filter value:", cityFilter);
-    console.log(
-      "Available concerts cities:",
-      filteredConcerts.map((c) => c.location.city)
-    );
 
     if (cityFilter) {
       filteredConcerts = filteredConcerts.filter((concert) => {
         const matches =
           concert.location.city.toLowerCase() === cityFilter.toLowerCase();
-        console.log(
-          `Comparing ${concert.location.city} with ${cityFilter}: ${matches}`
-        );
         return matches;
       });
     }
 
-    console.log("Filtered concerts count:", filteredConcerts.length);
     const concerts = filteredConcerts;
     const links = concertsData.links;
     const meta = {
