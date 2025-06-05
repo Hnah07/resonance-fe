@@ -31,8 +31,12 @@ import { MultiCombobox } from "@/components/ui/multi-combobox";
 
 interface FilterOptions {
   locations: string[];
-  genres: string[];
   eventTypes: string[];
+}
+
+interface Genre {
+  id: string;
+  genre: string;
 }
 
 interface FilterDialogProps {
@@ -81,29 +85,38 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     locations: [],
-    genres: [],
     eventTypes: [],
   });
+  const [genres, setGenres] = useState<Genre[]>([]);
 
   useEffect(() => {
-    const fetchFilterOptions = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch("/api/filters");
-        if (!response.ok) {
+        // Fetch filter options
+        const filterResponse = await fetch("/api/filters");
+        if (!filterResponse.ok) {
           throw new Error("Failed to fetch filter options");
         }
-        const data = await response.json();
-        setFilterOptions(data);
+        const filterData = await filterResponse.json();
+        setFilterOptions(filterData);
+
+        // Fetch all genres
+        const genresResponse = await fetch("/api/genres?all=true");
+        if (!genresResponse.ok) {
+          throw new Error("Failed to fetch genres");
+        }
+        const genresData = await genresResponse.json();
+        setGenres(genresData.data);
       } catch (error) {
-        console.error("Error fetching filter options:", error);
+        console.error("Error fetching data:", error);
         // Keep the empty arrays as fallback
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchFilterOptions();
+    fetchData();
   }, []);
 
   const handleApply = () => {
@@ -182,9 +195,9 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
               Genres
             </Label>
             <MultiCombobox
-              options={filterOptions.genres.map((genre) => ({
-                value: genre,
-                label: genre,
+              options={genres.map((genre) => ({
+                value: genre.genre,
+                label: genre.genre,
               }))}
               selectedValues={selectedGenres}
               onSelectionChange={setSelectedGenres}

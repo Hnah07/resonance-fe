@@ -1,10 +1,30 @@
 import { NextResponse } from "next/server";
 import https from "https";
 
+interface Genre {
+  id: string;
+  genre: string;
+}
+
+interface PaginatedResponse {
+  data: Genre[];
+  meta: {
+    current_page: number;
+    last_page: number;
+  };
+  links: {
+    first: string;
+    last: string;
+    prev: string | null;
+    next: string | null;
+  };
+}
+
 export async function GET(request: Request) {
   const token = process.env.API_TOKEN?.trim();
   const { searchParams } = new URL(request.url);
-  const name = searchParams.get("name");
+  const genre = searchParams.get("genre");
+  const all = searchParams.get("all") === "true";
 
   if (!token) {
     console.error("API token is missing in server-side route");
@@ -16,7 +36,7 @@ export async function GET(request: Request) {
 
   try {
     // Create a promise-based request function
-    const makeRequest = (path: string) => {
+    const makeRequest = (path: string): Promise<PaginatedResponse> => {
       return new Promise((resolve, reject) => {
         const options = {
           hostname:
@@ -66,8 +86,28 @@ export async function GET(request: Request) {
       });
     };
 
-    // Build the API path with query parameters
-    const apiPath = `/api/genres${name ? `?name=${name}` : ""}`;
+    if (all) {
+      // Fetch all genres by making multiple requests if needed
+      const allGenres: Genre[] = [];
+      let currentPage = 1;
+      let hasMorePages = true;
+
+      while (hasMorePages) {
+        const response = await makeRequest(`/api/genres?page=${currentPage}`);
+        allGenres.push(...response.data);
+
+        if (response.meta.current_page >= response.meta.last_page) {
+          hasMorePages = false;
+        } else {
+          currentPage++;
+        }
+      }
+
+      return NextResponse.json({ data: allGenres });
+    }
+
+    // Build the API path with query parameters for normal requests
+    const apiPath = `/api/genres${genre ? `?genre=${genre}` : ""}`;
 
     // Fetch genre data
     const genreData = await makeRequest(apiPath);
