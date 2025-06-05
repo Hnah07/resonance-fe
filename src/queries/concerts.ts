@@ -6,9 +6,9 @@ const getBaseUrl = () => {
     // Browser should use relative path
     return "";
   }
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
+  if (process.env.FRONTEND_URL) {
     // Reference for vercel.com
-    return `https://${process.env.NEXT_PUBLIC_BASE_URL}`;
+    return `https://${process.env.FRONTEND_URL}`;
   }
   // Assume localhost
   return `http://localhost:${process.env.PORT || 3000}`;
