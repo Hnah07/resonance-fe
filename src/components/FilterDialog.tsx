@@ -215,8 +215,8 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
               <div className="flex items-center justify-between mt-2">
                 <Label className="text-sm text-muted-foreground">
                   {genreFilterMode === "any"
-                    ? "Show concerts where any artist has any selected genre"
-                    : "Show concerts where all artists have all selected genres"}
+                    ? "Include concerts with any of these genres"
+                    : "Only show concerts with all these genres"}
                 </Label>
                 <Switch
                   checked={genreFilterMode === "all"}
