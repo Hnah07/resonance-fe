@@ -96,8 +96,12 @@ export async function getAllConcerts(
   filters?: ConcertFilters
 ): Promise<{ concerts: ApiConcert[] }> {
   try {
+    console.log("Starting getAllConcerts request");
     const baseUrl = getBaseUrl();
+    console.log("Base URL:", baseUrl);
+
     const token = process.env.API_TOKEN?.trim();
+    console.log("API Token present:", !!token);
 
     if (!token) {
       throw new Error("API token is missing");
@@ -108,7 +112,7 @@ export async function getAllConcerts(
 
     // Handle location filter
     if (filters?.location && filters.location !== "all") {
-      console.log("Fetching location data for:", filters.location);
+      console.log("Processing location filter:", filters.location);
       // Use server action to fetch location
       const { location, error: locationError } = await fetchLocation(
         filters.location
@@ -177,6 +181,7 @@ export async function getAllConcerts(
     const url = `${baseUrl}/api/concerts${
       queryString ? `?${queryString}` : ""
     }`;
+    console.log("Fetching concerts from URL:", url);
 
     const res = await fetch(url, {
       cache: "no-store",
@@ -188,7 +193,12 @@ export async function getAllConcerts(
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => null);
-      console.error("Concerts API error:", errorData);
+      console.error("Concerts API error response:", {
+        status: res.status,
+        statusText: res.statusText,
+        headers: Object.fromEntries(res.headers.entries()),
+        errorData,
+      });
       throw new Error(
         `Failed to fetch concerts: ${res.status} ${res.statusText}${
           errorData ? ` - ${JSON.stringify(errorData)}` : ""
@@ -197,9 +207,18 @@ export async function getAllConcerts(
     }
 
     const data = await res.json();
+    console.log("Successfully fetched concerts:", data.concerts?.length || 0);
     return { concerts: data.concerts };
   } catch (error) {
     console.error("Error in getAllConcerts:", error);
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause,
+      });
+    }
     throw error;
   }
 }

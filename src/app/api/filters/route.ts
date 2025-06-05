@@ -4,6 +4,10 @@ import { ApiConcert } from "@/types/concert";
 
 export async function GET() {
   try {
+    console.log("Starting filters endpoint request");
+    console.log("Environment:", process.env.NODE_ENV);
+    console.log("API Host:", process.env.NEXT_PUBLIC_API_HOST);
+
     const { concerts } = await getAllConcerts();
     console.log("Successfully fetched concerts for filters:", concerts.length);
 
@@ -39,17 +43,26 @@ export async function GET() {
       eventTypes,
     });
   } catch (error) {
-    console.error("Error fetching filter options:", error);
+    console.error("Error in filters endpoint:", error);
     if (error instanceof Error) {
       console.error("Error details:", {
+        name: error.name,
         message: error.message,
         stack: error.stack,
+        cause: error.cause,
       });
     }
     return NextResponse.json(
       {
         error: "Failed to fetch filter options",
-        details: error instanceof Error ? error.message : "Unknown error",
+        details:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                cause: error.cause,
+              }
+            : "Unknown error",
       },
       { status: 500 }
     );
