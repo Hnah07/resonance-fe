@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import https from "https";
+import { ApiConcertResponse } from "@/types/concert";
 
 export async function GET() {
   const token = process.env.API_TOKEN?.trim();
@@ -64,47 +65,16 @@ export async function GET() {
     };
 
     // Fetch concerts
-    const concertsData = (await makeRequest("/api/concerts")) as {
-      data: Array<{
-        id: string;
-        event: {
-          id: string;
-          name: string;
-          type: string;
-          image?: string;
-        };
-        location: { id: string; name: string; city: string; country: string };
-        date: string;
-        source: string;
-        status: string;
-        created_at: string;
-        updated_at: string;
-      }>;
-      links: {
-        first: string;
-        last: string;
-        prev: string | null;
-        next: string | null;
-      };
-      meta: {
-        current_page: number;
-        from: number;
-        last_page: number;
-        links: Array<{
-          url: string | null;
-          label: string;
-          active: boolean;
-        }>;
-        path: string;
-        per_page: number;
-        to: number;
-        total: number;
-      };
-    };
+    const concertsData = (await makeRequest(
+      "/api/concerts"
+    )) as ApiConcertResponse;
+    const concerts = concertsData.data;
+    const links = concertsData.links;
+    const meta = concertsData.meta;
 
     // Fetch artists and genres for each concert
     const concertsWithDetails = await Promise.all(
-      concertsData.data.map(async (concert) => {
+      concerts.map(async (concert) => {
         try {
           // Fetch artists
           const artistsData = (await makeRequest(
@@ -158,31 +128,11 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json({ concerts: concertsWithDetails });
+    return NextResponse.json({ concerts: concertsWithDetails, links, meta });
   } catch (error) {
-    console.error("Server-side API error:", {
-      name: error instanceof Error ? error.name : "Unknown",
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-      code:
-        error instanceof Error
-          ? (error as NodeJS.ErrnoException).code
-          : undefined,
-      errno:
-        error instanceof Error
-          ? (error as NodeJS.ErrnoException).errno
-          : undefined,
-      syscall:
-        error instanceof Error
-          ? (error as NodeJS.ErrnoException).syscall
-          : undefined,
-    });
-
+    console.error("Server-side API error:", error);
     return NextResponse.json(
-      {
-        error: "Failed to fetch concerts",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to fetch concerts" },
       { status: 500 }
     );
   }
