@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Your Digital Memory Book for Live Music",
   manifest: "/manifest.json",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "https://localhost:3000"
+    process.env.FRONTEND_URL || "https://resonance-lake.vercel.app"
   ),
   appleWebApp: {
     capable: true,
