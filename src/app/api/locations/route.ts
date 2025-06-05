@@ -27,8 +27,8 @@ export async function GET(request: Request) {
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
           },
-          // Ignore SSL certificate errors in development
-          rejectUnauthorized: false,
+          // Only ignore SSL certificate errors in development
+          rejectUnauthorized: process.env.NODE_ENV !== "production",
         };
 
         const req = https.request(options, (res) => {

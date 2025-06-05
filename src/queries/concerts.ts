@@ -47,7 +47,8 @@ async function fetchAllGenres(
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        rejectUnauthorized: false,
+        // Only ignore SSL certificate errors in development
+        rejectUnauthorized: process.env.NODE_ENV !== "production",
       };
 
       const req = https.request(options, (res) => {
