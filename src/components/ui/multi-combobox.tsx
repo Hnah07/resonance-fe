@@ -1,22 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 
 export interface Option {
   value: string;
@@ -46,6 +34,7 @@ export function MultiCombobox({
 }: MultiComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const filteredOptions = options.filter((option) =>
     option.label.toLowerCase().includes(search.toLowerCase())
@@ -55,69 +44,94 @@ export function MultiCombobox({
     .filter((option) => selectedValues.includes(option.value))
     .map((option) => option.label);
 
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <div className={className}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-            disabled={disabled}
-          >
-            {selectedValues.length > 0
-              ? `${selectedValues.length} item${
-                  selectedValues.length === 1 ? "" : "s"
-                } selected`
-              : placeholder}
-            <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
-          <Command>
-            <CommandInput
+    <div className={cn("relative", className)} ref={containerRef}>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={open}
+        className="w-full justify-between"
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+      >
+        {selectedValues.length > 0
+          ? `${selectedValues.length} item${
+              selectedValues.length === 1 ? "" : "s"
+            } selected`
+          : placeholder}
+        <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+
+      {open && (
+        <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-md">
+          <div className="p-2 border-b sticky top-0 bg-background z-10">
+            <Input
               placeholder={searchPlaceholder}
               value={search}
-              onValueChange={setSearch}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-8"
+              onClick={(e) => e.stopPropagation()}
             />
-            <CommandList>
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
-              <CommandGroup>
+          </div>
+          <div className="max-h-[180px] sm:max-h-[200px] md:max-h-[180px] lg:max-h-[220px] overflow-y-auto">
+            {filteredOptions.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                {emptyMessage}
+              </div>
+            ) : (
+              <div className="p-1">
                 {filteredOptions.map((option) => (
-                  <CommandItem
+                  <button
                     key={option.value}
-                    value={option.value}
-                    onSelect={(currentValue) => {
-                      if (selectedValues.includes(currentValue)) {
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                      selectedValues.includes(option.value) && "bg-accent/50"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (selectedValues.includes(option.value)) {
                         onSelectionChange(
                           selectedValues.filter(
-                            (value) => value !== currentValue
+                            (value) => value !== option.value
                           )
                         );
                       } else {
-                        onSelectionChange([...selectedValues, currentValue]);
+                        onSelectionChange([...selectedValues, option.value]);
                       }
                     }}
                   >
-                    <div className="flex items-center gap-2">
-                      <CheckIcon
-                        className={cn(
-                          "h-4 w-4",
-                          selectedValues.includes(option.value)
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {option.label}
-                    </div>
-                  </CommandItem>
+                    <CheckIcon
+                      className={cn(
+                        "h-4 w-4",
+                        selectedValues.includes(option.value)
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </button>
                 ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {selectedValues.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2">
           {selectedLabels.map((label, index) => (
@@ -134,7 +148,7 @@ export function MultiCombobox({
                 }
                 className="hover:text-accent-cyan/80"
               >
-                ×
+                <XIcon className="h-3 w-3" />
               </button>
             </div>
           ))}
