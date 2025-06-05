@@ -6,6 +6,7 @@ import {
   LuMapPin,
   LuMusic,
   LuTicket,
+  LuRefreshCw,
 } from "react-icons/lu";
 import {
   Dialog,
@@ -115,6 +116,14 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     setOpen(false);
   };
 
+  const handleReset = () => {
+    setDateRange({ from: undefined, to: undefined });
+    setLocation(null);
+    setCity(null);
+    setGenre("all");
+    setEventType("all");
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -217,7 +226,15 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
             </Select>
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            className="flex items-center gap-2"
+          >
+            <LuRefreshCw className="h-4 w-4" />
+            Reset Filters
+          </Button>
           <Button onClick={handleApply} disabled={isLoading}>
             Apply Filters
           </Button>

@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -43,6 +49,9 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] p-0">
+        <DialogHeader className="px-3 pt-3">
+          <DialogTitle>Select Date Range</DialogTitle>
+        </DialogHeader>
         <div className="p-3">
           <Calendar
             initialFocus
