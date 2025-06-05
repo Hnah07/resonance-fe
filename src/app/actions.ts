@@ -35,8 +35,7 @@ export async function fetchLocation(search: string): Promise<{
 
     const baseUrl =
       process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    const url = `${protocol}://${baseUrl}/api/locations?location=${encodeURIComponent(
+    const url = `https://${baseUrl}/api/locations?location=${encodeURIComponent(
       search
     )}`;
     console.log("Fetching location from URL:", url);
@@ -80,8 +79,7 @@ export async function fetchGenre(name: string): Promise<{
 
     const baseUrl =
       process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
-    const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
-    const url = `${protocol}://${baseUrl}/api/genres?name=${encodeURIComponent(
+    const url = `https://${baseUrl}/api/genres?name=${encodeURIComponent(
       name
     )}`;
     console.log("Fetching genre from URL:", url);
