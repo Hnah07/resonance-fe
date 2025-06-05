@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useState, useEffect } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
+import { MultiCombobox } from "@/components/ui/multi-combobox";
 
 interface FilterOptions {
   locations: string[];
@@ -49,7 +50,7 @@ interface FilterDialogProps {
       city: string;
       country: string;
     } | null;
-    genre: string;
+    genres: string[];
     eventType: string;
   }) => void;
 }
@@ -75,7 +76,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     city: string;
     country: string;
   } | null>(null);
-  const [genre, setGenre] = useState<string>("all");
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [eventType, setEventType] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -110,7 +111,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
       dateRange,
       location,
       city,
-      genre,
+      genres: selectedGenres,
       eventType,
     });
     setOpen(false);
@@ -120,7 +121,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     setDateRange({ from: undefined, to: undefined });
     setLocation(null);
     setCity(null);
-    setGenre("all");
+    setSelectedGenres([]);
     setEventType("all");
   };
 
@@ -178,24 +179,20 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <LuMusic className="text-xl stroke-accent-cyan" />
-              Genre
+              Genres
             </Label>
-            <Select value={genre} onValueChange={setGenre} disabled={isLoading}>
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={isLoading ? "Loading..." : "Select genre"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Genres</SelectItem>
-                {!isLoading &&
-                  filterOptions.genres?.map((genre) => (
-                    <SelectItem key={genre} value={genre}>
-                      {genre}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <MultiCombobox
+              options={filterOptions.genres.map((genre) => ({
+                value: genre,
+                label: genre,
+              }))}
+              selectedValues={selectedGenres}
+              onSelectionChange={setSelectedGenres}
+              placeholder="Select genres..."
+              searchPlaceholder="Search genres..."
+              emptyMessage="No genres found."
+              disabled={isLoading}
+            />
           </div>
 
           {/* Event Type Filter */}
