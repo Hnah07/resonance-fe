@@ -25,6 +25,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useState, useEffect } from "react";
+import { LocationSearch } from "@/components/LocationSearch";
 
 interface FilterOptions {
   locations: string[];
@@ -35,7 +36,18 @@ interface FilterOptions {
 interface FilterDialogProps {
   onApply?: (filters: {
     dateRange: { from: Date | undefined; to: Date | undefined };
-    location: string;
+    location: {
+      id: string;
+      name: string;
+      city: string;
+      country: string;
+    } | null;
+    city: {
+      id: string;
+      name: string;
+      city: string;
+      country: string;
+    } | null;
     genre: string;
     eventType: string;
   }) => void;
@@ -50,9 +62,21 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     from: undefined,
     to: undefined,
   });
-  const [location, setLocation] = useState<string>("all");
+  const [location, setLocation] = useState<{
+    id: string;
+    name: string;
+    city: string;
+    country: string;
+  } | null>(null);
+  const [city, setCity] = useState<{
+    id: string;
+    name: string;
+    city: string;
+    country: string;
+  } | null>(null);
   const [genre, setGenre] = useState<string>("all");
   const [eventType, setEventType] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     locations: [],
     genres: [],
@@ -61,12 +85,19 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch("/api/filters");
+        if (!response.ok) {
+          throw new Error("Failed to fetch filter options");
+        }
         const data = await response.json();
         setFilterOptions(data);
       } catch (error) {
         console.error("Error fetching filter options:", error);
+        // Keep the empty arrays as fallback
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -77,6 +108,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     onApply?.({
       dateRange,
       location,
+      city,
       genre,
       eventType,
     });
@@ -107,25 +139,30 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
             <DateRangePicker value={dateRange} onChange={setDateRange} />
           </div>
 
+          {/* City Filter */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <LuMapPin className="text-xl stroke-accent-cyan" />
+              City
+            </Label>
+            <LocationSearch
+              selectedLocation={city || undefined}
+              onSelect={(loc) => setCity(loc)}
+              searchType="city"
+            />
+          </div>
+
           {/* Location Filter */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <LuMapPin className="text-xl stroke-accent-cyan" />
-              Location
+              Venue
             </Label>
-            <Select value={location} onValueChange={setLocation}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
-                {filterOptions.locations.map((city) => (
-                  <SelectItem key={city} value={city.toLowerCase()}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <LocationSearch
+              selectedLocation={location || undefined}
+              onSelect={(loc) => setLocation(loc)}
+              searchType="location"
+            />
           </div>
 
           {/* Genre Filter */}
@@ -134,17 +171,20 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
               <LuMusic className="text-xl stroke-accent-cyan" />
               Genre
             </Label>
-            <Select value={genre} onValueChange={setGenre}>
+            <Select value={genre} onValueChange={setGenre} disabled={isLoading}>
               <SelectTrigger>
-                <SelectValue placeholder="Select genre" />
+                <SelectValue
+                  placeholder={isLoading ? "Loading..." : "Select genre"}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Genres</SelectItem>
-                {filterOptions.genres.map((genre) => (
-                  <SelectItem key={genre} value={genre.toLowerCase()}>
-                    {genre}
-                  </SelectItem>
-                ))}
+                {!isLoading &&
+                  filterOptions.genres?.map((genre) => (
+                    <SelectItem key={genre} value={genre}>
+                      {genre}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -155,23 +195,32 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
               <LuTicket className="text-xl stroke-accent-cyan" />
               Event Type
             </Label>
-            <Select value={eventType} onValueChange={setEventType}>
+            <Select
+              value={eventType}
+              onValueChange={setEventType}
+              disabled={isLoading}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select event type" />
+                <SelectValue
+                  placeholder={isLoading ? "Loading..." : "Select event type"}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {filterOptions.eventTypes.map((type) => (
-                  <SelectItem key={type} value={type.toLowerCase()}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </SelectItem>
-                ))}
+                {!isLoading &&
+                  filterOptions.eventTypes?.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
         </div>
         <div className="flex justify-end">
-          <Button onClick={handleApply}>Apply Filters</Button>
+          <Button onClick={handleApply} disabled={isLoading}>
+            Apply Filters
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

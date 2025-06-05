@@ -19,7 +19,9 @@ interface CheckInCardProps {
   concert: {
     id: string;
     event: string;
-    location: string;
+    location: {
+      name: string;
+    };
     city: string;
     image: string;
     date: string;
@@ -157,10 +159,10 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             <h4 className="font-bold text-lg text-slate-800 dark:text-white">
               {concert.event}
             </h4>
-            <div className="flex items-center space-x-1">
-              <LuMapPin className="w-4 h-4" />
-              <p className="text-slate-600 dark:text-slate-400">
-                {concert.location}, {concert.city}
+            <div className="flex items-center gap-2">
+              <LuMapPin className="text-sm text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                {concert.location.name}, {concert.city}
               </p>
             </div>
           </div>

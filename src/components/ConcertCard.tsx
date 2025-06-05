@@ -18,7 +18,7 @@ function ConcertCard({ concert }: { concert: ConcertProperties }) {
           <ExpandableImage
             src={concert.image}
             alt={`${getEventDisplay(concert.event, concert.date)} at ${
-              concert.location
+              concert.location.name
             }`}
             className="object-cover w-full h-full"
           />
@@ -29,7 +29,7 @@ function ConcertCard({ concert }: { concert: ConcertProperties }) {
             <div className="flex flex-row items-center gap-2">
               <LuMapPin className="text-sm text-white" />
               <p className="text-sm text-white">
-                {concert.location}, {concert.city}, {concert.country}
+                {concert.location.name}, {concert.city}, {concert.country}
               </p>
             </div>
           </div>

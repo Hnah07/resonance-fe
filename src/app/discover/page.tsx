@@ -16,6 +16,14 @@ const ConcertCard = dynamic(() => import("@/components/ConcertCard"), {
   ssr: false,
 });
 
+interface Filters {
+  dateRange: { from: Date | undefined; to: Date | undefined };
+  location: { id: string; name: string; city: string; country: string } | null;
+  city: { id: string; name: string; city: string; country: string } | null;
+  genre: string;
+  eventType: string;
+}
+
 export default function DiscoverPage() {
   const [concerts, setConcerts] = useState<ConcertProperties[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +32,13 @@ export default function DiscoverPage() {
   const { ref, inView } = useInView({
     threshold: 0,
     triggerOnce: false,
+  });
+  const [filters, setFilters] = useState<Filters>({
+    dateRange: { from: undefined, to: undefined },
+    location: null,
+    city: null,
+    genre: "all",
+    eventType: "all",
   });
 
   // Fetch concerts on mount
@@ -57,68 +72,44 @@ export default function DiscoverPage() {
     }
   }, [inView, isLoading, visibleCards, concerts.length]);
 
-  const handleApplyFilters = async (filters: {
-    dateRange: { from: Date | undefined; to: Date | undefined };
-    location: string;
-    genre: string;
-    eventType: string;
-  }) => {
-    setIsLoading(true);
-    try {
-      const { concerts: filteredConcerts, error } = await fetchConcerts();
-      if (error) {
-        setError(error);
-        return;
-      }
-
-      let filtered = [...filteredConcerts];
-
-      // Apply location filter
-      if (filters.location !== "all") {
-        filtered = filtered.filter(
-          (concert) =>
-            concert.city.toLowerCase() === filters.location.toLowerCase()
-        );
-      }
-
-      // Apply genre filter
-      if (filters.genre !== "all") {
-        filtered = filtered.filter((concert) =>
-          concert.genres.some(
-            (genre) => genre.toLowerCase() === filters.genre.toLowerCase()
-          )
-        );
-      }
-
-      // Apply event type filter
-      if (filters.eventType !== "all") {
-        filtered = filtered.filter((concert) =>
-          typeof concert.event === "string"
-            ? filters.eventType === "concert"
-            : concert.event.type.toLowerCase() ===
-              filters.eventType.toLowerCase()
-        );
-      }
-
-      // Apply date range filter
-      if (filters.dateRange.from || filters.dateRange.to) {
-        filtered = filtered.filter((concert) => {
-          const concertDate = new Date(concert.date);
-          const from = filters.dateRange.from || new Date(0);
-          const to = filters.dateRange.to || new Date(8640000000000000); // Max date
-          return concertDate >= from && concertDate <= to;
-        });
-      }
-
-      setConcerts(filtered);
-    } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Failed to apply filters"
-      );
-    } finally {
-      setIsLoading(false);
-    }
+  const handleApplyFilters = (newFilters: Filters) => {
+    setFilters(newFilters);
   };
+
+  useEffect(() => {
+    const fetchConcertsWithFilters = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const { concerts, error } = await fetchConcerts({
+          location: filters.location?.name,
+          city: filters.city?.city,
+          genre: filters.genre !== "all" ? filters.genre : undefined,
+          eventType:
+            filters.eventType !== "all" ? filters.eventType : undefined,
+          dateFrom: filters.dateRange.from?.toISOString(),
+          dateTo: filters.dateRange.to?.toISOString(),
+        });
+
+        if (error) {
+          setError(error);
+          setConcerts([]);
+        } else {
+          setConcerts(concerts);
+        }
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : "Failed to fetch concerts"
+        );
+        setConcerts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConcertsWithFilters();
+  }, [filters]);
 
   if (error) {
     return <div>Error: {error}</div>;

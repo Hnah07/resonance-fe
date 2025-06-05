@@ -13,11 +13,15 @@ export interface Event {
 export interface ConcertProperties {
   id: string; // UUID format
   event: Event | string; // Either a full Event object or just the event name
-  location: string;
+  location: {
+    id: string;
+    name: string;
+    image?: string;
+  };
   city: string;
   country: string;
-  image: string;
   date: string; // The specific date of this concert
+  image: string;
   artists: string[];
   genres: string[];
   //   interestedCount?: number;
@@ -30,14 +34,18 @@ export interface ConcertResponse {
 
 export interface ApiConcert {
   id: string;
-  event: string | Event; // Either a full Event object or just the event name
-  location: string | { id: string; name: string; type: string; image?: string };
-  city: string;
-  country: string;
-  date: string; // The specific date of this concert
+  event: Event | string;
+  location: {
+    id: string;
+    name: string;
+    city: string;
+    country: string;
+    image?: string;
+  };
+  date: string;
   image?: string;
-  artists?: string[];
-  genres?: string[];
+  artists: string[];
+  genres: string[];
 }
 
 export interface ApiConcertResponse {

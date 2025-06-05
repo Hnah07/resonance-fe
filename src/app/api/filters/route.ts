@@ -2,14 +2,16 @@ import { NextResponse } from "next/server";
 import { getAllConcerts } from "@/queries/concerts";
 import { ApiConcert } from "@/types/concert";
 
-export async function getConcertFilterOptions() {
+export async function GET() {
   try {
     const { concerts } = await getAllConcerts();
 
     // Extract unique values
     const locations = [
       ...new Set(
-        concerts.map((concert: ApiConcert) => concert.city).filter(Boolean)
+        concerts
+          .map((concert: ApiConcert) => concert.location.city)
+          .filter(Boolean)
       ),
     ].sort();
     const genres = [
@@ -38,6 +40,3 @@ export async function getConcertFilterOptions() {
     );
   }
 }
-
-// Export the GET handler that Next.js expects
-export const GET = getConcertFilterOptions;
