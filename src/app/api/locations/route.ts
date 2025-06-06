@@ -1,77 +1,57 @@
 import { NextResponse } from "next/server";
-import https from "https";
+import { makeRequest } from "@/lib/api";
+import { cache } from "react";
+import { ApiLocationResponse } from "@/types/concert";
+
+type LocationItem = ApiLocationResponse["data"][number];
+
+// Cache the getAllLocations function
+const getAllLocations = cache(async () => {
+  const response = await makeRequest<ApiLocationResponse>("/api/locations");
+  return response.data as unknown as LocationItem[];
+});
 
 export async function GET(request: Request) {
-  const token = process.env.API_TOKEN?.trim();
   const { searchParams } = new URL(request.url);
   const city = searchParams.get("city");
+  const location = searchParams.get("location");
+  const all = searchParams.get("all") === "true";
 
-  if (!token) {
-    console.error("API token is missing in server-side route");
-    return NextResponse.json(
-      { error: "API token not configured" },
-      { status: 500 }
-    );
-  }
+  console.log("Locations API request params:", { city, location, all });
 
   try {
-    // Create a promise-based request function
-    const makeRequest = (path: string) => {
-      return new Promise((resolve, reject) => {
-        const options = {
-          hostname:
-            process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
-          path,
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          // Only ignore SSL certificate errors in development
-          rejectUnauthorized: process.env.NODE_ENV !== "production",
-        };
+    // Always fetch all locations first
+    const locations = await getAllLocations();
+    console.log("Fetched all locations:", locations);
 
-        const req = https.request(options, (res) => {
-          let data = "";
+    if (all) {
+      // Extract unique cities from locations and sort them
+      const cities = Array.from(
+        new Set(locations.map((loc) => loc.city))
+      ).sort();
+      console.log("Returning unique cities:", cities);
+      return NextResponse.json({ data: cities });
+    }
 
-          res.on("data", (chunk) => {
-            data += chunk;
-          });
+    // Filter locations based on search parameters
+    let filteredLocations = locations;
+    if (city) {
+      const searchCity = city.toLowerCase();
+      console.log("Filtering by city:", searchCity);
+      filteredLocations = locations.filter((loc) =>
+        loc.city.toLowerCase().includes(searchCity)
+      );
+      console.log("Filtered locations:", filteredLocations);
+    } else if (location) {
+      const searchLocation = location.toLowerCase();
+      console.log("Filtering by location:", searchLocation);
+      filteredLocations = locations.filter((loc) =>
+        loc.name.toLowerCase().includes(searchLocation)
+      );
+      console.log("Filtered locations:", filteredLocations);
+    }
 
-          res.on("end", () => {
-            if (res.statusCode && res.statusCode >= 400) {
-              reject(
-                new Error(
-                  `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
-                )
-              );
-              return;
-            }
-
-            try {
-              const jsonData = JSON.parse(data);
-              resolve(jsonData);
-            } catch {
-              reject(new Error(`Failed to parse response: ${data}`));
-            }
-          });
-        });
-
-        req.on("error", (error) => {
-          console.error("Request error:", error);
-          reject(error);
-        });
-
-        req.end();
-      });
-    };
-
-    // Build the API path with query parameters
-    const apiPath = `/api/locations${city ? `?city=${city}` : ""}`;
-
-    // Fetch location data
-    const locationData = await makeRequest(apiPath);
-    return NextResponse.json(locationData);
+    return NextResponse.json({ data: filteredLocations });
   } catch (error) {
     console.error("Server-side API error:", error);
     return NextResponse.json(

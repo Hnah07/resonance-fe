@@ -1,6 +1,5 @@
 import { ApiConcert } from "@/types/concert";
 import { fetchLocation } from "@/app/actions";
-import https from "https";
 
 // Get the base URL for the current environment
 const getBaseUrl = () => {
@@ -18,7 +17,7 @@ const getBaseUrl = () => {
 
 export interface ConcertFilters {
   location?: string;
-  city?: string;
+  city?: string | null;
   genres?: string[];
   genreFilterMode?: "any" | "all";
   eventType?: string;
@@ -26,70 +25,31 @@ export interface ConcertFilters {
   dateTo?: string;
 }
 
-// Helper function to fetch all genres across pages
-async function fetchAllGenres(
-  token: string
-): Promise<{ id: string; genre: string }[]> {
-  const allGenres: { id: string; genre: string }[] = [];
-  let currentPage = 1;
-  let hasMorePages = true;
+// Helper function to fetch all genres
+async function fetchAllGenres(): Promise<{ id: string; genre: string }[]> {
+  const baseUrl = getBaseUrl();
+  const url =
+    typeof window === "undefined"
+      ? `${baseUrl}/api/genres?all=true`
+      : `/api/genres?all=true`;
 
-  while (hasMorePages) {
-    const response = await new Promise<{
-      data: { id: string; genre: string }[];
-      meta: { current_page: number; last_page: number };
-    }>((resolve, reject) => {
-      const options = {
-        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
-        path: `/api/genres?page=${currentPage}`,
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        // Only ignore SSL certificate errors in development
-        rejectUnauthorized: process.env.NODE_ENV !== "production",
-      };
-
-      const req = https.request(options, (res) => {
-        let data = "";
-        res.on("data", (chunk) => {
-          data += chunk;
-        });
-        res.on("end", () => {
-          if (res.statusCode && res.statusCode >= 400) {
-            reject(
-              new Error(
-                `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
-              )
-            );
-            return;
-          }
-          try {
-            resolve(JSON.parse(data));
-          } catch {
-            reject(new Error(`Failed to parse response: ${data}`));
-          }
-        });
-      });
-
-      req.on("error", (error) => {
-        reject(error);
-      });
-
-      req.end();
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
     });
 
-    allGenres.push(...response.data);
-
-    if (response.meta.current_page >= response.meta.last_page) {
-      hasMorePages = false;
-    } else {
-      currentPage++;
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
     }
-  }
 
-  return allGenres;
+    const data = await response.json();
+    return data.data;
+  } catch (error) {
+    console.error("Error fetching genres:", error);
+    throw error;
+  }
 }
 
 export async function getAllConcerts(
@@ -99,13 +59,6 @@ export async function getAllConcerts(
     console.log("Starting getAllConcerts request");
     const baseUrl = getBaseUrl();
     console.log("Base URL:", baseUrl);
-
-    const token = process.env.API_TOKEN?.trim();
-    console.log("API Token present:", !!token);
-
-    if (!token) {
-      throw new Error("API token is missing");
-    }
 
     // Build query string from filters
     const queryParams = new URLSearchParams();
@@ -140,7 +93,7 @@ export async function getAllConcerts(
     if (filters?.genres && filters.genres.length > 0) {
       try {
         // Fetch all genres first
-        const allGenres = await fetchAllGenres(token);
+        const allGenres = await fetchAllGenres();
 
         // Find matching genre IDs
         const genreIds = filters.genres.map((genreName) => {
@@ -178,16 +131,20 @@ export async function getAllConcerts(
     }
 
     const queryString = queryParams.toString();
-    const url = `${baseUrl}/api/concerts${
-      queryString ? `?${queryString}` : ""
-    }`;
+    // Use baseUrl for server-side requests, relative path for client-side
+    const url =
+      typeof window === "undefined"
+        ? `${baseUrl}/api/concerts${queryString ? `?${queryString}` : ""}`
+        : `/api/concerts${queryString ? `?${queryString}` : ""}`;
     console.log("Fetching concerts from URL:", url);
 
     const res = await fetch(url, {
-      cache: "no-store",
+      next: {
+        revalidate: 60,
+        tags: ["concerts"],
+      },
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -206,9 +163,14 @@ export async function getAllConcerts(
       );
     }
 
-    const data = await res.json();
-    console.log("Successfully fetched concerts:", data.concerts?.length || 0);
-    return { concerts: data.concerts };
+    const response = await res.json();
+    console.log(
+      "Successfully fetched concerts:",
+      response.concerts?.length || 0
+    );
+
+    // Return the concerts array from the response
+    return { concerts: response.concerts };
   } catch (error) {
     console.error("Error in getAllConcerts:", error);
     if (error instanceof Error) {
