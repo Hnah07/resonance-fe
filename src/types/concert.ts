@@ -73,12 +73,12 @@ export interface ApiConcertResponse {
 }
 
 export interface ApiLocationResponse {
-  data: {
+  data: Array<{
     id: string;
     name: string;
     city: string;
     country: string;
     type: string;
     image?: string;
-  };
+  }>;
 }

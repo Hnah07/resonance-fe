@@ -49,12 +49,7 @@ interface FilterDialogProps {
       city: string;
       country: string;
     } | null;
-    city: {
-      id: string;
-      name: string;
-      city: string;
-      country: string;
-    } | null;
+    city: string | null;
     genres: string[];
     genreFilterMode: "any" | "all";
     eventType: string;
@@ -76,12 +71,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     city: string;
     country: string;
   } | null>(null);
-  const [city, setCity] = useState<{
-    id: string;
-    name: string;
-    city: string;
-    country: string;
-  } | null>(null);
+  const [city, setCity] = useState<string | null>(null);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [genreFilterMode, setGenreFilterMode] = useState<"any" | "all">("any");
   const [eventType, setEventType] = useState<string>("all");
@@ -175,7 +165,7 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
             </Label>
             <LocationSearch
               selectedLocation={city || undefined}
-              onSelect={(loc) => setCity(loc)}
+              onSelect={(loc) => setCity(typeof loc === "string" ? loc : null)}
               searchType="city"
             />
           </div>
@@ -188,7 +178,9 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
             </Label>
             <LocationSearch
               selectedLocation={location || undefined}
-              onSelect={(loc) => setLocation(loc)}
+              onSelect={(loc) =>
+                setLocation(typeof loc === "string" ? null : loc)
+              }
               searchType="location"
             />
           </div>

@@ -27,8 +27,8 @@ interface Location {
 }
 
 interface LocationSearchProps {
-  onSelect: (location: Location) => void;
-  selectedLocation?: Location;
+  onSelect: (location: Location | string) => void;
+  selectedLocation?: Location | string;
   className?: string;
   searchType?: "city" | "location";
 }
@@ -47,14 +47,16 @@ export function LocationSearch({
   // Fetch locations when search changes
   React.useEffect(() => {
     const searchLocations = async () => {
-      if (search.length < 3) {
+      if (search.length < 2) {
         setLocations([]);
         return;
       }
 
       setIsLoading(true);
       try {
-        const { location, error } = await fetchLocation(search);
+        console.log("Searching for:", search, "type:", searchType);
+        const { location, error } = await fetchLocation(search, searchType);
+        console.log("Search results:", location, "error:", error);
         if (error) {
           console.error("Error fetching locations:", error);
           setLocations([]);
@@ -62,16 +64,9 @@ export function LocationSearch({
         }
         // Convert the location data to our Location interface format
         if (location && Array.isArray(location)) {
-          // Filter by city if searchType is "city"
-          const filteredLocations =
-            searchType === "city"
-              ? location.filter((loc) =>
-                  loc.city.toLowerCase().includes(search.toLowerCase())
-                )
-              : location;
-
+          console.log("Setting locations:", location);
           setLocations(
-            filteredLocations.map((loc) => ({
+            location.map((loc) => ({
               id: loc.id,
               name: loc.name,
               city: loc.city,
@@ -79,6 +74,7 @@ export function LocationSearch({
             }))
           );
         } else {
+          console.log("No locations found");
           setLocations([]);
         }
       } catch (error) {
@@ -92,6 +88,19 @@ export function LocationSearch({
     const timeoutId = setTimeout(searchLocations, 300);
     return () => clearTimeout(timeoutId);
   }, [search, searchType]);
+
+  // Add logging for selection
+  const handleSelect = (location: Location) => {
+    console.log("Selected location:", location);
+    if (searchType === "city") {
+      console.log("Selecting city:", location.city);
+      onSelect(location.city);
+    } else {
+      console.log("Selecting location:", location);
+      onSelect(location);
+    }
+    setOpen(false);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -111,7 +120,11 @@ export function LocationSearch({
             {selectedLocation ? (
               <span>
                 {searchType === "city"
-                  ? selectedLocation.city
+                  ? typeof selectedLocation === "string"
+                    ? selectedLocation
+                    : selectedLocation.city
+                  : typeof selectedLocation === "string"
+                  ? selectedLocation
                   : `${selectedLocation.name}, ${selectedLocation.city}`}
               </span>
             ) : (
@@ -134,13 +147,13 @@ export function LocationSearch({
             <CommandEmpty>
               {isLoading ? (
                 <div className="py-6 text-center text-sm">Searching...</div>
-              ) : search.length < 3 ? (
+              ) : search.length < 2 ? (
                 <div className="py-6 text-center text-sm">
-                  Type at least 3 characters to search
+                  Type at least 2 characters to search
                 </div>
               ) : (
                 <div className="py-6 text-center text-sm">
-                  No {searchType}s found
+                  No {searchType === "city" ? "cities" : "locations"} found
                 </div>
               )}
             </CommandEmpty>
@@ -149,10 +162,7 @@ export function LocationSearch({
                 <CommandItem
                   key={location.id}
                   value={searchType === "city" ? location.city : location.name}
-                  onSelect={() => {
-                    onSelect(location);
-                    setOpen(false);
-                  }}
+                  onSelect={() => handleSelect(location)}
                 >
                   <div className="flex flex-col">
                     <span>

@@ -20,34 +20,33 @@ export async function fetchConcerts(filters?: ConcertFilters): Promise<{
   }
 }
 
-export async function fetchLocation(search: string): Promise<{
-  location: { id: string; name: string; city: string } | null;
+export async function fetchLocation(
+  search: string,
+  searchType: "city" | "location" = "location"
+): Promise<{
+  location: { id: string; name: string; city: string }[] | null;
   error: string | null;
 }> {
   try {
-    const token = process.env.API_TOKEN?.trim();
-    if (!token) {
-      return {
-        location: null,
-        error: "API token not configured",
-      };
-    }
-
+    // Get the base URL for the current environment
     const baseUrl =
-      process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
-    const url = `https://${baseUrl}/api/locations?location=${encodeURIComponent(
-      search
-    )}`;
+      typeof window !== "undefined" ? "" : "http://localhost:3000";
+
+    // Use our local API route instead of calling the backend directly
+    const url = `${baseUrl}/api/locations${
+      search ? `?${searchType}=${encodeURIComponent(search)}` : ""
+    }`;
     console.log("Fetching location from URL:", url);
 
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
-        Authorization: `Bearer ${token}`,
       },
     });
 
+    console.log("Location API response status:", response.status);
     if (!response.ok) {
+      console.error("Location API error:", response.statusText);
       return {
         location: null,
         error: `Failed to fetch location: ${response.statusText}`,
@@ -55,8 +54,10 @@ export async function fetchLocation(search: string): Promise<{
     }
 
     const data = await response.json();
+    console.log("Location API response data:", data);
     return { location: data.data, error: null };
   } catch (err) {
+    console.error("Location API error:", err);
     return {
       location: null,
       error: err instanceof Error ? err.message : "Failed to fetch location",

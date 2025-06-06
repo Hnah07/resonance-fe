@@ -1,155 +1,54 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { FilterDialog } from "@/components/FilterDialog";
-import LocationSelector from "@/components/LocationSelector";
-import { fetchConcerts } from "@/app/actions";
-import { ConcertProperties } from "@/types/concert";
-import { PageHeader } from "@/components/PageHeader";
-import dynamic from "next/dynamic";
-import { useInView } from "react-intersection-observer";
-import CardSkeleton from "@/components/CardSkeleton";
 import { Suspense } from "react";
+import { getAllConcerts } from "@/queries/concerts";
+import { mapConcertFromApi } from "@/lib/mappers";
+import { ConcertList } from "@/components/ConcertList";
+import { DiscoverFilters } from "@/components/DiscoverFilters";
+import CardSkeleton from "@/components/CardSkeleton";
 
-const ConcertCard = dynamic(() => import("@/components/ConcertCard"), {
-  loading: () => <CardSkeleton />,
-  ssr: false,
-});
+type SearchParams = {
+  city?: string;
+  genres?: string;
+  genreFilterMode?: "any" | "all";
+  eventType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
 
-interface Filters {
-  dateRange: { from: Date | undefined; to: Date | undefined };
-  location: { id: string; name: string; city: string; country: string } | null;
-  city: { id: string; name: string; city: string; country: string } | null;
-  genres: string[];
-  genreFilterMode: "any" | "all";
-  eventType: string;
-}
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
 
-export default function DiscoverPage() {
-  const [concerts, setConcerts] = useState<ConcertProperties[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [visibleCards, setVisibleCards] = useState(6);
-  const { ref, inView } = useInView({
-    threshold: 0,
-    triggerOnce: false,
+  // Fetch concerts server-side
+  const { concerts: apiConcerts } = await getAllConcerts({
+    city: params.city || null,
+    genres: params.genres?.split(",") || [],
+    genreFilterMode: params.genreFilterMode || "any",
+    eventType: params.eventType,
+    dateFrom: params.dateFrom,
+    dateTo: params.dateTo,
   });
-  const [filters, setFilters] = useState<Filters>({
-    dateRange: { from: undefined, to: undefined },
-    location: null,
-    city: null,
-    genres: [],
-    genreFilterMode: "any",
-    eventType: "all",
-  });
 
-  // Fetch concerts on mount
-  useEffect(() => {
-    const loadConcerts = async () => {
-      try {
-        const { concerts, error } = await fetchConcerts();
-        if (error) {
-          setError(error);
-        } else {
-          setConcerts(concerts);
-        }
-      } catch (error) {
-        setError(
-          error instanceof Error ? error.message : "Failed to load concerts"
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadConcerts();
-  }, []);
-
-  // Load more cards when scrolling
-  useEffect(() => {
-    if (inView && !isLoading && visibleCards < concerts.length) {
-      setTimeout(() => {
-        setVisibleCards((prev) => Math.min(prev + 6, concerts.length));
-      }, 500);
-    }
-  }, [inView, isLoading, visibleCards, concerts.length]);
-
-  const handleApplyFilters = (newFilters: Filters) => {
-    setFilters(newFilters);
-  };
-
-  useEffect(() => {
-    const fetchConcertsWithFilters = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const { concerts, error } = await fetchConcerts({
-          location: filters.location?.name,
-          city: filters.city?.city,
-          genres: filters.genres,
-          genreFilterMode: filters.genreFilterMode,
-          eventType:
-            filters.eventType !== "all" ? filters.eventType : undefined,
-          dateFrom: filters.dateRange.from?.toISOString(),
-          dateTo: filters.dateRange.to?.toISOString(),
-        });
-
-        if (error) {
-          setError(error);
-          setConcerts([]);
-        } else {
-          setConcerts(concerts);
-        }
-      } catch (error) {
-        setError(
-          error instanceof Error ? error.message : "Failed to fetch concerts"
-        );
-        setConcerts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchConcertsWithFilters();
-  }, [filters]);
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  const concerts = apiConcerts.map(mapConcertFromApi);
 
   return (
     <>
-      <div className="flex flex-col gap-4 mb-8">
-        <PageHeader
-          title="Discover Concerts"
-          subtitle="Find the best concerts in your area"
-        />
-        <div className="flex justify-between items-center">
-          <LocationSelector />
-          <FilterDialog onApply={handleApplyFilters} />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-        {isLoading ? (
-          // Show 6 skeleton cards while loading
-          Array.from({ length: 6 }).map((_, index) => (
-            <CardSkeleton key={index} />
-          ))
-        ) : (
-          // Show actual cards with lazy loading
-          <>
-            {concerts.slice(0, visibleCards).map((concert) => (
-              <Suspense key={concert.id} fallback={<CardSkeleton />}>
-                <ConcertCard concert={concert} />
-              </Suspense>
+      <Suspense fallback={<div>Loading filters...</div>}>
+        <DiscoverFilters />
+      </Suspense>
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <CardSkeleton key={index} />
             ))}
-            {visibleCards < concerts.length && (
-              <div ref={ref} className="h-4" />
-            )}
-          </>
-        )}
-      </div>
+          </div>
+        }
+      >
+        <ConcertList initialConcerts={concerts} />
+      </Suspense>
     </>
   );
 }
