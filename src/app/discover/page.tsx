@@ -5,26 +5,30 @@ import { ConcertList } from "@/components/ConcertList";
 import { DiscoverFilters } from "@/components/DiscoverFilters";
 import CardSkeleton from "@/components/CardSkeleton";
 
-interface PageProps {
-  searchParams: {
-    city?: string;
-    genres?: string;
-    genreFilterMode?: "any" | "all";
-    eventType?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  };
-}
+type SearchParams = {
+  city?: string;
+  genres?: string;
+  genreFilterMode?: "any" | "all";
+  eventType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+};
 
-export default async function DiscoverPage({ searchParams }: PageProps) {
+export default async function DiscoverPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const params = await searchParams;
+
   // Fetch concerts server-side
   const { concerts: apiConcerts } = await getAllConcerts({
-    city: searchParams.city || null,
-    genres: searchParams.genres?.split(",") || [],
-    genreFilterMode: searchParams.genreFilterMode || "any",
-    eventType: searchParams.eventType,
-    dateFrom: searchParams.dateFrom,
-    dateTo: searchParams.dateTo,
+    city: params.city || null,
+    genres: params.genres?.split(",") || [],
+    genreFilterMode: params.genreFilterMode || "any",
+    eventType: params.eventType,
+    dateFrom: params.dateFrom,
+    dateTo: params.dateTo,
   });
 
   const concerts = apiConcerts.map(mapConcertFromApi);
