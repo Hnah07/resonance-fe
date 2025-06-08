@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useEffect } from "react";
 import { FormInput } from "@/components/ui/form-input";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { login } from "@/lib/actions/auth";
@@ -15,7 +16,6 @@ const initialState = {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
-
   return (
     <GradientButton type="submit" disabled={pending} className="w-full">
       {pending ? "Signing in..." : "Sign in"}
@@ -27,10 +27,11 @@ export function LoginForm() {
   const router = useRouter();
   const [state, formAction] = useActionState(login, initialState);
 
-  // Redirect on successful login
-  if (state.message === "Login successful") {
-    router.push("/discover");
-  }
+  useEffect(() => {
+    if (state.message === "Login successful") {
+      router.push("/discover");
+    }
+  }, [state.message, router]);
 
   return (
     <form className="space-y-6" action={formAction}>

@@ -1,11 +1,6 @@
 "use server";
 
-import { z } from "zod";
-
-const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
+import { loginSchema } from "@/lib/validations/auth";
 
 type LoginFormState = {
   errors?: {
