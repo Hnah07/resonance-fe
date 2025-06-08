@@ -1,27 +1,17 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect } from "react";
 import { FormInput } from "@/components/ui/form-input";
-import { GradientButton } from "@/components/ui/gradient-button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { login } from "@/lib/actions/auth";
 
 const initialState = {
   message: null,
   errors: undefined,
 };
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <GradientButton type="submit" disabled={pending} className="w-full">
-      {pending ? "Signing in..." : "Sign in"}
-    </GradientButton>
-  );
-}
 
 export function LoginForm() {
   const router = useRouter();
@@ -63,7 +53,7 @@ export function LoginForm() {
       )}
 
       <div>
-        <SubmitButton />
+        <SubmitButton label="Sign in" pendingLabel="Signing in..." />
       </div>
 
       <div className="text-sm text-center">
