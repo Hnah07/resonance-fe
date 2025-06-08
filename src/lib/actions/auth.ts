@@ -85,3 +85,14 @@ export async function login(
     };
   }
 }
+
+export async function logout() {
+  try {
+    const cookieStore = await cookies();
+    await cookieStore.delete("auth_token");
+    return { message: "Logout successful" };
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw new Error("Failed to logout");
+  }
+}
