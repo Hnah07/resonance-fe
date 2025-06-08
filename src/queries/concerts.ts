@@ -146,6 +146,7 @@ export async function getAllConcerts(
       headers: {
         Accept: "application/json",
       },
+      credentials: "include", // Add this to ensure cookies are sent
     });
 
     if (!res.ok) {
