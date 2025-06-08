@@ -1,4 +1,5 @@
 import { ThemeSwitch } from "@/components/ThemeSwitch";
+import UserMenu from "@/components/UserMenu";
 import Image from "next/image";
 
 const Header = () => {
@@ -16,12 +17,14 @@ const Header = () => {
             />
             <h1 className="text-xl font-semibold text-foreground">Resonance</h1>
           </div>
-          <div className="flex items-center pb-1 mb-1 mr-4 pr-4 mt-2 pt-1">
+          <div className="flex items-center gap-4 pb-1 mb-1 mr-4 pr-4 mt-2 pt-1">
             <ThemeSwitch />
+            <UserMenu />
           </div>
         </div>
       </div>
     </header>
   );
 };
+
 export default Header;
