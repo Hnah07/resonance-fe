@@ -9,9 +9,12 @@ export const revalidate = 0;
 
 // Cache the main concerts request
 const getConcerts = cache(async (searchParams: URLSearchParams) => {
+  // Build the API path with all query parameters
   const apiPath = `/api/concerts${
     searchParams.toString() ? `?${searchParams.toString()}` : ""
   }`;
+
+  console.log("Fetching concerts from backend API:", apiPath);
 
   // Add cache headers to the response
   const response = await makeRequest<ApiConcertResponse>(apiPath, {

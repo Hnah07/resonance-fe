@@ -11,7 +11,7 @@ export interface Event {
   name: string;
   type?: EventTypeValue;
   image?: string;
-  genres?: string[];
+  genres?: (string | { id: string; name: string })[];
 }
 
 export interface ConcertProperties {
@@ -61,7 +61,7 @@ export interface ApiConcert {
   date: string;
   image?: string;
   artists: (string | Artist)[];
-  genres?: string[];
+  genres?: (string | { id: string; name: string })[];
 }
 
 export interface ApiConcertResponse {

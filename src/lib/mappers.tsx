@@ -28,6 +28,18 @@ export const mapConcertFromApi = (c: ApiConcert): ConcertProperties => {
   const artistNames: string[] = [];
   const allGenres = new Set<string>();
 
+  // Add genres from the event object if it exists
+  if (typeof c.event === "object" && c.event.genres) {
+    c.event.genres.forEach((genre) => {
+      if (typeof genre === "string") {
+        allGenres.add(genre);
+      } else if (genre && typeof genre === "object" && "name" in genre) {
+        allGenres.add(genre.name);
+      }
+    });
+  }
+
+  // Add genres from artists
   (c.artists || []).forEach((artist) => {
     if (typeof artist === "string") {
       artistNames.push(artist);
@@ -44,6 +56,22 @@ export const mapConcertFromApi = (c: ApiConcert): ConcertProperties => {
         });
       }
     }
+  });
+
+  // Add any genres directly on the concert object
+  if (c.genres && Array.isArray(c.genres)) {
+    c.genres.forEach((genre) => {
+      if (typeof genre === "string") {
+        allGenres.add(genre);
+      } else if (genre && typeof genre === "object" && "name" in genre) {
+        allGenres.add(genre.name);
+      }
+    });
+  }
+
+  console.log("Mapped concert genres:", {
+    id: c.id,
+    genres: Array.from(allGenres),
   });
 
   return {
