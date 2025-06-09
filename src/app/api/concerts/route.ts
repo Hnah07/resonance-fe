@@ -1,122 +1,154 @@
 import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
-import { cache } from "react";
 import { ApiConcertResponse, ApiConcert } from "@/types/concert";
 
 // Configure dynamic rendering for this route
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// Cache the main concerts request
-const getConcerts = cache(async (searchParams: URLSearchParams) => {
-  // Build the API path with all query parameters
-  const apiPath = `/api/concerts${
-    searchParams.toString() ? `?${searchParams.toString()}` : ""
-  }`;
+type Genre = {
+  id: string;
+  genre: string;
+};
 
-  console.log("Fetching concerts from backend API:", apiPath);
+interface GenreResponse {
+  data: Genre[];
+  links?: Record<string, string>;
+  meta?: Record<string, unknown>;
+}
 
-  // Add cache headers to the response
-  const response = await makeRequest<ApiConcertResponse>(apiPath, {
-    next: {
-      revalidate: 0, // Disable caching
-      tags: ["concerts", "list"],
-    },
-  });
-
-  // Cache the response in memory for subsequent requests
-  return response;
-});
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-
+async function getGenreIds(genreNames: string[]): Promise<string[]> {
   try {
-    // Use the cached getConcerts function
-    const concertsResponse = await getConcerts(searchParams);
-    let concerts = (concertsResponse as unknown as { data: ApiConcert[] }).data;
-
-    // Filter by genres if specified
-    const genres = searchParams.get("genres")?.split(",");
-    const filterMode = searchParams.get("filter_mode") || "any";
-
-    if (genres && genres.length > 0) {
-      console.log("Filtering concerts by genres:", { genres, filterMode });
-      concerts = concerts.filter((concert) => {
-        // Collect all genres from artists
-        const concertGenres = new Set<string>();
-        (concert.artists || []).forEach((artist) => {
-          if (typeof artist === "object" && artist.genres) {
-            artist.genres.forEach((genre) => {
-              if (typeof genre === "string") {
-                concertGenres.add(genre);
-              } else if (
-                genre &&
-                typeof genre === "object" &&
-                "name" in genre
-              ) {
-                concertGenres.add(genre.name);
-              }
-            });
-          }
-        });
-
-        // Log the genres for this concert
-        console.log("Concert genres:", {
-          id: concert.id,
-          genres: Array.from(concertGenres),
-          requestedGenres: genres,
-        });
-
-        // Check if concert has any/all of the requested genres
-        const hasGenres =
-          filterMode === "any"
-            ? genres.some((genre) => concertGenres.has(genre))
-            : genres.every((genre) => concertGenres.has(genre));
-
-        console.log("Concert genre match:", {
-          id: concert.id,
-          hasGenres,
-          filterMode,
-        });
-
-        return hasGenres;
-      });
-
-      console.log("Filtered concerts count:", concerts.length);
-    }
-
-    // Add logging to diagnose event object type, artists, and genres
-    console.log(
-      "Concert data from API:",
-      concerts.map((c) => ({
-        id: c.id,
-        eventType: typeof c.event,
-        eventValue: c.event,
-        artistsType: typeof c.artists,
-        artistsValue: c.artists,
-        artistsLength: c.artists?.length,
-        genresType: typeof c.genres,
-        genresValue: c.genres,
-        genresLength: c.genres?.length,
-        eventGenres: typeof c.event === "object" ? c.event.genres : undefined,
-      }))
-    );
-
-    // Cache the response headers
-    const response = NextResponse.json({
-      concerts: concerts,
-      links: concertsResponse.links,
-      meta: {
-        ...concertsResponse.meta,
-        total: concerts.length, // Update total to reflect filtered count
+    // Fetch all genres to get their IDs
+    const response = await makeRequest<GenreResponse>("/api/genres?all=true", {
+      next: {
+        revalidate: 0,
+        tags: ["genres"],
       },
     });
 
-    // Add cache control headers to prevent caching
-    response.headers.set("Cache-Control", "no-store");
+    // Create a map of genre names to IDs
+    const genreMap = new Map<string, string>();
+    (response.data as unknown as Genre[]).forEach((genre) => {
+      genreMap.set(genre.genre.toLowerCase(), genre.id);
+    });
 
-    return response;
+    // Get the IDs for the requested genre names
+    const genreIds = genreNames
+      .map((name) => genreMap.get(name.toLowerCase()))
+      .filter((id): id is string => id !== undefined);
+
+    console.log("Mapped genre names to IDs:", {
+      names: genreNames,
+      ids: genreIds,
+    });
+
+    return genreIds;
+  } catch (error) {
+    console.error("Error fetching genre IDs:", error);
+    return [];
+  }
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const city = searchParams.get("city");
+  const genreFilterMode = searchParams.get("genreFilterMode");
+  const genres = searchParams.get("genres");
+
+  try {
+    // Log all search parameters
+    console.log("Concerts API request params:", {
+      city,
+      genres,
+      genreFilterMode,
+      type: searchParams.get("type"),
+      dateFrom: searchParams.get("dateFrom"),
+      dateTo: searchParams.get("dateTo"),
+      allParams: Object.fromEntries(searchParams.entries()),
+    });
+
+    // Create a new URLSearchParams for the backend request
+    const backendParams = new URLSearchParams();
+
+    // Copy all parameters except the ones we need to transform
+    for (const [key, value] of searchParams.entries()) {
+      if (key !== "genres" && key !== "genreFilterMode" && key !== "city") {
+        backendParams.append(key, value);
+      }
+    }
+
+    // Convert city parameter to location_city for the backend
+    if (city) {
+      backendParams.append("location_city", city);
+      console.log("Converting city parameter to location_city:", city);
+    }
+
+    // Convert genre names to IDs and update the parameters
+    if (genres) {
+      const genreNames = genres.split(",");
+      const genreIds = await getGenreIds(genreNames);
+
+      if (genreIds.length > 0) {
+        backendParams.append("genre_ids", genreIds.join(","));
+        console.log("Converting genre names to IDs:", {
+          names: genreNames,
+          ids: genreIds,
+        });
+      }
+    }
+
+    // Convert genreFilterMode to filter_mode for the backend
+    if (genreFilterMode) {
+      backendParams.append("filter_mode", genreFilterMode);
+      console.log(
+        "Converting genreFilterMode to filter_mode:",
+        genreFilterMode
+      );
+    }
+
+    // Pass all parameters to the backend API with the correct parameter name
+    const apiPath = `/api/concerts${
+      backendParams.toString() ? `?${backendParams.toString()}` : ""
+    }`;
+    console.log("Making request to backend API:", apiPath);
+
+    const response = await makeRequest<ApiConcertResponse>(apiPath, {
+      next: {
+        revalidate: 0,
+        tags: ["concerts", "list"],
+      },
+    });
+
+    // Log the raw response from the backend
+    console.log("Raw backend response:", {
+      data: (response.data as unknown as ApiConcert[]).map((c) => ({
+        id: c.id,
+        location: c.location,
+        city: c.location?.city,
+        event: c.event,
+        genres: c.artists?.flatMap((a) =>
+          typeof a === "object" && a.genres
+            ? a.genres.map((g) => (typeof g === "string" ? g : g.name))
+            : []
+        ),
+      })),
+      meta: response.meta,
+    });
+
+    // Return the response directly from the backend since filtering is now handled there
+    return NextResponse.json(
+      {
+        concerts: response.data,
+        links: response.links,
+        meta: response.meta,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     console.error("Server-side API error:", error);
     return NextResponse.json(

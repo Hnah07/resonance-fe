@@ -7,6 +7,7 @@ import CardSkeleton from "@/components/CardSkeleton";
 
 type SearchParams = {
   city?: string;
+  location?: string;
   genres?: string;
   genreFilterMode?: "any" | "all";
   eventType?: string;
@@ -24,6 +25,7 @@ export default async function DiscoverPage({
   // Fetch concerts server-side
   const { concerts: apiConcerts } = await getAllConcerts({
     city: params.city || null,
+    location: params.location || null,
     genres: params.genres?.split(",") || [],
     genreFilterMode: params.genreFilterMode || "any",
     eventType: params.eventType,
