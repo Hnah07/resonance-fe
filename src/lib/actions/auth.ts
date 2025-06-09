@@ -1,9 +1,8 @@
 "use server";
 
-import { loginSchema, registerSchema } from "@/lib/validations/auth";
 import { cookies } from "next/headers";
-import { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { revalidatePath } from "next/cache";
+import { loginSchema, registerSchema } from "@/lib/validations/auth";
 
 export type LoginFormState = {
   errors?: {
@@ -12,6 +11,9 @@ export type LoginFormState = {
     form?: string[];
   };
   message?: string | null;
+  headers?: {
+    "Set-Cookie"?: string;
+  };
 };
 
 export type RegisterFormState = {
@@ -23,6 +25,9 @@ export type RegisterFormState = {
     password?: string;
     confirmPassword?: string;
     form?: string;
+  };
+  headers?: {
+    "Set-Cookie"?: string;
   };
 };
 
@@ -72,6 +77,7 @@ export async function login(
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(validatedFields.data),
     });
 
@@ -81,6 +87,8 @@ export async function login(
       ok: response.ok,
       hasError: !!data.error,
       errorMessage: data.error,
+      hasToken: !!data.token,
+      hasSetCookie: !!response.headers.get("Set-Cookie"),
     });
 
     // Handle validation errors (422)
@@ -103,26 +111,32 @@ export async function login(
       throw new Error("No token received");
     }
 
-    // Store the token in an HTTP-only cookie
+    // Get the Set-Cookie header from the response
+    const setCookieHeader = response.headers.get("Set-Cookie");
+    if (!setCookieHeader) {
+      console.error("No Set-Cookie header in response");
+      throw new Error("No cookie header received");
+    }
+
+    // Set the cookie in the server action
     const cookieStore = await cookies();
-    const cookieOptions: ResponseCookie = {
+    cookieStore.set({
       name: "auth_token",
       value: data.token,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax" as const,
-      maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
-    };
-    console.log("Setting cookie with options:", {
-      ...cookieOptions,
-      value: "[REDACTED]",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
-    await cookieStore.set(cookieOptions);
-
-    // Verify cookie was set
-    const cookie = await cookieStore.get("auth_token");
-    console.log("Cookie after setting:", cookie ? "exists" : "not found");
+    // Verify the cookie was set
+    const cookie = cookieStore.get("auth_token");
+    console.log("Cookie set in server action:", {
+      hasCookie: !!cookie,
+      cookieName: cookie?.name,
+      cookieValue: cookie ? "[REDACTED]" : undefined,
+    });
 
     // Revalidate all paths to ensure auth state is updated everywhere
     revalidatePath("/", "layout");
@@ -198,6 +212,7 @@ export async function register(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+      credentials: "include",
       body: JSON.stringify({
         name: validatedFields.data.name,
         email: validatedFields.data.email,
@@ -258,26 +273,14 @@ export async function register(
     if (response.status === 201) {
       const successData = responseData as BackendSuccessResponse;
       if (successData.token) {
-        // Store the token in an HTTP-only cookie
-        const cookieStore = await cookies();
-        const cookieOptions: ResponseCookie = {
-          name: "auth_token",
-          value: successData.token,
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax" as const,
-          maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
+        // Create a plain object with the headers
+        const headers = {
+          "Set-Cookie": `auth_token=${
+            successData.token
+          }; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}${
+            process.env.NODE_ENV === "production" ? "; Secure" : ""
+          }`,
         };
-        console.log("Setting cookie with options:", {
-          ...cookieOptions,
-          value: "[REDACTED]",
-        });
-
-        await cookieStore.set(cookieOptions);
-
-        // Verify cookie was set
-        const cookie = await cookieStore.get("auth_token");
-        console.log("Cookie after setting:", cookie ? "exists" : "not found");
 
         // Revalidate all paths to ensure auth state is updated everywhere
         revalidatePath("/", "layout");
@@ -285,6 +288,7 @@ export async function register(
         return {
           message: "Registration successful",
           errors: undefined,
+          headers,
         };
       }
     }
