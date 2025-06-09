@@ -62,8 +62,11 @@ export async function POST(request: NextRequest) {
           data += chunk;
         });
         res.on("end", () => {
-          console.log("Backend response status:", res.statusCode);
-          console.log("Backend response data:", data);
+          console.log("Backend registration response:", {
+            status: res.statusCode,
+            headers: res.headers,
+            data: data,
+          });
 
           try {
             const parsedData = JSON.parse(data);
@@ -116,6 +119,16 @@ export async function POST(request: NextRequest) {
       req.end();
     });
 
+    console.log("Registration response from backend:", {
+      status: response.status,
+      hasToken: !!response.data.token,
+      tokenLength: response.data.token?.length,
+      data: {
+        ...response.data,
+        token: response.data.token ? "[REDACTED]" : undefined,
+      },
+    });
+
     // Handle the response based on status code
     if (response.status === 422) {
       // Return validation errors with 422 status
@@ -128,12 +141,42 @@ export async function POST(request: NextRequest) {
     }
 
     // Return successful response
-    return NextResponse.json(response.data, {
+    const jsonResponse = NextResponse.json(response.data, {
       status: response.status,
       headers: {
         "Cache-Control": "no-store",
       },
     });
+
+    // Set the cookie if we have a token
+    if (response.data.token) {
+      console.log("Setting auth token cookie in response headers");
+      jsonResponse.cookies.set({
+        name: "auth_token",
+        value: response.data.token,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      });
+
+      // Log the cookie that was set
+      const cookie = jsonResponse.cookies.get("auth_token");
+      console.log("Cookie set in response:", {
+        name: cookie?.name,
+        value: cookie ? "[REDACTED]" : undefined,
+        httpOnly: cookie?.httpOnly,
+        secure: cookie?.secure,
+        sameSite: cookie?.sameSite,
+        path: cookie?.path,
+        maxAge: cookie?.maxAge,
+      });
+    } else {
+      console.log("No token in response data to set as cookie");
+    }
+
+    return jsonResponse;
   } catch (error) {
     console.error("Registration proxy error:", error);
     // Return more specific error message if available

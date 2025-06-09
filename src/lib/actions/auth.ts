@@ -282,22 +282,38 @@ export async function register(
     if (response.status === 201) {
       const successData = responseData as BackendSuccessResponse;
       if (successData.token) {
-        // Create a plain object with the headers
-        const headers = {
-          "Set-Cookie": `auth_token=${
-            successData.token
-          }; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}${
-            process.env.NODE_ENV === "production" ? "; Secure" : ""
-          }`,
-        };
+        // Get the Set-Cookie header from the response
+        const setCookieHeader = response.headers.get("Set-Cookie");
+        if (!setCookieHeader) {
+          console.error("No Set-Cookie header in response");
+          throw new Error("No cookie header received");
+        }
+
+        // Set the cookie in the server action
+        const cookieStore = await cookies();
+        cookieStore.set({
+          name: "auth_token",
+          value: successData.token,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+        });
+
+        // Verify the cookie was set
+        const cookie = cookieStore.get("auth_token");
+        console.log("Cookie set in server action:", {
+          hasCookie: !!cookie,
+          cookieName: cookie?.name,
+          cookieValue: cookie ? "[REDACTED]" : undefined,
+        });
 
         // Revalidate all paths to ensure auth state is updated everywhere
         revalidatePath("/", "layout");
 
         return {
           message: "Registration successful",
-          errors: undefined,
-          headers,
         };
       }
     }
