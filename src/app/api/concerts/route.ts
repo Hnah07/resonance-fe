@@ -3,9 +3,9 @@ import { makeRequest } from "@/lib/api";
 import { cache } from "react";
 import { ApiConcertResponse, ApiConcert } from "@/types/concert";
 
-// Configure static rendering for this route
-export const dynamic = "force-static";
-export const revalidate = 60;
+// Configure dynamic rendering for this route
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // Cache the main concerts request
 const getConcerts = cache(async (searchParams: URLSearchParams) => {
@@ -16,7 +16,7 @@ const getConcerts = cache(async (searchParams: URLSearchParams) => {
   // Add cache headers to the response
   const response = await makeRequest<ApiConcertResponse>(apiPath, {
     next: {
-      revalidate: 60,
+      revalidate: 0, // Disable caching
       tags: ["concerts", "list"],
     },
   });
@@ -110,11 +110,8 @@ export async function GET(request: Request) {
       },
     });
 
-    // Add cache control headers
-    response.headers.set(
-      "Cache-Control",
-      "public, s-maxage=60, stale-while-revalidate=30"
-    );
+    // Add cache control headers to prevent caching
+    response.headers.set("Cache-Control", "no-store");
 
     return response;
   } catch (error) {
