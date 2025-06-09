@@ -120,12 +120,24 @@ export function formatEventYear(dateString: string): string {
 }
 
 export function getEventDisplay(event: Event | string, date: string): string {
+  // Add logging to diagnose event object type
+  console.log("getEventDisplay received:", {
+    eventType: typeof event,
+    eventValue: event,
+    date,
+  });
+
   if (typeof event === "string") return event;
 
-  // Only show year for festivals
-  if (event.type === "festival") {
-    return `${event.name} ${formatEventYear(date)}`;
+  // Handle Event object case
+  if (event && typeof event === "object" && "name" in event) {
+    // If it's a festival, include the year
+    if (event.type === "festival") {
+      return `${event.name} ${formatEventYear(date)}`;
+    }
+    return event.name;
   }
 
-  return event.name;
+  // Fallback case
+  return "Unknown Event";
 }

@@ -26,6 +26,13 @@ interface ApiResponse<T> {
   };
 }
 
+interface ApiResponseWithCache<T> extends ApiResponse<T> {
+  _cache?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+}
+
 export interface AuthResponse {
   message: string;
   user: {
@@ -48,9 +55,19 @@ export interface AuthResponse {
   token: string;
 }
 
+interface RequestOptions {
+  next?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+}
+
 // Cache the makeRequest function using React's cache
 export const makeRequest = cache(
-  async <T>(path: string): Promise<ApiResponse<T>> => {
+  async <T>(
+    path: string,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>> => {
     // Try to get the auth token from cookies first
     const cookieStore = await cookies();
     const authToken = cookieStore.get("auth_token")?.value;
@@ -72,47 +89,75 @@ export const makeRequest = cache(
       headers.Cookie = `auth_token=${authToken}`;
     }
 
-    return new Promise((resolve, reject) => {
-      const options = {
-        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
-        path,
-        method: "GET",
-        headers,
-        rejectUnauthorized: false,
-        agent: new https.Agent({
+    const hostname =
+      process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
+    const url = `https://${hostname}${path}`;
+    console.log("Making request to:", url);
+
+    // Always use https.request in server components for consistent behavior
+    if (typeof window === "undefined") {
+      return new Promise((resolve, reject) => {
+        const requestOptions = {
+          hostname,
+          path,
+          method: "GET",
+          headers,
           rejectUnauthorized: false,
-        }),
-      };
+          agent: new https.Agent({
+            rejectUnauthorized: false,
+          }),
+        };
 
-      const req = https.request(options, (res) => {
-        let data = "";
-        res.on("data", (chunk) => {
-          data += chunk;
+        const req = https.request(requestOptions, (res) => {
+          let data = "";
+          res.on("data", (chunk) => {
+            data += chunk;
+          });
+          res.on("end", () => {
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(
+                new Error(
+                  `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
+                )
+              );
+              return;
+            }
+            try {
+              const response = JSON.parse(data) as ApiResponseWithCache<T>;
+              // If we have caching options, store them in the response
+              if (options?.next) {
+                response._cache = options.next;
+              }
+              resolve(response);
+            } catch {
+              reject(new Error(`Failed to parse response: ${data}`));
+            }
+          });
         });
-        res.on("end", () => {
-          if (res.statusCode && res.statusCode >= 400) {
-            reject(
-              new Error(
-                `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
-              )
-            );
-            return;
-          }
-          try {
-            resolve(JSON.parse(data));
-          } catch {
-            reject(new Error(`Failed to parse response: ${data}`));
-          }
+
+        req.on("error", (error) => {
+          console.error("Request error:", error);
+          reject(error);
         });
-      });
 
-      req.on("error", (error) => {
-        console.error("Request error:", error);
-        reject(error);
+        req.end();
       });
+    }
 
-      req.end();
+    // Use fetch for client components
+    const response = await fetch(url, {
+      headers,
     });
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP Error: ${response.status} ${
+          response.statusText
+        } - ${await response.text()}`
+      );
+    }
+
+    return response.json();
   }
 );
 
@@ -178,7 +223,13 @@ export const fetchAllPages = cache(async <T>(path: string): Promise<T[]> => {
   let hasMorePages = true;
 
   while (hasMorePages) {
-    const response = await makeRequest<T>(`${path}?page=${currentPage}`);
+    // Use makeRequest with caching options for each page
+    const response = await makeRequest<T>(`${path}?page=${currentPage}`, {
+      next: {
+        revalidate: 60, // Cache for 60 seconds
+        tags: ["pagination"], // Tag for manual revalidation
+      },
+    });
     allItems.push(...response.data);
 
     if (response.meta.current_page >= response.meta.last_page) {

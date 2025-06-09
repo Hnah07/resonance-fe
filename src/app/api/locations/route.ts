@@ -1,74 +1,77 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
 
+// Configure static rendering for this route
+export const dynamic = "force-static";
+export const revalidate = 60;
+
 type LocationItem = {
-  id: string;
+  id: number;
   name: string;
   city: string;
   country: string;
 };
 
-type LocationResponse = {
-  data: LocationItem[];
+type ApiResponse<T> = {
+  data: T;
+  links?: Record<string, string>;
+  meta?: Record<string, unknown>;
 };
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const city = searchParams.get("city");
-  const location = searchParams.get("location");
-  const all = searchParams.get("all") === "true";
-
-  console.log("Locations API request params:", { city, location, all });
-
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const city = searchParams.get("city");
+    const location = searchParams.get("location");
+    const all = searchParams.get("all");
+
+    console.log("Locations API request params:", {
+      city,
+      location,
+      all,
+    });
+
     // Build the API path with query parameters
-    const apiPath = `/api/locations${
-      searchParams.toString() ? `?${searchParams.toString()}` : ""
-    }`;
+    let apiPath = "/api/locations";
+    const queryParams = new URLSearchParams();
 
-    // Fetch locations with query parameters
-    const response = await makeRequest<LocationResponse>(apiPath);
-    const locations = (response as unknown as { data: LocationItem[] }).data;
-
-    if (!locations) {
-      console.error("No data in locations response");
-      throw new Error("No data received from locations API");
+    if (location) {
+      queryParams.append("name", location);
+    } else if (city) {
+      // For city search, use a partial match by adding a wildcard
+      queryParams.append("city", `${city}%`);
+    } else if (all) {
+      queryParams.append("all", "true");
     }
 
-    console.log("Successfully fetched locations:", locations.length);
-
-    if (all) {
-      // Extract unique cities from locations and sort them
-      const cities = Array.from(
-        new Set(locations.map((loc) => loc.city))
-      ).sort();
-      console.log("Returning unique cities:", cities);
-      return NextResponse.json({ data: cities });
+    if (queryParams.toString()) {
+      apiPath += `?${queryParams.toString()}`;
     }
 
-    // Filter locations based on search parameters
-    let filteredLocations = locations;
+    // Make the request with caching options
+    const response = await makeRequest<ApiResponse<LocationItem[]>>(apiPath, {
+      next: {
+        revalidate: 60, // Cache for 60 seconds
+        tags: ["locations"], // Tag for manual revalidation
+      },
+    });
+
+    // For city search, extract unique cities from the response
     if (city) {
-      const searchCity = city.toLowerCase();
-      console.log("Filtering by city:", searchCity);
-      filteredLocations = locations.filter((loc) =>
-        loc.city.toLowerCase().includes(searchCity)
-      );
-      console.log("Filtered locations:", filteredLocations);
-    } else if (location) {
-      const searchLocation = location.toLowerCase();
-      console.log("Filtering by location:", searchLocation);
-      filteredLocations = locations.filter((loc) =>
-        loc.name.toLowerCase().includes(searchLocation)
-      );
-      console.log("Filtered locations:", filteredLocations);
+      const locations = (response as unknown as ApiResponse<LocationItem[]>)
+        .data;
+      const uniqueCities = [
+        ...new Set(locations.map((item) => item.city)),
+      ].sort();
+      return NextResponse.json({ data: uniqueCities });
     }
 
-    return NextResponse.json({ data: filteredLocations });
+    // Return the filtered locations for other cases
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("Server-side API error:", error);
+    console.error("Error in locations API route:", error);
     return NextResponse.json(
-      { error: "Failed to fetch location" },
+      { error: "Failed to fetch locations" },
       { status: 500 }
     );
   }

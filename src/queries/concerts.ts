@@ -1,19 +1,15 @@
 import { ApiConcert } from "@/types/concert";
 import { fetchLocation } from "@/app/actions";
 
-// Get the base URL for the current environment
-const getBaseUrl = () => {
+// Helper function to get the base URL
+function getBaseUrl(): string {
+  // For client-side requests, use relative URL
   if (typeof window !== "undefined") {
-    // Browser should use relative path
     return "";
   }
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    // Use NEXT_PUBLIC_BASE_URL for server-side requests
-    return `https://${process.env.NEXT_PUBLIC_BASE_URL}`;
-  }
-  // Assume localhost
-  return `http://localhost:${process.env.PORT || 3000}`;
-};
+  // For server-side requests, use the frontend URL from env
+  return process.env.FRONTEND_URL || "http://localhost:3000";
+}
 
 export interface ConcertFilters {
   location?: string;
@@ -23,33 +19,6 @@ export interface ConcertFilters {
   eventType?: string;
   dateFrom?: string;
   dateTo?: string;
-}
-
-// Helper function to fetch all genres
-async function fetchAllGenres(): Promise<{ id: string; genre: string }[]> {
-  const baseUrl = getBaseUrl();
-  const url =
-    typeof window === "undefined"
-      ? `${baseUrl}/api/genres?all=true`
-      : `/api/genres?all=true`;
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.data;
-  } catch (error) {
-    console.error("Error fetching genres:", error);
-    throw error;
-  }
 }
 
 export async function getAllConcerts(
@@ -80,43 +49,17 @@ export async function getAllConcerts(
       }
       // Get the first location from the array
       const firstLocation = location[0];
-      // Use location parameter for name-based filtering
-      queryParams.append("location", firstLocation.name);
+      if (typeof firstLocation === "object" && "name" in firstLocation) {
+        queryParams.append("location", firstLocation.name);
+      } else {
+        console.error("Invalid location data format:", firstLocation);
+        throw new Error("Invalid location data format");
+      }
     }
 
     // Handle city filter
     if (filters?.city && filters.city !== "all") {
       queryParams.append("city", filters.city);
-    }
-
-    // Handle genre filter
-    if (filters?.genres && filters.genres.length > 0) {
-      try {
-        // Fetch all genres first
-        const allGenres = await fetchAllGenres();
-
-        // Find matching genre IDs
-        const genreIds = filters.genres.map((genreName) => {
-          const matchingGenre = allGenres.find((g) => g.genre === genreName);
-          if (!matchingGenre) {
-            console.error("No matching genre found for:", genreName);
-            throw new Error(`No matching genre found for: ${genreName}`);
-          }
-          return matchingGenre.id;
-        });
-
-        if (genreIds.length > 0) {
-          // Join all genre IDs with commas
-          const genreIdsString = genreIds.join(",");
-          queryParams.set("genre_ids", genreIdsString);
-          if (filters.genreFilterMode) {
-            queryParams.set("filter_mode", filters.genreFilterMode);
-          }
-        }
-      } catch (error) {
-        console.error("Error processing genres:", error);
-        throw error;
-      }
     }
 
     // Handle other filters
@@ -131,11 +74,10 @@ export async function getAllConcerts(
     }
 
     const queryString = queryParams.toString();
-    // Use baseUrl for server-side requests, relative path for client-side
-    const url =
-      typeof window === "undefined"
-        ? `${baseUrl}/api/concerts${queryString ? `?${queryString}` : ""}`
-        : `/api/concerts${queryString ? `?${queryString}` : ""}`;
+    // Use the frontend URL for server-side requests to ensure we go through Next.js API route
+    const url = `${baseUrl}/api/concerts${
+      queryString ? `?${queryString}` : ""
+    }`;
     console.log("Fetching concerts from URL:", url);
 
     const res = await fetch(url, {
@@ -150,38 +92,72 @@ export async function getAllConcerts(
     });
 
     if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      console.error("Concerts API error response:", {
-        status: res.status,
-        statusText: res.statusText,
-        headers: Object.fromEntries(res.headers.entries()),
-        errorData,
-      });
-      throw new Error(
-        `Failed to fetch concerts: ${res.status} ${res.statusText}${
-          errorData ? ` - ${JSON.stringify(errorData)}` : ""
-        }`
-      );
+      throw new Error(`HTTP error! status: ${res.status}`);
     }
 
-    const response = await res.json();
-    console.log(
-      "Successfully fetched concerts:",
-      response.concerts?.length || 0
-    );
+    const data = await res.json();
+    let concerts = data.concerts;
 
-    // Return the concerts array from the response
-    return { concerts: response.concerts };
+    // Filter by genres if specified
+    if (
+      filters?.genres &&
+      Array.isArray(filters.genres) &&
+      filters.genres.length > 0
+    ) {
+      const genreFilters = filters.genres;
+      console.log("Filtering concerts by genres:", {
+        genres: genreFilters,
+        mode: filters.genreFilterMode,
+      });
+
+      concerts = concerts.filter((concert: ApiConcert) => {
+        // Collect all genres from artists
+        const concertGenres = new Set<string>();
+        (concert.artists || []).forEach((artist) => {
+          if (typeof artist === "object" && artist.genres) {
+            artist.genres.forEach((genre) => {
+              if (typeof genre === "string") {
+                concertGenres.add(genre);
+              } else if (
+                genre &&
+                typeof genre === "object" &&
+                "name" in genre
+              ) {
+                concertGenres.add(genre.name);
+              }
+            });
+          }
+        });
+
+        // Log the genres for this concert
+        console.log("Concert genres:", {
+          id: concert.id,
+          genres: Array.from(concertGenres),
+          requestedGenres: genreFilters,
+        });
+
+        // Check if concert has any/all of the requested genres
+        const hasGenres =
+          filters.genreFilterMode === "any"
+            ? genreFilters.some((genre) => concertGenres.has(genre))
+            : genreFilters.every((genre) => concertGenres.has(genre));
+
+        console.log("Concert genre match:", {
+          id: concert.id,
+          hasGenres,
+          mode: filters.genreFilterMode,
+        });
+
+        return hasGenres;
+      });
+
+      console.log("Filtered concerts count:", concerts.length);
+    }
+
+    console.log("Successfully fetched concerts:", concerts.length);
+    return { concerts };
   } catch (error) {
-    console.error("Error in getAllConcerts:", error);
-    if (error instanceof Error) {
-      console.error("Error details:", {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: error.cause,
-      });
-    }
+    console.error("Error fetching concerts:", error);
     throw error;
   }
 }
