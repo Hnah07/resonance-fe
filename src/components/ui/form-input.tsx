@@ -1,14 +1,20 @@
 import { cn } from "@/lib/utils";
 import { forwardRef } from "react";
 
-interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface FormInputProps
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    "value" | "onChange"
+  > {
   label?: string;
   error?: string;
   className?: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
-  ({ label, error, className, ...props }, ref) => {
+  ({ label, error, className, value, onChange, ...props }, ref) => {
     return (
       <div className="w-full">
         {label && (
@@ -26,6 +32,8 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             error && "border-[#FF0086]",
             className
           )}
+          value={value}
+          onChange={onChange}
           {...props}
         />
         {error && <p className="mt-1 text-sm text-[#FF0086]">{error}</p>}

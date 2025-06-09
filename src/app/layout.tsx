@@ -4,6 +4,7 @@ import Header from "@/layout/Header";
 import { Metadata, Viewport } from "next";
 import BottomNavbar from "@/layout/BottomNavBar";
 import { Container } from "@/components/ui/container";
+import { Toaster } from "@/components/ui/sonner";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -51,6 +52,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => {
             <main>{children}</main>
           </Container>
           <BottomNavbar />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
