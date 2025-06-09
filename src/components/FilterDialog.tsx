@@ -29,10 +29,11 @@ import { useState, useEffect } from "react";
 import { LocationSearch } from "@/components/LocationSearch";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { Switch } from "@/components/ui/switch";
+import { EventType } from "@/types/concert";
 
 interface FilterOptions {
   locations: string[];
-  eventTypes: string[];
+  eventTypes: EventType[];
 }
 
 interface Genre {
@@ -87,12 +88,27 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
       setIsLoading(true);
       try {
         // Fetch filter options
-        const filterResponse = await fetch("/api/filters");
+        const [filterResponse, eventTypesResponse] = await Promise.all([
+          fetch("/api/filters"),
+          fetch("/api/event-types"),
+        ]);
+
         if (!filterResponse.ok) {
           throw new Error("Failed to fetch filter options");
         }
-        const filterData = await filterResponse.json();
-        setFilterOptions(filterData);
+        if (!eventTypesResponse.ok) {
+          throw new Error("Failed to fetch event types");
+        }
+
+        const [filterData, eventTypesData] = await Promise.all([
+          filterResponse.json(),
+          eventTypesResponse.json(),
+        ]);
+
+        setFilterOptions({
+          ...filterData,
+          eventTypes: eventTypesData.data,
+        });
 
         // Fetch all genres
         const genresResponse = await fetch("/api/genres?all=true");
@@ -240,8 +256,8 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
                 <SelectItem value="all">All Types</SelectItem>
                 {!isLoading &&
                   filterOptions.eventTypes?.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    <SelectItem key={type.id} value={type.name}>
+                      {type.name.charAt(0).toUpperCase() + type.name.slice(1)}
                     </SelectItem>
                   ))}
               </SelectContent>

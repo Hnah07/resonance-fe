@@ -5,7 +5,7 @@ import {
   ApiConcertResponse,
   ApiLocationResponse,
   ApiConcert,
-  EventType,
+  EventTypeValue,
 } from "@/types/concert";
 import {
   ApiArtistResponse,
@@ -66,17 +66,28 @@ export async function GET(request: Request) {
     const concerts = (concertsResponse as unknown as { data: ApiConcert[] })
       .data;
 
-    // Filter concerts by city if city parameter is present
+    // Filter concerts by city and event type
     let filteredConcerts = concerts;
     const cityFilter = searchParams.get("city");
+    const typeFilter = searchParams.get("type") as EventTypeValue | null;
 
     if (cityFilter) {
       const searchCity = cityFilter.toLowerCase();
-      filteredConcerts = concerts.filter((concert) => {
+      filteredConcerts = filteredConcerts.filter((concert) => {
         const matches = concert.location.city
           .toLowerCase()
           .includes(searchCity);
         return matches;
+      });
+    }
+
+    // Filter by event type
+    if (typeFilter) {
+      filteredConcerts = filteredConcerts.filter((concert) => {
+        if (typeof concert.event === "string") {
+          return typeFilter === "concert";
+        }
+        return concert.event.type === typeFilter;
       });
     }
 
@@ -103,7 +114,7 @@ export async function GET(request: Request) {
                 : {
                     id: concert.event.id,
                     name: concert.event.name,
-                    type: concert.event.type as EventType,
+                    type: concert.event.type as EventTypeValue,
                     description: concert.event.description,
                     start_date: concert.event.start_date,
                     end_date: concert.event.end_date,

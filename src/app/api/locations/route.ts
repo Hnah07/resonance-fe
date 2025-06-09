@@ -2,16 +2,42 @@ import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
 import { cache } from "react";
 import { ApiLocationResponse } from "@/types/concert";
+import { cookies } from "next/headers";
 
 type LocationItem = ApiLocationResponse["data"][number];
 
 // Cache the getAllLocations function
 const getAllLocations = cache(async () => {
   try {
+    // Get the auth token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    console.log(
+      "Fetching locations with token:",
+      token ? "Token present" : "No token"
+    );
+
+    // Make the request - makeRequest will handle the token from cookies
     const response = await makeRequest<ApiLocationResponse>("/api/locations");
+
+    if (!response.data) {
+      console.error("No data in locations response");
+      throw new Error("No data received from locations API");
+    }
+
+    console.log("Successfully fetched locations:", response.data.length);
     return response.data as unknown as LocationItem[];
   } catch (error) {
     console.error("Error fetching locations:", error);
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause,
+      });
+    }
     throw error;
   }
 });
