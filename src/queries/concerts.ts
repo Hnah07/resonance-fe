@@ -56,10 +56,14 @@ export async function getAllConcerts(
           next: { revalidate: 0, tags: ["genres"] },
         });
 
-        allGenres.push(...response.data);
+        const genres = response.data as unknown as {
+          id: string;
+          genre: string;
+        }[];
+        allGenres.push(...genres);
         console.log(
           `Page ${currentPage} genres:`,
-          response.data.map((g) => g.genre)
+          genres.map((g) => g.genre)
         );
 
         if (response.meta.current_page >= response.meta.last_page) {
