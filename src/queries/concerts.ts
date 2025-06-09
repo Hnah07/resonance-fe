@@ -62,6 +62,12 @@ export async function getAllConcerts(
       queryParams.append("city", filters.city);
     }
 
+    // Handle genre filters
+    if (filters?.genres && filters.genres.length > 0) {
+      queryParams.append("genres", filters.genres.join(","));
+      queryParams.append("filter_mode", filters.genreFilterMode || "any");
+    }
+
     // Handle other filters
     if (filters?.eventType && filters.eventType !== "all") {
       queryParams.append("type", filters.eventType);
@@ -82,7 +88,7 @@ export async function getAllConcerts(
 
     const res = await fetch(url, {
       next: {
-        revalidate: 60,
+        revalidate: 0, // Disable caching
         tags: ["concerts"],
       },
       headers: {
@@ -96,66 +102,8 @@ export async function getAllConcerts(
     }
 
     const data = await res.json();
-    let concerts = data.concerts;
-
-    // Filter by genres if specified
-    if (
-      filters?.genres &&
-      Array.isArray(filters.genres) &&
-      filters.genres.length > 0
-    ) {
-      const genreFilters = filters.genres;
-      console.log("Filtering concerts by genres:", {
-        genres: genreFilters,
-        mode: filters.genreFilterMode,
-      });
-
-      concerts = concerts.filter((concert: ApiConcert) => {
-        // Collect all genres from artists
-        const concertGenres = new Set<string>();
-        (concert.artists || []).forEach((artist) => {
-          if (typeof artist === "object" && artist.genres) {
-            artist.genres.forEach((genre) => {
-              if (typeof genre === "string") {
-                concertGenres.add(genre);
-              } else if (
-                genre &&
-                typeof genre === "object" &&
-                "name" in genre
-              ) {
-                concertGenres.add(genre.name);
-              }
-            });
-          }
-        });
-
-        // Log the genres for this concert
-        console.log("Concert genres:", {
-          id: concert.id,
-          genres: Array.from(concertGenres),
-          requestedGenres: genreFilters,
-        });
-
-        // Check if concert has any/all of the requested genres
-        const hasGenres =
-          filters.genreFilterMode === "any"
-            ? genreFilters.some((genre) => concertGenres.has(genre))
-            : genreFilters.every((genre) => concertGenres.has(genre));
-
-        console.log("Concert genre match:", {
-          id: concert.id,
-          hasGenres,
-          mode: filters.genreFilterMode,
-        });
-
-        return hasGenres;
-      });
-
-      console.log("Filtered concerts count:", concerts.length);
-    }
-
-    console.log("Successfully fetched concerts:", concerts.length);
-    return { concerts };
+    console.log("Successfully fetched concerts:", data.concerts.length);
+    return { concerts: data.concerts };
   } catch (error) {
     console.error("Error fetching concerts:", error);
     throw error;
