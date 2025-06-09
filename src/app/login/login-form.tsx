@@ -6,9 +6,9 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { FormInput } from "@/components/ui/form-input";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { login } from "@/lib/actions/auth";
+import { login, type LoginFormState } from "@/lib/actions/auth";
 
-const initialState = {
+const initialState: LoginFormState = {
   message: null,
   errors: undefined,
 };
