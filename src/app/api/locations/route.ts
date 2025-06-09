@@ -2,23 +2,22 @@ import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
 import { cache } from "react";
 import { ApiLocationResponse } from "@/types/concert";
-import { cookies } from "next/headers";
 
 type LocationItem = ApiLocationResponse["data"][number];
 
 // Cache the getAllLocations function
 const getAllLocations = cache(async () => {
   try {
-    // Get the auth token from cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
+    // For public data, we can use the API token
+    const apiToken = process.env.API_TOKEN?.trim();
+    if (!apiToken) {
+      console.error("API_TOKEN is not configured");
+      throw new Error("API token not configured");
+    }
 
-    console.log(
-      "Fetching locations with token:",
-      token ? "Token present" : "No token"
-    );
+    console.log("Fetching locations with API token");
 
-    // Make the request - makeRequest will handle the token from cookies
+    // Make the request with API token
     const response = await makeRequest<ApiLocationResponse>("/api/locations");
 
     if (!response.data) {
