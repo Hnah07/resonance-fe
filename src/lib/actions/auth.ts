@@ -83,6 +83,17 @@ export async function login(
       errorMessage: data.error,
     });
 
+    // Handle validation errors (422)
+    if (response.status === 422) {
+      const errorMessage = data.message || "Invalid credentials";
+      return {
+        errors: {
+          form: [errorMessage],
+        },
+        message: "Login failed",
+      };
+    }
+
     if (!response.ok) {
       throw new Error(data.error || "Login failed");
     }

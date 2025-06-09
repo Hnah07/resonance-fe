@@ -3,6 +3,15 @@ import https from "https";
 
 export const dynamic = "force-dynamic"; // Disable caching for this route
 
+type BackendResponse = {
+  status: number;
+  data: {
+    token?: string;
+    message?: string;
+    errors?: Record<string, string[]>;
+  };
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -26,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Make request to backend API
-    const response = await new Promise((resolve, reject) => {
+    const response = await new Promise<BackendResponse>((resolve, reject) => {
       const options = {
         hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
         path: "/api/login",
@@ -55,21 +64,33 @@ export async function POST(request: NextRequest) {
           console.log("Backend response status:", res.statusCode);
           console.log("Backend response data:", data);
 
-          if (res.statusCode && res.statusCode >= 400) {
-            reject(
-              new Error(
-                `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
-              )
-            );
-            return;
-          }
           try {
             const parsedData = JSON.parse(data);
-            console.log("Parsed response data:", {
-              hasToken: !!parsedData.token,
-              message: parsedData.message,
+
+            // Handle validation errors (422) by passing them through
+            if (res.statusCode === 422) {
+              resolve({
+                status: 422,
+                data: parsedData,
+              });
+              return;
+            }
+
+            // Handle other error status codes
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(
+                new Error(
+                  `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
+                )
+              );
+              return;
+            }
+
+            // Handle successful response
+            resolve({
+              status: res.statusCode || 200,
+              data: parsedData,
             });
-            resolve(parsedData);
           } catch (error) {
             console.error("Failed to parse response:", error);
             reject(new Error(`Failed to parse response: ${data}`));
@@ -92,7 +113,19 @@ export async function POST(request: NextRequest) {
       req.end();
     });
 
-    return NextResponse.json(response, {
+    // Handle the response based on status code
+    if (response.status === 422) {
+      // Return validation errors with 422 status
+      return NextResponse.json(response.data, {
+        status: 422,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
+    // Return successful response
+    return NextResponse.json(response.data, {
       headers: {
         "Cache-Control": "no-store",
       },

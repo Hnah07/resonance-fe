@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { FormInput } from "@/components/ui/form-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { register, type RegisterFormState } from "@/lib/actions/auth";
+import { toast } from "sonner";
 
 const initialState: RegisterFormState = {
   message: null,
@@ -26,9 +27,15 @@ const RegisterForm = () => {
 
   useEffect(() => {
     if (state.message === "Registration successful") {
+      toast.success("Successfully created account");
       router.push("/discover");
+    } else if (
+      state.message === "Registration failed" ||
+      state.message === "Validation failed"
+    ) {
+      toast.error(state.errors?.form || "Failed to create account");
     }
-  }, [state.message, router]);
+  }, [state.message, state.errors, router]);
 
   const handleSubmit = async (formData: FormData) => {
     // Log form data before submission

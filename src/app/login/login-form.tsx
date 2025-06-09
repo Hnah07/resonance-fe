@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { FormInput } from "@/components/ui/form-input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { login, type LoginFormState } from "@/lib/actions/auth";
+import { toast } from "sonner";
 
 const initialState: LoginFormState = {
   message: null,
@@ -19,9 +20,12 @@ export function LoginForm() {
 
   useEffect(() => {
     if (state.message === "Login successful") {
+      toast.success("Successfully signed in");
       router.push("/discover");
+    } else if (state.message === "Login failed") {
+      toast.error(state.errors?.form?.[0] || "Failed to sign in");
     }
-  }, [state.message, router]);
+  }, [state.message, state.errors, router]);
 
   return (
     <form className="space-y-6" action={formAction}>

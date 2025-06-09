@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { toast } from "sonner";
 
 const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,10 +44,17 @@ const UserMenu = () => {
         throw new Error(data.message || "Failed to logout");
       }
 
+      // Show success toast
+      toast.success("Successfully signed out");
+
       // After successful logout, redirect to login
       router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
+      // Show error toast
+      toast.error(
+        error instanceof Error ? error.message : "Failed to sign out"
+      );
     }
   };
 
