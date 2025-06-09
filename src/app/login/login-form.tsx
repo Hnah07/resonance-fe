@@ -20,6 +20,8 @@ export function LoginForm() {
 
   useEffect(() => {
     if (state.message === "Login successful") {
+      // The cookie should be set by the browser from the API response
+      // We don't need to handle it in the client
       toast.success("Successfully signed in");
       router.push("/discover");
     } else if (state.message === "Login failed") {
