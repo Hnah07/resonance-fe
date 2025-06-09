@@ -61,16 +61,23 @@ export const makeRequest = cache(
       throw new Error("No authentication token available");
     }
 
+    // Prepare headers
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    };
+
+    // Only add Cookie header if we have an auth token
+    if (authToken) {
+      headers.Cookie = `auth_token=${authToken}`;
+    }
+
     return new Promise((resolve, reject) => {
       const options = {
         hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
         path,
         method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-          Cookie: authToken ? `auth_token=${authToken}` : undefined,
-        },
+        headers,
         rejectUnauthorized: false,
         agent: new https.Agent({
           rejectUnauthorized: false,

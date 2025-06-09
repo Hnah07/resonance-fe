@@ -1,9 +1,15 @@
-export type EventType = "concert" | "festival" | "tour" | "other";
+export type EventTypeValue = "concert" | "festival" | "tour" | "other";
+
+export interface EventType {
+  id: string;
+  name: EventTypeValue;
+  description?: string;
+}
 
 export interface Event {
   id: string;
   name: string;
-  type: EventType;
+  type: EventTypeValue;
   description: string;
   start_date: string;
   end_date: string;
