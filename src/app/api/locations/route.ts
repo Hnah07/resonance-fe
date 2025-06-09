@@ -7,8 +7,13 @@ type LocationItem = ApiLocationResponse["data"][number];
 
 // Cache the getAllLocations function
 const getAllLocations = cache(async () => {
-  const response = await makeRequest<ApiLocationResponse>("/api/locations");
-  return response.data as unknown as LocationItem[];
+  try {
+    const response = await makeRequest<ApiLocationResponse>("/api/locations");
+    return response.data as unknown as LocationItem[];
+  } catch (error) {
+    console.error("Error fetching locations:", error);
+    throw error;
+  }
 });
 
 export async function GET(request: Request) {

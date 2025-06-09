@@ -69,6 +69,7 @@ export const makeRequest = cache(
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
+          Cookie: authToken ? `auth_token=${authToken}` : undefined,
         },
         rejectUnauthorized: false,
         agent: new https.Agent({
