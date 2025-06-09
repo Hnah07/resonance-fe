@@ -68,11 +68,20 @@ export async function login(
       email: validatedFields.data.email,
     });
 
-    // Get the base URL from environment or use a default
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // Get the frontend URL from environment
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      console.error("FRONTEND_URL is not defined");
+      return {
+        errors: {
+          form: ["Configuration error. Please contact support."],
+        },
+        message: "Login failed",
+      };
+    }
 
-    // Use absolute URL for the API route
-    const response = await fetch(`${baseUrl}/api/auth/login`, {
+    // Use the frontend URL for the API route
+    const response = await fetch(`${frontendUrl}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
