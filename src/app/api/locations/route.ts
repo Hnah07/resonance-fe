@@ -1,45 +1,16 @@
 import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
-import { cache } from "react";
-import { ApiLocationResponse } from "@/types/concert";
 
-type LocationItem = ApiLocationResponse["data"][number];
+type LocationItem = {
+  id: string;
+  name: string;
+  city: string;
+  country: string;
+};
 
-// Cache the getAllLocations function
-const getAllLocations = cache(async () => {
-  try {
-    // For public data, we can use the API token
-    const apiToken = process.env.API_TOKEN?.trim();
-    if (!apiToken) {
-      console.error("API_TOKEN is not configured");
-      throw new Error("API token not configured");
-    }
-
-    console.log("Fetching locations with API token");
-
-    // Make the request with API token
-    const response = await makeRequest<ApiLocationResponse>("/api/locations");
-
-    if (!response.data) {
-      console.error("No data in locations response");
-      throw new Error("No data received from locations API");
-    }
-
-    console.log("Successfully fetched locations:", response.data.length);
-    return response.data as unknown as LocationItem[];
-  } catch (error) {
-    console.error("Error fetching locations:", error);
-    if (error instanceof Error) {
-      console.error("Error details:", {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: error.cause,
-      });
-    }
-    throw error;
-  }
-});
+type LocationResponse = {
+  data: LocationItem[];
+};
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -50,9 +21,21 @@ export async function GET(request: Request) {
   console.log("Locations API request params:", { city, location, all });
 
   try {
-    // Always fetch all locations first
-    const locations = await getAllLocations();
-    console.log("Fetched all locations:", locations);
+    // Build the API path with query parameters
+    const apiPath = `/api/locations${
+      searchParams.toString() ? `?${searchParams.toString()}` : ""
+    }`;
+
+    // Fetch locations with query parameters
+    const response = await makeRequest<LocationResponse>(apiPath);
+    const locations = (response as unknown as { data: LocationItem[] }).data;
+
+    if (!locations) {
+      console.error("No data in locations response");
+      throw new Error("No data received from locations API");
+    }
+
+    console.log("Successfully fetched locations:", locations.length);
 
     if (all) {
       // Extract unique cities from locations and sort them
