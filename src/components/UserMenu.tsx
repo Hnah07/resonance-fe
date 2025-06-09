@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { logout } from "@/lib/actions/auth";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 const UserMenu = () => {
@@ -31,7 +30,20 @@ const UserMenu = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to logout");
+      }
+
+      // After successful logout, redirect to login
       router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);

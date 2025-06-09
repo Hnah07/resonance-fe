@@ -300,8 +300,36 @@ export async function register(
 
 export async function logout() {
   try {
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      console.error("FRONTEND_URL is not defined");
+      throw new Error("Configuration error");
+    }
+
+    // Debug: Check if we can access the cookie directly
     const cookieStore = await cookies();
-    await cookieStore.delete("auth_token");
+    const authToken = cookieStore.get("auth_token");
+    console.log("Logout - Cookie state before request:", {
+      hasCookie: !!authToken,
+      cookieName: authToken?.name,
+      cookieValue: authToken ? "[REDACTED]" : undefined,
+    });
+
+    const response = await fetch(`${frontendUrl}/api/auth/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    console.log("Logout - Response status:", response.status);
+    const data = await response.json();
+    console.log("Logout - Response data:", data);
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to logout");
+    }
 
     // Revalidate all paths to ensure auth state is updated everywhere
     revalidatePath("/", "layout");
