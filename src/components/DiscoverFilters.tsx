@@ -28,6 +28,12 @@ export function DiscoverFilters() {
       params.delete("city");
     }
 
+    if (newFilters.location) {
+      params.set("location", newFilters.location.name);
+    } else {
+      params.delete("location");
+    }
+
     if (newFilters.genres.length > 0) {
       params.set("genres", newFilters.genres.join(","));
       params.set("genreFilterMode", newFilters.genreFilterMode);

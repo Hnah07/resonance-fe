@@ -7,6 +7,14 @@ interface ApiGenre {
   genre: string;
 }
 
+type ApiGenreResponse = {
+  data: ApiGenre[];
+  meta: {
+    current_page: number;
+    last_page: number;
+  };
+};
+
 // Configure static rendering for this route
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,8 +25,11 @@ const getAllGenres = cache(async (): Promise<ApiGenre[]> => {
   let currentPage = 1;
   let hasMorePages = true;
 
+  console.log("Starting to fetch all genres...");
+
   while (hasMorePages) {
-    const response = await makeRequest<ApiGenre>(
+    console.log(`Fetching genres page ${currentPage}...`);
+    const response = await makeRequest<ApiGenreResponse>(
       `/api/genres?page=${currentPage}`,
       {
         next: {
@@ -28,10 +39,18 @@ const getAllGenres = cache(async (): Promise<ApiGenre[]> => {
       }
     );
 
-    allGenres.push(...response.data);
+    const genres = response.data as unknown as ApiGenre[];
+    console.log(
+      `Page ${currentPage} genres:`,
+      genres.map((g) => g.genre)
+    );
+    allGenres.push(...genres);
 
     // Check if we've reached the last page
     if (response.meta.current_page >= response.meta.last_page) {
+      console.log(
+        `Reached last page (${response.meta.last_page}). Total genres: ${allGenres.length}`
+      );
       hasMorePages = false;
     } else {
       currentPage++;
@@ -40,6 +59,10 @@ const getAllGenres = cache(async (): Promise<ApiGenre[]> => {
 
   // Sort genres alphabetically
   allGenres.sort((a, b) => a.genre.localeCompare(b.genre));
+  console.log(
+    "All genres after sorting:",
+    allGenres.map((g) => g.genre)
+  );
 
   return allGenres;
 });
