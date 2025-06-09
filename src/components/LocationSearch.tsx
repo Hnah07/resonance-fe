@@ -62,11 +62,31 @@ export function LocationSearch({
           setLocations([]);
           return;
         }
-        // Convert the location data to our Location interface format
-        if (location && Array.isArray(location)) {
+        // Handle city search results
+        if (
+          searchType === "city" &&
+          Array.isArray(location) &&
+          location.every((item) => typeof item === "string")
+        ) {
+          console.log("Setting city suggestions:", location);
+          setLocations(
+            location.map((city: string) => ({
+              id: city, // Use city name as ID for cities
+              name: city,
+              city: city,
+              country: "Belgium", // Since we're only searching in Belgium
+            }))
+          );
+        }
+        // Handle location search results
+        else if (
+          location &&
+          Array.isArray(location) &&
+          location.every((item) => typeof item === "object" && "id" in item)
+        ) {
           console.log("Setting locations:", location);
           setLocations(
-            location.map((loc) => ({
+            (location as Location[]).map((loc) => ({
               id: loc.id,
               name: loc.name,
               city: loc.city,

@@ -23,8 +23,8 @@ interface MultiComboboxProps {
 }
 
 export function MultiCombobox({
-  options,
-  selectedValues,
+  options = [],
+  selectedValues = [],
   onSelectionChange,
   placeholder = "Select items...",
   searchPlaceholder = "Search...",
@@ -37,7 +37,7 @@ export function MultiCombobox({
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(search.toLowerCase())
+    option.label.toLowerCase().includes((search || "").toLowerCase())
   );
 
   const selectedLabels = options

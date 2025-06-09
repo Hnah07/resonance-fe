@@ -9,11 +9,9 @@ export interface EventType {
 export interface Event {
   id: string;
   name: string;
-  type: EventTypeValue;
-  description: string;
-  start_date: string;
-  end_date: string;
+  type?: EventTypeValue;
   image?: string;
+  genres?: (string | { id: string; name: string })[];
 }
 
 export interface ConcertProperties {
@@ -38,9 +36,21 @@ export interface ConcertResponse {
   concerts: ConcertProperties[];
 }
 
+interface ArtistGenre {
+  id: string;
+  name: string;
+}
+
+interface Artist {
+  id: string;
+  name: string;
+  image?: string;
+  genres?: (string | ArtistGenre)[];
+}
+
 export interface ApiConcert {
   id: string;
-  event: Event | string;
+  event: string | Event;
   location: {
     id: string;
     name: string;
@@ -50,8 +60,8 @@ export interface ApiConcert {
   };
   date: string;
   image?: string;
-  artists: string[];
-  genres: string[];
+  artists: (string | Artist)[];
+  genres?: (string | { id: string; name: string })[];
 }
 
 export interface ApiConcertResponse {

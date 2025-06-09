@@ -1,184 +1,122 @@
 import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
 import { cache } from "react";
-import {
-  ApiConcertResponse,
-  ApiLocationResponse,
-  ApiConcert,
-  EventTypeValue,
-} from "@/types/concert";
-import {
-  ApiArtistResponse,
-  ApiGenreResponse,
-  Artist,
-  Genre,
-} from "@/types/artists";
+import { ApiConcertResponse, ApiConcert } from "@/types/concert";
 
-interface LocationDetails {
-  city: string;
-  country: string;
-}
+// Configure dynamic rendering for this route
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-// Cache the getConcertDetails function
-const getConcertDetails = cache(async (concert: ApiConcert) => {
-  const [artistsResponse, locationResponse] = await Promise.all([
-    makeRequest<ApiArtistResponse>(`/api/concerts/${concert.id}/artists`),
-    typeof concert.location === "object" && concert.location.id
-      ? makeRequest<ApiLocationResponse>(
-          `/api/locations/${concert.location.id}`
-        )
-      : Promise.resolve({ data: { city: "", country: "" } as LocationDetails }),
-  ]);
+// Cache the main concerts request
+const getConcerts = cache(async (searchParams: URLSearchParams) => {
+  // Build the API path with all query parameters
+  const apiPath = `/api/concerts${
+    searchParams.toString() ? `?${searchParams.toString()}` : ""
+  }`;
 
-  // Fetch genres for each artist
-  const artists = (artistsResponse as unknown as { data: Artist[] }).data;
-  const artistGenresPromises = artists.map(async (artist) => {
-    const genresResponse = await makeRequest<ApiGenreResponse>(
-      `/api/artists/${artist.id}/genres`
-    );
-    const genres = (genresResponse as unknown as { data: Genre[] }).data;
-    return genres.map((genre) => genre.name);
+  console.log("Fetching concerts from backend API:", apiPath);
+
+  // Add cache headers to the response
+  const response = await makeRequest<ApiConcertResponse>(apiPath, {
+    next: {
+      revalidate: 0, // Disable caching
+      tags: ["concerts", "list"],
+    },
   });
 
-  const allGenres = await Promise.all(artistGenresPromises);
-  const uniqueGenres = [...new Set(allGenres.flat())];
-
-  const locationDetails = locationResponse.data as LocationDetails;
-
-  return {
-    artists,
-    location: locationDetails,
-    genres: uniqueGenres,
-  };
+  // Cache the response in memory for subsequent requests
+  return response;
 });
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
   try {
-    // Build the API path with query parameters
-    const apiPath = `/api/concerts${
-      searchParams.toString() ? `?${searchParams.toString()}` : ""
-    }`;
+    // Use the cached getConcerts function
+    const concertsResponse = await getConcerts(searchParams);
+    let concerts = (concertsResponse as unknown as { data: ApiConcert[] }).data;
 
-    // Fetch concerts with query parameters
-    const concertsResponse = await makeRequest<ApiConcertResponse>(apiPath);
-    const concerts = (concertsResponse as unknown as { data: ApiConcert[] })
-      .data;
+    // Filter by genres if specified
+    const genres = searchParams.get("genres")?.split(",");
+    const filterMode = searchParams.get("filter_mode") || "any";
 
-    // Filter concerts by city and event type
-    let filteredConcerts = concerts;
-    const cityFilter = searchParams.get("city");
-    const typeFilter = searchParams.get("type") as EventTypeValue | null;
+    if (genres && genres.length > 0) {
+      console.log("Filtering concerts by genres:", { genres, filterMode });
+      concerts = concerts.filter((concert) => {
+        // Collect all genres from artists
+        const concertGenres = new Set<string>();
+        (concert.artists || []).forEach((artist) => {
+          if (typeof artist === "object" && artist.genres) {
+            artist.genres.forEach((genre) => {
+              if (typeof genre === "string") {
+                concertGenres.add(genre);
+              } else if (
+                genre &&
+                typeof genre === "object" &&
+                "name" in genre
+              ) {
+                concertGenres.add(genre.name);
+              }
+            });
+          }
+        });
 
-    if (cityFilter) {
-      const searchCity = cityFilter.toLowerCase();
-      filteredConcerts = filteredConcerts.filter((concert) => {
-        const matches = concert.location.city
-          .toLowerCase()
-          .includes(searchCity);
-        return matches;
+        // Log the genres for this concert
+        console.log("Concert genres:", {
+          id: concert.id,
+          genres: Array.from(concertGenres),
+          requestedGenres: genres,
+        });
+
+        // Check if concert has any/all of the requested genres
+        const hasGenres =
+          filterMode === "any"
+            ? genres.some((genre) => concertGenres.has(genre))
+            : genres.every((genre) => concertGenres.has(genre));
+
+        console.log("Concert genre match:", {
+          id: concert.id,
+          hasGenres,
+          filterMode,
+        });
+
+        return hasGenres;
       });
+
+      console.log("Filtered concerts count:", concerts.length);
     }
 
-    // Filter by event type
-    if (typeFilter) {
-      filteredConcerts = filteredConcerts.filter((concert) => {
-        if (typeof concert.event === "string") {
-          return typeFilter === "concert";
-        }
-        return concert.event.type === typeFilter;
-      });
-    }
-
-    const links = concertsResponse.links;
-    const meta = {
-      ...concertsResponse.meta,
-      total: filteredConcerts.length,
-      to: filteredConcerts.length,
-    };
-
-    // Fetch artists and genres for each concert using the cached function
-    const concertsWithDetails = await Promise.all(
-      filteredConcerts.map(async (concert) => {
-        try {
-          const { artists, location, genres } = await getConcertDetails(
-            concert
-          );
-
-          return {
-            id: concert.id,
-            event:
-              typeof concert.event === "string"
-                ? concert.event
-                : {
-                    id: concert.event.id,
-                    name: concert.event.name,
-                    type: concert.event.type as EventTypeValue,
-                    description: concert.event.description,
-                    start_date: concert.event.start_date,
-                    end_date: concert.event.end_date,
-                    image: concert.event.image,
-                  },
-            location:
-              typeof concert.location === "string"
-                ? {
-                    id: "",
-                    name: concert.location,
-                    city: location.city,
-                    country: location.country,
-                  }
-                : {
-                    id: concert.location.id,
-                    name: concert.location.name,
-                    city: location.city,
-                    country: location.country,
-                  },
-            date: concert.date,
-            image:
-              typeof concert.event === "string"
-                ? concert.image || ""
-                : concert.event.image || concert.image || "",
-            artists: artists.map((artist) => artist.name),
-            genres: genres,
-          };
-        } catch (error) {
-          console.error(
-            `Error fetching details for concert ${concert.id} (${
-              typeof concert.event === "string"
-                ? concert.event
-                : concert.event.name
-            }):`,
-            error
-          );
-          return {
-            id: concert.id,
-            event:
-              typeof concert.event === "string"
-                ? concert.event
-                : concert.event.name,
-            location:
-              typeof concert.location === "string"
-                ? { id: "", name: concert.location, city: "", country: "" }
-                : {
-                    id: concert.location.id,
-                    name: concert.location.name,
-                    city: "",
-                    country: "",
-                  },
-            date: concert.date,
-            image:
-              typeof concert.event === "string"
-                ? concert.image || ""
-                : concert.event.image || concert.image || "",
-            artists: [],
-            genres: [],
-          };
-        }
-      })
+    // Add logging to diagnose event object type, artists, and genres
+    console.log(
+      "Concert data from API:",
+      concerts.map((c) => ({
+        id: c.id,
+        eventType: typeof c.event,
+        eventValue: c.event,
+        artistsType: typeof c.artists,
+        artistsValue: c.artists,
+        artistsLength: c.artists?.length,
+        genresType: typeof c.genres,
+        genresValue: c.genres,
+        genresLength: c.genres?.length,
+        eventGenres: typeof c.event === "object" ? c.event.genres : undefined,
+      }))
     );
 
-    return NextResponse.json({ concerts: concertsWithDetails, links, meta });
+    // Cache the response headers
+    const response = NextResponse.json({
+      concerts: concerts,
+      links: concertsResponse.links,
+      meta: {
+        ...concertsResponse.meta,
+        total: concerts.length, // Update total to reflect filtered count
+      },
+    });
+
+    // Add cache control headers to prevent caching
+    response.headers.set("Cache-Control", "no-store");
+
+    return response;
   } catch (error) {
     console.error("Server-side API error:", error);
     return NextResponse.json(

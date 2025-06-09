@@ -21,12 +21,23 @@ export async function GET() {
     ].sort();
     console.log("Extracted locations:", locations.length);
 
-    const genres = [
-      ...new Set(
-        concerts.flatMap((concert: ApiConcert) => concert.genres || [])
-      ),
-    ].sort();
-    console.log("Extracted genres:", genres.length);
+    // Extract genres from artists
+    const genres = new Set<string>();
+    concerts.forEach((concert: ApiConcert) => {
+      (concert.artists || []).forEach((artist) => {
+        if (typeof artist === "object" && artist.genres) {
+          artist.genres.forEach((genre) => {
+            if (typeof genre === "string") {
+              genres.add(genre);
+            } else if (genre && typeof genre === "object" && "name" in genre) {
+              genres.add(genre.name);
+            }
+          });
+        }
+      });
+    });
+    const sortedGenres = Array.from(genres).sort();
+    console.log("Extracted genres from artists:", sortedGenres.length);
 
     const eventTypes = [
       ...new Set(
@@ -39,7 +50,7 @@ export async function GET() {
 
     return NextResponse.json({
       locations,
-      genres,
+      genres: sortedGenres,
       eventTypes,
     });
   } catch (error) {

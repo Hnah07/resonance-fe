@@ -3,6 +3,7 @@
 import { getAllConcerts, ConcertFilters } from "@/queries/concerts";
 import { mapConcertFromApi } from "@/lib/mappers";
 import { ConcertProperties } from "@/types/concert";
+import { makeRequest } from "@/lib/api";
 
 export async function fetchConcerts(filters?: ConcertFilters): Promise<{
   concerts: ConcertProperties[];
@@ -20,42 +21,61 @@ export async function fetchConcerts(filters?: ConcertFilters): Promise<{
   }
 }
 
+type LocationItem = {
+  id: string;
+  name: string;
+  city: string;
+};
+
+type LocationResponse = {
+  data: LocationItem[];
+};
+
+type CityResponse = {
+  data: string[];
+};
+
 export async function fetchLocation(
   search: string,
   searchType: "city" | "location" = "location"
 ): Promise<{
-  location: { id: string; name: string; city: string }[] | null;
+  location: LocationItem[] | string[] | null;
   error: string | null;
 }> {
   try {
-    // Get the base URL for the current environment
-    const baseUrl =
-      typeof window !== "undefined" ? "" : "http://localhost:3000";
-
-    // Use our local API route instead of calling the backend directly
-    const url = `${baseUrl}/api/locations${
-      search ? `?${searchType}=${encodeURIComponent(search)}` : ""
+    // Build the API path with query parameters
+    const apiPath = `/api/locations${
+      search
+        ? `?${searchType === "city" ? "city" : "location"}=${encodeURIComponent(
+            search
+          )}`
+        : ""
     }`;
-    console.log("Fetching location from URL:", url);
+    console.log("Fetching location from path:", apiPath);
 
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-      },
-    });
-
-    console.log("Location API response status:", response.status);
-    if (!response.ok) {
-      console.error("Location API error:", response.statusText);
+    if (searchType === "city") {
+      const response = await makeRequest<CityResponse>(apiPath);
+      console.log("City API response:", response);
+      if (!response.data) {
+        console.error("No data in city response");
+        return { location: null, error: "No data received from locations API" };
+      }
       return {
-        location: null,
-        error: `Failed to fetch location: ${response.statusText}`,
+        location: (response as unknown as CityResponse).data,
+        error: null,
+      };
+    } else {
+      const response = await makeRequest<LocationResponse>(apiPath);
+      console.log("Location API response:", response);
+      if (!response.data) {
+        console.error("No data in location response");
+        return { location: null, error: "No data received from locations API" };
+      }
+      return {
+        location: (response as unknown as LocationResponse).data,
+        error: null,
       };
     }
-
-    const data = await response.json();
-    console.log("Location API response data:", data);
-    return { location: data.data, error: null };
   } catch (err) {
     console.error("Location API error:", err);
     return {
