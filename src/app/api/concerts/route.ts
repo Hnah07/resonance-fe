@@ -127,6 +127,7 @@ export async function GET(request: Request) {
         location: c.location,
         city: c.location?.city,
         event: c.event,
+        date: c.date,
         genres: c.artists?.flatMap((a) =>
           typeof a === "object" && a.genres
             ? a.genres.map((g) => (typeof g === "string" ? g : g.name))
@@ -134,6 +135,7 @@ export async function GET(request: Request) {
         ),
       })),
       meta: response.meta,
+      queryParams: backendParams.toString(),
     });
 
     // Return the response directly from the backend since filtering is now handled there

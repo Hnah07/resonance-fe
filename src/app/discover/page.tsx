@@ -33,7 +33,37 @@ export default async function DiscoverPage({
     dateTo: params.dateTo,
   });
 
-  const concerts = apiConcerts.map(mapConcertFromApi);
+  // Filter out concerts before today
+  const today = new Date().toLocaleDateString("en-CA");
+  const filteredConcerts = apiConcerts.filter(
+    (concert) => concert.date >= today
+  );
+
+  console.log("Filtered concerts:", {
+    before: apiConcerts.length,
+    after: filteredConcerts.length,
+    removed: apiConcerts
+      .filter((c) => c.date < today)
+      .map((c) => ({
+        id: c.id,
+        event: typeof c.event === "string" ? c.event : c.event.name,
+        date: c.date,
+      })),
+  });
+
+  const concerts = filteredConcerts.map(mapConcertFromApi);
+
+  // Log the dates after mapping
+  console.log(
+    "Mapped concerts with dates:",
+    concerts.map((c) => ({
+      id: c.id,
+      event: typeof c.event === "string" ? c.event : c.event.name,
+      date: c.date,
+      location: c.location.name,
+      city: c.city,
+    }))
+  );
 
   return (
     <>

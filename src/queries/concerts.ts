@@ -25,7 +25,42 @@ export async function getAllConcerts(
     // Build query parameters
     const queryParams = new URLSearchParams();
 
-    // Add filters to query params
+    // Always set today as the minimum date for the discover page
+    const today = new Date();
+    // Get local date string in YYYY-MM-DD format
+    const todayISO = today.toLocaleDateString("en-CA"); // This gives YYYY-MM-DD in local timezone
+
+    console.log("Date filtering:", {
+      today: today.toLocaleString(),
+      todayISO,
+      filtersDateFrom: filters?.dateFrom,
+      currentTime: new Date().toLocaleString(),
+    });
+
+    // Only use dateFrom if it's after today
+    if (filters?.dateFrom) {
+      const dateFrom = new Date(filters.dateFrom);
+      const dateFromLocal = dateFrom.toLocaleDateString("en-CA");
+      console.log("Date comparison:", {
+        dateFrom: dateFromLocal,
+        today: todayISO,
+        isAfterToday: dateFromLocal > todayISO,
+      });
+
+      if (dateFromLocal > todayISO) {
+        queryParams.append("dateFrom", filters.dateFrom);
+        console.log("Using provided dateFrom:", filters.dateFrom);
+      } else {
+        queryParams.append("dateFrom", todayISO);
+        console.log("Using today as dateFrom:", todayISO);
+      }
+    } else {
+      // If no dateFrom is specified, use today
+      queryParams.append("dateFrom", todayISO);
+      console.log("No dateFrom provided, using today:", todayISO);
+    }
+
+    // Add other filters to query params
     if (filters?.city) {
       console.log("Adding location_city filter to query params:", filters.city);
       queryParams.append("location_city", filters.city);
@@ -116,11 +151,6 @@ export async function getAllConcerts(
       queryParams.append("type", filters.eventType);
     }
 
-    if (filters?.dateFrom) {
-      console.log("Adding date from filter to query params:", filters.dateFrom);
-      queryParams.append("dateFrom", filters.dateFrom);
-    }
-
     if (filters?.dateTo) {
       console.log("Adding date to filter to query params:", filters.dateTo);
       queryParams.append("dateTo", filters.dateTo);
@@ -130,7 +160,11 @@ export async function getAllConcerts(
     const apiPath = `/api/concerts${
       queryParams.toString() ? `?${queryParams.toString()}` : ""
     }`;
-    console.log("Making request to API path:", apiPath);
+    console.log("Making request to API with params:", {
+      path: apiPath,
+      dateFrom: queryParams.get("dateFrom"),
+      allParams: Object.fromEntries(queryParams.entries()),
+    });
 
     // Make the request using makeRequest with the relative path
     const response = await makeRequest<ApiConcert>(apiPath, {
@@ -144,6 +178,11 @@ export async function getAllConcerts(
       totalConcerts: response.data.length,
       hasLinks: !!response.links,
       hasMeta: !!response.meta,
+      dates: response.data.map((c) => ({
+        id: c.id,
+        event: typeof c.event === "string" ? c.event : c.event.name,
+        date: c.date,
+      })),
     });
 
     // Map the response data to include genres from artists
