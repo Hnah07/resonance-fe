@@ -3,7 +3,7 @@ import { makeRequest } from "@/lib/api";
 
 // Configure static rendering for this route
 export const dynamic = "force-static";
-export const revalidate = 60;
+export const revalidate = 3600; // Cache for 1 hour since locations rarely change
 
 type LocationItem = {
   id: number;
@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
     // Make the request with caching options
     const response = await makeRequest<ApiResponse<LocationItem[]>>(apiPath, {
       next: {
-        revalidate: 60, // Cache for 60 seconds
-        tags: ["locations"], // Tag for manual revalidation
+        revalidate: 3600, // Cache for 1 hour
+        tags: ["locations"],
       },
     });
 
@@ -67,7 +67,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Return the filtered locations for other cases
-    return NextResponse.json(response);
+    return NextResponse.json(response, {
+      headers: {
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=1800",
+      },
+    });
   } catch (error) {
     console.error("Error in locations API route:", error);
     return NextResponse.json(

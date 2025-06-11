@@ -10,11 +10,29 @@ import { LuMapPin, LuCalendar } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
 import { formatEventDate, getEventDisplay } from "@/lib/helpers";
 
-function ConcertCard({ concert }: { concert: ConcertProperties }) {
+// Extend ConcertProperties to include optional distance
+interface ConcertCardProps {
+  concert: ConcertProperties & { distance?: number };
+}
+
+function ConcertCard({ concert }: ConcertCardProps) {
+  console.log("ConcertCard rendering with concert:", {
+    city: concert.city,
+    distance: concert.distance,
+    hasDistance: concert.distance !== undefined,
+  });
+
   return (
     <div className="flex justify-center w-full mb-6">
       <Card className="w-full sm:w-full max-w-sm sm:max-w-none overflow-hidden rounded-2xl shadow-lg !p-0 !gap-0">
         <div className="relative w-full h-[300px] sm:h-[250px] md:h-[280px] bg-gray-800">
+          {concert.distance !== undefined && (
+            <div className="absolute top-4 right-4 z-10 bg-black/80 text-white px-3 py-1 rounded-full text-sm font-medium shadow-md">
+              {concert.distance === 0
+                ? "Here"
+                : `${concert.distance.toFixed(1)} km`}
+            </div>
+          )}
           <ExpandableImage
             src={concert.image}
             alt={`${getEventDisplay(concert.event, concert.date)} at ${

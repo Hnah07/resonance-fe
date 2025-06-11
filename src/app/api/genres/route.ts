@@ -17,7 +17,7 @@ type ApiGenreResponse = {
 
 // Configure static rendering for this route
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 86400; // Cache for 24 hours
 
 // Cache the getAllGenres function with Next.js caching
 const getAllGenres = cache(async (): Promise<ApiGenre[]> => {
@@ -33,8 +33,8 @@ const getAllGenres = cache(async (): Promise<ApiGenre[]> => {
       `/api/genres?page=${currentPage}`,
       {
         next: {
-          revalidate: 0,
-          tags: ["genres", "pagination"],
+          revalidate: 86400, // Cache for 24 hours
+          tags: ["genres"], // Only invalidate when explicitly needed
         },
       }
     );
@@ -81,7 +81,8 @@ export async function GET(request: Request) {
         { data: allGenres },
         {
           headers: {
-            "Cache-Control": "no-store",
+            "Cache-Control":
+              "public, s-maxage=86400, stale-while-revalidate=43200",
           },
         }
       );
@@ -93,7 +94,7 @@ export async function GET(request: Request) {
     }`;
     const response = await makeRequest<ApiGenre>(apiPath, {
       next: {
-        revalidate: 0,
+        revalidate: 86400, // Cache for 24 hours
         tags: ["genres"],
       },
     });
