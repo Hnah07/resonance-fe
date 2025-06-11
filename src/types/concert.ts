@@ -28,6 +28,7 @@ export interface ConcertProperties {
   image: string;
   artists: string[];
   genres: string[];
+  distance?: number; // Distance in kilometers from selected city
   //   interestedCount?: number;
   //   rating?: number;
 }

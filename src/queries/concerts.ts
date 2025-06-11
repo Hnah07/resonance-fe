@@ -88,7 +88,10 @@ export async function getAllConcerts(
           data: { id: string; genre: string }[];
           meta: { current_page: number; last_page: number };
         }>(`/api/genres?page=${currentPage}`, {
-          next: { revalidate: 0, tags: ["genres"] },
+          next: {
+            revalidate: 86400, // Cache for 24 hours
+            tags: ["genres"],
+          },
         });
 
         const genres = response.data as unknown as {
@@ -169,7 +172,7 @@ export async function getAllConcerts(
     // Make the request using makeRequest with the relative path
     const response = await makeRequest<ApiConcert>(apiPath, {
       next: {
-        revalidate: 0,
+        revalidate: 60, // Keep concerts at 60 seconds since they change frequently
         tags: ["concerts", "list"],
       },
     });

@@ -22,7 +22,7 @@ async function getGenreIds(genreNames: string[]): Promise<string[]> {
     // Fetch all genres to get their IDs
     const response = await makeRequest<GenreResponse>("/api/genres?all=true", {
       next: {
-        revalidate: 0,
+        revalidate: 86400, // Cache for 24 hours
         tags: ["genres"],
       },
     });
@@ -115,7 +115,7 @@ export async function GET(request: Request) {
 
     const response = await makeRequest<ApiConcertResponse>(apiPath, {
       next: {
-        revalidate: 0,
+        revalidate: 60, // Keep concerts at 60 seconds since they change frequently
         tags: ["concerts", "list"],
       },
     });
@@ -147,7 +147,7 @@ export async function GET(request: Request) {
       },
       {
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
         },
       }
     );
