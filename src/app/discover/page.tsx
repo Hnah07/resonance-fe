@@ -5,6 +5,10 @@ import { ConcertList } from "@/components/ConcertList";
 import { DiscoverFilters } from "@/components/DiscoverFilters";
 import CardSkeleton from "@/components/CardSkeleton";
 
+// Add these exports at the top of the file
+export const dynamic = "force-static";
+export const revalidate = 60; // Cache for 60 seconds
+
 // Function to calculate distance between two points using Haversine formula
 function calculateDistance(
   lat1: number,

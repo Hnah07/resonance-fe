@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
 import { ApiConcertResponse, ApiConcert } from "@/types/concert";
 
-// Configure dynamic rendering for this route
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+// Configure static generation with revalidation
+export const revalidate = 60; // Cache for 60 seconds
 
 type Genre = {
   id: string;
