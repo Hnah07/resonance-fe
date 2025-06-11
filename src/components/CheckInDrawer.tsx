@@ -139,8 +139,8 @@ export function CheckInDrawer({
                   onClick={() => handleArtistClick(artist)}
                   className={`px-3 py-1 rounded-full text-sm border transition-colors ${
                     selectedArtists.includes(artist)
-                      ? "bg-accent-cyan/20 border-accent-cyan text-accent-cyan"
-                      : "border-slate-200 dark:border-slate-700 hover:border-accent-cyan/50"
+                      ? "bg-accent-cyan/30 border-accent-cyan text-accent-cyan font-medium shadow-sm"
+                      : "border-slate-200 dark:border-slate-700 hover:border-accent-cyan/50 hover:bg-accent-cyan/5"
                   }`}
                 >
                   {artist}
@@ -152,7 +152,7 @@ export function CheckInDrawer({
 
           {/* Comment */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Comment (Optional)</label>
+            <label className="text-sm font-medium">Comment</label>
             <Input
               type="text"
               placeholder="Share your experience..."
@@ -216,7 +216,7 @@ export function CheckInDrawer({
 
           {/* Photo Upload */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Photo (Optional)</label>
+            <label className="text-sm font-medium">Photo</label>
             <div className="flex items-center gap-2">
               <Input
                 type="file"
