@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
-import { ApiConcertResponse, ApiConcert } from "@/types/concert";
+import { ApiConcertResponse } from "@/types/concert";
 
-// Configure dynamic rendering for this route
+// Use dynamic rendering but with stale-while-revalidate caching
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+
+// Configure static generation with revalidation
+export const revalidate = 60; // Cache for 60 seconds
 
 type Genre = {
   id: string;
@@ -38,11 +40,6 @@ async function getGenreIds(genreNames: string[]): Promise<string[]> {
       .map((name) => genreMap.get(name.toLowerCase()))
       .filter((id): id is string => id !== undefined);
 
-    console.log("Mapped genre names to IDs:", {
-      names: genreNames,
-      ids: genreIds,
-    });
-
     return genreIds;
   } catch (error) {
     console.error("Error fetching genre IDs:", error);
@@ -57,17 +54,6 @@ export async function GET(request: Request) {
   const genres = searchParams.get("genres");
 
   try {
-    // Log all search parameters
-    console.log("Concerts API request params:", {
-      city,
-      genres,
-      genreFilterMode,
-      type: searchParams.get("type"),
-      dateFrom: searchParams.get("dateFrom"),
-      dateTo: searchParams.get("dateTo"),
-      allParams: Object.fromEntries(searchParams.entries()),
-    });
-
     // Create a new URLSearchParams for the backend request
     const backendParams = new URLSearchParams();
 
@@ -81,7 +67,6 @@ export async function GET(request: Request) {
     // Convert city parameter to location_city for the backend
     if (city) {
       backendParams.append("location_city", city);
-      console.log("Converting city parameter to location_city:", city);
     }
 
     // Convert genre names to IDs and update the parameters
@@ -91,54 +76,27 @@ export async function GET(request: Request) {
 
       if (genreIds.length > 0) {
         backendParams.append("genre_ids", genreIds.join(","));
-        console.log("Converting genre names to IDs:", {
-          names: genreNames,
-          ids: genreIds,
-        });
+      } else {
       }
     }
 
     // Convert genreFilterMode to filter_mode for the backend
     if (genreFilterMode) {
       backendParams.append("filter_mode", genreFilterMode);
-      console.log(
-        "Converting genreFilterMode to filter_mode:",
-        genreFilterMode
-      );
     }
 
-    // Pass all parameters to the backend API with the correct parameter name
     const apiPath = `/api/concerts${
       backendParams.toString() ? `?${backendParams.toString()}` : ""
     }`;
-    console.log("Making request to backend API:", apiPath);
 
     const response = await makeRequest<ApiConcertResponse>(apiPath, {
       next: {
-        revalidate: 60, // Keep concerts at 60 seconds since they change frequently
+        revalidate: 60,
         tags: ["concerts", "list"],
       },
     });
 
-    // Log the raw response from the backend
-    console.log("Raw backend response:", {
-      data: (response.data as unknown as ApiConcert[]).map((c) => ({
-        id: c.id,
-        location: c.location,
-        city: c.location?.city,
-        event: c.event,
-        date: c.date,
-        genres: c.artists?.flatMap((a) =>
-          typeof a === "object" && a.genres
-            ? a.genres.map((g) => (typeof g === "string" ? g : g.name))
-            : []
-        ),
-      })),
-      meta: response.meta,
-      queryParams: backendParams.toString(),
-    });
-
-    // Return the response directly from the backend since filtering is now handled there
+    // Return the response with stale-while-revalidate caching
     return NextResponse.json(
       {
         concerts: response.data,
@@ -153,8 +111,12 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     console.error("Server-side API error:", error);
+
     return NextResponse.json(
-      { error: "Failed to fetch concerts" },
+      {
+        error: "Failed to fetch concerts",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

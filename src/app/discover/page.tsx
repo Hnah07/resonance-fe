@@ -5,6 +5,9 @@ import { ConcertList } from "@/components/ConcertList";
 import { DiscoverFilters } from "@/components/DiscoverFilters";
 import CardSkeleton from "@/components/CardSkeleton";
 
+// Use ISR with a short revalidation period
+export const revalidate = 60; // Cache for 60 seconds, then revalidate in the background
+
 // Function to calculate distance between two points using Haversine formula
 function calculateDistance(
   lat1: number,

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getAllConcerts } from "@/queries/concerts";
 import { ApiConcert } from "@/types/concert";
 
+// Configure static generation with revalidation
+export const revalidate = 3600; // Cache for 1 hour since filters change less frequently
+
 export async function GET() {
   try {
     console.log("Starting filters endpoint request");
