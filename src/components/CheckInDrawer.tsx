@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LuImage, LuStar, LuStarHalf } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
-import { formatEventDate } from "@/lib/helpers";
+import { formatEventDate, getEventDisplay } from "@/lib/helpers";
 
 interface CheckInDrawerProps {
   isOpen: boolean;
@@ -120,7 +120,9 @@ export function CheckInDrawer({
         <div className="px-4 space-y-6 overflow-y-auto flex-1">
           {/* Concert Info (Read-only) */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg">{String(concert.event)}</h3>
+            <h3 className="font-semibold text-lg">
+              {getEventDisplay(concert.event, concert.date)}
+            </h3>
             <p className="text-sm text-muted-foreground">
               {concert.location.name}, {concert.city}
             </p>
