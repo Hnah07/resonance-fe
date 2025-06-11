@@ -74,7 +74,24 @@ export const makeRequest = cache(
 
     // If no auth token is found, use the API token
     const token = authToken || process.env.API_TOKEN?.trim();
+
+    // Log token state
+    console.log("Token state in makeRequest:", {
+      hasAuthToken: !!authToken,
+      authTokenLength: authToken?.length,
+      hasApiToken: !!process.env.API_TOKEN,
+      apiTokenLength: process.env.API_TOKEN?.length,
+      finalTokenLength: token?.length,
+      nodeEnv: process.env.NODE_ENV,
+      apiHost: process.env.NEXT_PUBLIC_API_HOST,
+    });
+
     if (!token) {
+      console.error("No token available:", {
+        hasAuthToken: !!authToken,
+        hasApiToken: !!process.env.API_TOKEN,
+        nodeEnv: process.env.NODE_ENV,
+      });
       throw new Error("No authentication token available");
     }
 
@@ -92,7 +109,14 @@ export const makeRequest = cache(
     const hostname =
       process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
     const url = `https://${hostname}${path}`;
-    console.log("Making request to:", url);
+    console.log("Making request to:", {
+      url,
+      headers: {
+        ...headers,
+        Authorization: headers.Authorization ? "Bearer [REDACTED]" : undefined,
+        Cookie: headers.Cookie ? "[REDACTED]" : undefined,
+      },
+    });
 
     // Always use https.request in server components for consistent behavior
     if (typeof window === "undefined") {
