@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { DetailsButton } from "@/components/ui/details-button";
@@ -9,6 +10,8 @@ import { ExpandableImage } from "@/components/ExpandableImage";
 import { LuMapPin, LuCalendar } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
 import { formatEventDate, getEventDisplay } from "@/lib/helpers";
+import { CheckInDrawer } from "@/components/CheckInDrawer";
+import { toast } from "sonner";
 
 // Extend ConcertProperties to include optional distance
 interface ConcertCardProps {
@@ -16,6 +19,23 @@ interface ConcertCardProps {
 }
 
 function ConcertCard({ concert }: ConcertCardProps) {
+  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+
+  const handleCheckIn = (data: {
+    selectedArtists: string[];
+    comment?: string;
+    rating?: number;
+    photo?: File;
+  }) => {
+    // TODO: Implement backend integration
+    console.log("Check-in data:", data);
+
+    // Show success toast
+    toast.success("Check-in successful!", {
+      description: "Your check-in has been recorded.",
+    });
+  };
+
   console.log("ConcertCard rendering with concert:", {
     city: concert.city,
     distance: concert.distance,
@@ -23,55 +43,69 @@ function ConcertCard({ concert }: ConcertCardProps) {
   });
 
   return (
-    <div className="flex justify-center w-full mb-6">
-      <Card className="w-full sm:w-full max-w-sm sm:max-w-none overflow-hidden rounded-2xl shadow-lg !p-0 !gap-0">
-        <div className="relative w-full h-[300px] sm:h-[250px] md:h-[280px] bg-gray-800">
-          {concert.distance !== undefined && (
-            <div className="absolute top-4 right-4 z-10 bg-black/80 text-white px-3 py-1 rounded-full text-sm font-medium shadow-md">
-              {concert.distance === 0
-                ? "Here"
-                : `${concert.distance.toFixed(1)} km`}
-            </div>
-          )}
-          <ExpandableImage
-            src={concert.image}
-            alt={`${getEventDisplay(concert.event, concert.date)} at ${
-              concert.location.name
-            }`}
-            className="object-cover w-full h-full"
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent text-white p-4">
-            <h3 className="text-lg font-semibold text-white">
-              {getEventDisplay(concert.event, concert.date)}
-            </h3>
-            <div className="flex flex-row items-center gap-2">
-              <LuMapPin className="text-sm text-white" />
-              <p className="text-sm text-white">
-                {concert.location.name}, {concert.city}, {concert.country}
-              </p>
+    <>
+      <div className="flex justify-center w-full mb-6">
+        <Card className="w-full sm:w-full max-w-sm sm:max-w-none overflow-hidden rounded-2xl shadow-lg !p-0 !gap-0">
+          <div className="relative w-full h-[300px] sm:h-[250px] md:h-[280px] bg-gray-800">
+            {concert.distance !== undefined && (
+              <div className="absolute top-4 right-4 z-10 bg-black/80 text-white px-3 py-1 rounded-full text-sm font-medium shadow-md">
+                {concert.distance === 0
+                  ? "Here"
+                  : `${concert.distance.toFixed(1)} km`}
+              </div>
+            )}
+            <ExpandableImage
+              src={concert.image}
+              alt={`${getEventDisplay(concert.event, concert.date)} at ${
+                concert.location.name
+              }`}
+              className="object-cover w-full h-full"
+            />
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent text-white p-4">
+              <h3 className="text-lg font-semibold text-white">
+                {getEventDisplay(concert.event, concert.date)}
+              </h3>
+              <div className="flex flex-row items-center gap-2">
+                <LuMapPin className="text-sm text-white" />
+                <p className="text-sm text-white">
+                  {concert.location.name}, {concert.city}, {concert.country}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        <CardContent className="p-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-row items-center gap-2">
-              <LuCalendar className="text-2xl stroke-accent-cyan" />
-              <p>{formatEventDate(concert.date)}</p>
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-row items-center gap-2">
+                <LuCalendar className="text-2xl stroke-accent-cyan" />
+                <p>{formatEventDate(concert.date)}</p>
+              </div>
+              {concert.artists.length > 0 && (
+                <ArtistBadges title="Artists" artists={concert.artists} />
+              )}
+              {concert.genres.length > 0 && (
+                <GenreBadges genres={concert.genres} />
+              )}
+              <div className="flex space-x-2 pt-2">
+                <DetailsButton className="flex-1">Details</DetailsButton>
+                <GradientButton
+                  className="flex-1"
+                  onClick={() => setIsCheckInOpen(true)}
+                >
+                  Check In
+                </GradientButton>
+              </div>
             </div>
-            {concert.artists.length > 0 && (
-              <ArtistBadges title="Artists" artists={concert.artists} />
-            )}
-            {concert.genres.length > 0 && (
-              <GenreBadges genres={concert.genres} />
-            )}
-            <div className="flex space-x-2 pt-2">
-              <DetailsButton className="flex-1">Details</DetailsButton>
-              <GradientButton className="flex-1">Check In</GradientButton>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <CheckInDrawer
+        isOpen={isCheckInOpen}
+        onClose={() => setIsCheckInOpen(false)}
+        concert={concert}
+        onSubmit={handleCheckIn}
+      />
+    </>
   );
 }
 
