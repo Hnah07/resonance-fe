@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
 import { ApiConcertResponse, ApiConcert } from "@/types/concert";
 
+// Use dynamic rendering but with stale-while-revalidate caching
+export const dynamic = "force-dynamic";
+
 // Configure static generation with revalidation
 export const revalidate = 60; // Cache for 60 seconds
 
@@ -137,7 +140,7 @@ export async function GET(request: Request) {
       queryParams: backendParams.toString(),
     });
 
-    // Return the response directly from the backend since filtering is now handled there
+    // Return the response with stale-while-revalidate caching
     return NextResponse.json(
       {
         concerts: response.data,
@@ -146,6 +149,7 @@ export async function GET(request: Request) {
       },
       {
         headers: {
+          // Cache for 60 seconds, but serve stale content for up to 30 seconds while revalidating
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
         },
       }
