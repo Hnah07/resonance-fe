@@ -141,7 +141,7 @@ const LocationSelector = () => {
             <div className="relative w-full">
               <Input
                 type="text"
-                placeholder="Zoek een stad..."
+                placeholder="Search a city..."
                 value={inputValue}
                 onChange={(e) => {
                   const newValue = e.target.value;
@@ -159,7 +159,7 @@ const LocationSelector = () => {
             </div>
             {inputValue.length > 0 && inputValue.length < 3 && (
               <p className="mt-1 text-sm text-muted-foreground">
-                Typ minstens 3 karakters om te zoeken
+                Type at least 3 characters to search
               </p>
             )}
           </div>
