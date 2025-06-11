@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { makeRequest } from "@/lib/api";
 import { ApiConcertResponse, ApiConcert } from "@/types/concert";
+import { cookies } from "next/headers";
 
 // Use dynamic rendering but with stale-while-revalidate caching
 export const dynamic = "force-dynamic";
@@ -89,6 +90,7 @@ export async function GET(request: Request) {
     // Convert genre names to IDs and update the parameters
     if (genres) {
       const genreNames = genres.split(",");
+      console.log("Processing genres:", genreNames);
       const genreIds = await getGenreIds(genreNames);
 
       if (genreIds.length > 0) {
@@ -97,6 +99,8 @@ export async function GET(request: Request) {
           names: genreNames,
           ids: genreIds,
         });
+      } else {
+        console.log("No genre IDs found for:", genreNames);
       }
     }
 
@@ -109,33 +113,37 @@ export async function GET(request: Request) {
       );
     }
 
-    // Pass all parameters to the backend API with the correct parameter name
     const apiPath = `/api/concerts${
       backendParams.toString() ? `?${backendParams.toString()}` : ""
     }`;
     console.log("Making request to backend API:", apiPath);
 
+    // Log the token being used
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get("auth_token")?.value;
+    console.log("Using auth token:", authToken ? "Present" : "Not present");
+
     const response = await makeRequest<ApiConcertResponse>(apiPath, {
       next: {
-        revalidate: 60, // Keep concerts at 60 seconds since they change frequently
+        revalidate: 60,
         tags: ["concerts", "list"],
       },
     });
 
     // Log the raw response from the backend
     console.log("Raw backend response:", {
-      data: (response.data as unknown as ApiConcert[]).map((c) => ({
-        id: c.id,
-        location: c.location,
-        city: c.location?.city,
-        event: c.event,
-        date: c.date,
-        genres: c.artists?.flatMap((a) =>
-          typeof a === "object" && a.genres
-            ? a.genres.map((g) => (typeof g === "string" ? g : g.name))
-            : []
-        ),
-      })),
+      status: "success",
+      dataLength: Array.isArray(response.data) ? response.data.length : 0,
+      firstItem:
+        Array.isArray(response.data) && response.data.length > 0
+          ? {
+              id: (response.data[0] as unknown as ApiConcert).id,
+              location: (response.data[0] as unknown as ApiConcert).location,
+              city: (response.data[0] as unknown as ApiConcert).location?.city,
+              event: (response.data[0] as unknown as ApiConcert).event,
+              date: (response.data[0] as unknown as ApiConcert).date,
+            }
+          : null,
       meta: response.meta,
       queryParams: backendParams.toString(),
     });
@@ -149,15 +157,25 @@ export async function GET(request: Request) {
       },
       {
         headers: {
-          // Cache for 60 seconds, but serve stale content for up to 30 seconds while revalidating
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30",
         },
       }
     );
   } catch (error) {
     console.error("Server-side API error:", error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+    }
     return NextResponse.json(
-      { error: "Failed to fetch concerts" },
+      {
+        error: "Failed to fetch concerts",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
