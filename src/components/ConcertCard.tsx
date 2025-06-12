@@ -12,6 +12,15 @@ import { ConcertProperties } from "@/types/concert";
 import { formatEventDate, getEventDisplay } from "@/lib/helpers";
 import { CheckInDrawer } from "@/components/CheckInDrawer";
 import { toast } from "sonner";
+import {
+  createCheckIn,
+  createArtistCheckIn,
+  searchArtists,
+  createRating,
+  uploadFile,
+  createPhoto,
+} from "@/lib/api";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 // Extend ConcertProperties to include optional distance
 interface ConcertCardProps {
@@ -20,20 +29,79 @@ interface ConcertCardProps {
 
 function ConcertCard({ concert }: ConcertCardProps) {
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  const handleCheckIn = (data: {
+  const handleCheckIn = async (data: {
     selectedArtists: string[];
-    comment?: string;
     rating?: number;
     photo?: File;
   }) => {
-    // TODO: Implement backend integration
-    console.log("Check-in data:", data);
+    if (!isAuthenticated) {
+      toast.error("Please sign in to check in");
+      return;
+    }
 
-    // Show success toast
-    toast.success("Check-in successful!", {
-      description: "Your check-in has been recorded.",
-    });
+    try {
+      // First create the check-in
+      const checkIn = await createCheckIn(concert.id);
+
+      // Search for each artist to get their IDs
+      const artistSearchPromises = data.selectedArtists.map(
+        async (artistName) => {
+          const searchResult = await searchArtists(artistName);
+          const artist = searchResult.data.find(
+            (a) => a.name.toLowerCase() === artistName.toLowerCase()
+          );
+          if (!artist) {
+            throw new Error(`Artist not found: ${artistName}`);
+          }
+          return artist;
+        }
+      );
+
+      const artists = await Promise.all(artistSearchPromises);
+
+      // Create artist check-ins
+      const artistCheckInPromises = artists.map((artist) =>
+        createArtistCheckIn(checkIn.id, artist.id)
+      );
+
+      // Create rating if provided
+      const ratingPromise = data.rating
+        ? createRating(checkIn.id, data.rating)
+        : Promise.resolve();
+
+      // Handle photo if provided
+      let photoPromise = Promise.resolve();
+      const photo = data.photo;
+      if (photo instanceof File) {
+        const file = photo; // Type is now narrowed to File
+        photoPromise = (async () => {
+          // Upload the photo first
+          const uploadResult = await uploadFile(file, "checkin-photos");
+          // Then create the photo record
+          await createPhoto(checkIn.id, uploadResult.url);
+        })();
+      }
+
+      // Wait for all operations to complete
+      await Promise.all([
+        ...artistCheckInPromises,
+        ratingPromise,
+        photoPromise,
+      ]);
+
+      // Show success toast
+      toast.success("Check-in successful!", {
+        description: "Your check-in has been recorded.",
+      });
+    } catch (error) {
+      console.error("Check-in failed:", error);
+      toast.error("Check-in failed", {
+        description:
+          error instanceof Error ? error.message : "Please try again later.",
+      });
+    }
   };
 
   console.log("ConcertCard rendering with concert:", {
@@ -89,7 +157,13 @@ function ConcertCard({ concert }: ConcertCardProps) {
                 <DetailsButton className="flex-1">Details</DetailsButton>
                 <GradientButton
                   className="flex-1"
-                  onClick={() => setIsCheckInOpen(true)}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      toast.error("Please sign in to check in");
+                      return;
+                    }
+                    setIsCheckInOpen(true);
+                  }}
                 >
                   Check In
                 </GradientButton>

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LuImage, LuStar, LuStarHalf, LuLock } from "react-icons/lu";
+import { LuImage, LuStar, LuLock } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
 import { formatEventDate, getEventDisplay } from "@/lib/helpers";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -23,7 +23,6 @@ interface CheckInDrawerProps {
   concert: ConcertProperties;
   onSubmit: (data: {
     selectedArtists: string[];
-    comment?: string;
     rating?: number;
     photo?: File;
   }) => void;
@@ -37,7 +36,6 @@ export function CheckInDrawer({
 }: CheckInDrawerProps) {
   const { isAuthenticated } = useAuth();
   const [selectedArtists, setSelectedArtists] = useState<string[]>([]);
-  const [comment, setComment] = useState("");
   const [rating, setRating] = useState<number | undefined>();
   const [photo, setPhoto] = useState<File | undefined>();
   const [error, setError] = useState<string | undefined>();
@@ -51,13 +49,11 @@ export function CheckInDrawer({
     setError(undefined);
     onSubmit({
       selectedArtists,
-      comment: comment || undefined,
       rating,
       photo,
     });
     // Reset form
     setSelectedArtists([]);
-    setComment("");
     setRating(undefined);
     setPhoto(undefined);
     onClose();
@@ -182,45 +178,19 @@ export function CheckInDrawer({
                 )}
               </div>
 
-              {/* Comment */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Comment</label>
-                <Input
-                  type="text"
-                  placeholder="Share your experience..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                />
-              </div>
-
               {/* Rating */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Rating</label>
-                <p className="text-sm text-muted-foreground">
-                  Click on the left side of a star for half ratings. Click the
-                  same star again to clear your rating.
-                </p>
                 <div className="flex flex-col gap-2">
-                  <div
-                    className="flex items-center gap-3"
-                    onMouseLeave={handleStarLeave}
-                  >
+                  <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <div
                         key={star}
-                        className="relative cursor-pointer w-12 h-12 flex items-center justify-center"
+                        className="relative cursor-pointer"
                         onMouseEnter={(e) => handleStarInteraction(star, e)}
+                        onMouseLeave={handleStarLeave}
                         onClick={(e) => handleStarInteraction(star, e)}
                       >
-                        {/* Half star - only show when selected */}
-                        {getStarFill(star, true) && (
-                          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                            <div className="w-1/2 h-full flex items-center justify-center">
-                              <LuStarHalf className="w-[44px] h-[44px] -ml-[1px] text-yellow-400 fill-yellow-400 scale-110 transition-all duration-200" />
-                            </div>
-                          </div>
-                        )}
-                        {/* Base star (empty) */}
                         <div className="relative flex items-center justify-center">
                           <LuStar
                             className={`w-10 h-10 transition-all duration-200 ${

@@ -193,6 +193,14 @@ export const makeAuthRequest = async <
   method: string,
   body: T
 ): Promise<R> => {
+  // Get the auth token from cookies
+  const cookieStore = await cookies();
+  const authToken = cookieStore.get("auth_token");
+
+  if (!authToken) {
+    throw new Error("No authentication token available");
+  }
+
   return new Promise((resolve, reject) => {
     const options = {
       hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
@@ -201,6 +209,7 @@ export const makeAuthRequest = async <
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        Authorization: `Bearer ${authToken.value}`,
       },
       rejectUnauthorized: false,
       agent: new https.Agent({
@@ -208,12 +217,24 @@ export const makeAuthRequest = async <
       }),
     };
 
+    console.log("Making auth request:", {
+      hostname: options.hostname,
+      path: options.path,
+      method: options.method,
+      hasAuthHeader: !!options.headers.Authorization,
+    });
+
     const req = https.request(options, (res) => {
       let data = "";
       res.on("data", (chunk) => {
         data += chunk;
       });
       res.on("end", () => {
+        console.log("Auth request response:", {
+          status: res.statusCode,
+          data: data,
+        });
+
         if (res.statusCode && res.statusCode >= 400) {
           reject(
             new Error(
@@ -231,7 +252,7 @@ export const makeAuthRequest = async <
     });
 
     req.on("error", (error) => {
-      console.error("Request error:", error);
+      console.error("Auth request error:", error);
       reject(error);
     });
 
@@ -265,3 +286,236 @@ export const fetchAllPages = cache(async <T>(path: string): Promise<T[]> => {
 
   return allItems;
 });
+
+export interface CheckInResponse {
+  id: string;
+  concert_id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ArtistCheckInResponse {
+  id: string;
+  checkin_id: string;
+  artist_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const createCheckIn = async (
+  concertId: string
+): Promise<CheckInResponse> => {
+  const response = await fetch("/api/checkins", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({ concert_id: concertId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create check-in: ${error}`);
+  }
+
+  return response.json();
+};
+
+export const createArtistCheckIn = async (
+  checkInId: string,
+  artistId: string
+): Promise<void> => {
+  const response = await fetch("/api/artist-checkins", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      check_in_id: checkInId,
+      artist_id: artistId,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create artist check-in: ${error}`);
+  }
+};
+
+export interface Artist {
+  id: string;
+  name: string;
+  image?: string;
+  genres?: string[];
+}
+
+export interface ArtistSearchResponse {
+  data: Artist[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export interface CommentResponse {
+  id: string;
+  checkin_id: string;
+  user_id: string;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RatingResponse {
+  id: string;
+  checkin_id: string;
+  user_id: string;
+  rating: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PhotoResponse {
+  id: string;
+  checkin_id: string;
+  user_id: string;
+  url: string;
+  caption?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const searchArtists = async (
+  searchTerm: string
+): Promise<ArtistSearchResponse> => {
+  const hostname = process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
+  const url = `https://${hostname}/api/artists?search=${encodeURIComponent(
+    searchTerm
+  )}&per_page=10`;
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to search artists: ${error}`);
+  }
+
+  return response.json();
+};
+
+export const createComment = async (
+  checkInId: string,
+  comment: string
+): Promise<void> => {
+  const response = await fetch(`/api/checkins/${checkInId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      comment: comment,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create comment: ${error}`);
+  }
+};
+
+export const createRating = async (
+  checkInId: string,
+  rating: number
+): Promise<void> => {
+  const response = await fetch("/api/ratings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      check_in_id: checkInId,
+      rating: rating,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create rating: ${error}`);
+  }
+};
+
+export const createPhoto = async (
+  checkInId: string,
+  photoUrl: string
+): Promise<void> => {
+  const response = await fetch("/api/photos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      check_in_id: checkInId,
+      photo_url: photoUrl,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to create photo: ${error}`);
+  }
+};
+
+export interface UploadResponse {
+  url: string;
+}
+
+export type UploadType =
+  | "profile-photos"
+  | "artists"
+  | "events"
+  | "checkin-photos";
+
+export const uploadFile = async (
+  file: File,
+  type: UploadType
+): Promise<UploadResponse> => {
+  // Create form data
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("folder", type); // Changed from 'type' to 'folder' to match our API route
+
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    headers: {
+      // Don't set Content-Type header - browser will set it with boundary for multipart/form-data
+      Accept: "application/json",
+    },
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to upload file: ${error}`);
+  }
+
+  return response.json();
+};
