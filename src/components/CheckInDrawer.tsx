@@ -212,17 +212,15 @@ export function CheckInDrawer({
                         onMouseEnter={(e) => handleStarInteraction(star, e)}
                         onClick={(e) => handleStarInteraction(star, e)}
                       >
-                        {/* Half star */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <LuStarHalf
-                            className={`w-10 h-10 transition-all duration-200 ${
-                              getStarFill(star, true)
-                                ? "text-yellow-400 fill-yellow-400 scale-110"
-                                : "text-slate-300 dark:text-slate-600"
-                            }`}
-                          />
-                        </div>
-                        {/* Full star */}
+                        {/* Half star - only show when selected */}
+                        {getStarFill(star, true) && (
+                          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                            <div className="w-1/2 h-full flex items-center justify-center">
+                              <LuStarHalf className="w-[44px] h-[44px] -ml-[1px] text-yellow-400 fill-yellow-400 scale-110 transition-all duration-200" />
+                            </div>
+                          </div>
+                        )}
+                        {/* Base star (empty) */}
                         <div className="relative flex items-center justify-center">
                           <LuStar
                             className={`w-10 h-10 transition-all duration-200 ${
