@@ -8,20 +8,21 @@ import {
   DrawerTitle,
   DrawerFooter,
   DrawerClose,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LuImage, LuLock } from "react-icons/lu";
+import { LuImage } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
 import { formatEventDate, getEventDisplay } from "@/lib/helpers";
 import { useAuth } from "@/lib/hooks/useAuth";
-import Link from "next/link";
 import { StarRating } from "@/components/ui/star-rating";
+import { UnauthenticatedCheckIn } from "@/components/UnauthenticatedCheckIn";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { toast } from "sonner";
 
 interface CheckInDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
   concert: ConcertProperties;
   onSubmit: (data: {
     selectedArtists: string[];
@@ -31,12 +32,8 @@ interface CheckInDrawerProps {
   }) => void;
 }
 
-export function CheckInDrawer({
-  isOpen,
-  onClose,
-  concert,
-  onSubmit,
-}: CheckInDrawerProps) {
+export function CheckInDrawer({ concert, onSubmit }: CheckInDrawerProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const [selectedArtists, setSelectedArtists] = useState<string[]>([]);
   const [review, setReview] = useState<string>("");
@@ -61,7 +58,7 @@ export function CheckInDrawer({
     setReview("");
     setPhoto(undefined);
     setRating(0);
-    onClose();
+    setIsOpen(false);
   };
 
   const handleArtistClick = (artist: string) => {
@@ -80,7 +77,20 @@ export function CheckInDrawer({
   };
 
   return (
-    <Drawer open={isOpen} onOpenChange={onClose}>
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>
+        <GradientButton
+          className="flex-1"
+          onClick={() => {
+            if (!isAuthenticated) {
+              toast.error("Please sign in to check in");
+              return;
+            }
+          }}
+        >
+          Check In
+        </GradientButton>
+      </DrawerTrigger>
       <DrawerContent className="h-[90vh]">
         <DrawerHeader>
           <DrawerTitle>Check In</DrawerTitle>
@@ -101,19 +111,7 @@ export function CheckInDrawer({
           </div>
 
           {!isAuthenticated ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <LuLock className="w-12 h-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                Sign in to check in
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create an account or sign in to check in to concerts and share
-                your experiences.
-              </p>
-              <Link href="/login">
-                <Button>Sign In</Button>
-              </Link>
-            </div>
+            <UnauthenticatedCheckIn />
           ) : (
             <>
               {/* Artist Selection */}

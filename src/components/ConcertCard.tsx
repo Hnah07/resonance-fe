@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { DetailsButton } from "@/components/ui/details-button";
 import { GenreBadges } from "@/components/GenreBadges";
 import { ArtistBadges } from "@/components/ArtistBadges";
@@ -21,7 +19,6 @@ import {
   createPhoto,
 } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 
 // Extend ConcertProperties to include optional distance
 interface ConcertCardProps {
@@ -36,7 +33,6 @@ interface CheckInData {
 }
 
 function ConcertCard({ concert }: ConcertCardProps) {
-  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const { isAuthenticated } = useAuth();
 
   const handleCheckIn = async (data: CheckInData) => {
@@ -117,7 +113,6 @@ function ConcertCard({ concert }: ConcertCardProps) {
       ]);
 
       toast.success("Check-in successful!");
-      setIsCheckInOpen(false);
     } catch (error) {
       console.error("Check-in error:", error);
       toast.error(
@@ -179,27 +174,7 @@ function ConcertCard({ concert }: ConcertCardProps) {
               )}
               <div className="flex space-x-2 pt-2">
                 <DetailsButton className="flex-1">Details</DetailsButton>
-                <Drawer open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
-                  <DrawerTrigger asChild>
-                    <GradientButton
-                      className="flex-1"
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          toast.error("Please sign in to check in");
-                          return;
-                        }
-                      }}
-                    >
-                      Check In
-                    </GradientButton>
-                  </DrawerTrigger>
-                  <CheckInDrawer
-                    isOpen={isCheckInOpen}
-                    onClose={() => setIsCheckInOpen(false)}
-                    concert={concert}
-                    onSubmit={handleCheckIn}
-                  />
-                </Drawer>
+                <CheckInDrawer concert={concert} onSubmit={handleCheckIn} />
               </div>
             </div>
           </CardContent>
