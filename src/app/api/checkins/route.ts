@@ -8,16 +8,45 @@ export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
 
+  console.log("Check-in API - Request headers:", {
+    cookie: request.headers.get("cookie"),
+    authorization: request.headers.get("authorization"),
+    contentType: request.headers.get("content-type"),
+  });
+
+  console.log("Check-in API - Cookie state:", {
+    hasCookie: !!authToken,
+    cookieName: authToken?.name,
+    cookieValue: authToken ? "[REDACTED]" : undefined,
+  });
+
   if (!authToken) {
+    console.log("Check-in API - No auth token found in cookies");
     return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
   }
 
   try {
     const body = await request.json();
+    console.log("Check-in API - Request body:", {
+      hasConcertId: !!body.concert_id,
+      concertId: body.concert_id,
+      bodyKeys: Object.keys(body),
+      rawBody: body,
+    });
+
     const apiHost = process.env.NEXT_PUBLIC_API_HOST;
     if (!apiHost) {
       throw new Error("API host not configured");
     }
+
+    console.log("Check-in API - Token format:", {
+      tokenLength: authToken.value.length,
+      tokenPrefix: authToken.value.substring(0, 10) + "...",
+      tokenFormat: authToken.value.includes("|")
+        ? "contains separator"
+        : "no separator",
+      authHeaderFormat: `Bearer ${authToken.value.substring(0, 10)}...`,
+    });
 
     const response = await new Promise((resolve, reject) => {
       const options = {
@@ -39,6 +68,17 @@ export async function POST(request: NextRequest) {
         hostname: options.hostname,
         path: options.path,
         hasAuthHeader: !!options.headers.Authorization,
+        requestBody: {
+          hasConcertId: !!body.concert_id,
+          concertId: body.concert_id,
+          rawBody: body,
+        },
+        headers: {
+          ...options.headers,
+          Authorization: options.headers.Authorization
+            ? "Bearer [REDACTED]"
+            : undefined,
+        },
       });
 
       const req = https.request(options, (res) => {
@@ -49,6 +89,8 @@ export async function POST(request: NextRequest) {
         res.on("end", () => {
           console.log("Backend check-in response:", {
             status: res.statusCode,
+            statusMessage: res.statusMessage,
+            headers: res.headers,
             data: data,
           });
 
@@ -73,7 +115,9 @@ export async function POST(request: NextRequest) {
         reject(error);
       });
 
-      req.write(JSON.stringify(body));
+      const requestBody = JSON.stringify(body);
+      console.log("Sending request body to backend:", requestBody);
+      req.write(requestBody);
       req.end();
     });
 
