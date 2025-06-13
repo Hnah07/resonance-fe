@@ -21,6 +21,7 @@ import {
   createPhoto,
 } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { Drawer, DrawerTrigger } from "@/components/ui/drawer";
 
 // Extend ConcertProperties to include optional distance
 interface ConcertCardProps {
@@ -178,30 +179,32 @@ function ConcertCard({ concert }: ConcertCardProps) {
               )}
               <div className="flex space-x-2 pt-2">
                 <DetailsButton className="flex-1">Details</DetailsButton>
-                <GradientButton
-                  className="flex-1"
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      toast.error("Please sign in to check in");
-                      return;
-                    }
-                    setIsCheckInOpen(true);
-                  }}
-                >
-                  Check In
-                </GradientButton>
+                <Drawer open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
+                  <DrawerTrigger asChild>
+                    <GradientButton
+                      className="flex-1"
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          toast.error("Please sign in to check in");
+                          return;
+                        }
+                      }}
+                    >
+                      Check In
+                    </GradientButton>
+                  </DrawerTrigger>
+                  <CheckInDrawer
+                    isOpen={isCheckInOpen}
+                    onClose={() => setIsCheckInOpen(false)}
+                    concert={concert}
+                    onSubmit={handleCheckIn}
+                  />
+                </Drawer>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <CheckInDrawer
-        isOpen={isCheckInOpen}
-        onClose={() => setIsCheckInOpen(false)}
-        concert={concert}
-        onSubmit={handleCheckIn}
-      />
     </>
   );
 }
