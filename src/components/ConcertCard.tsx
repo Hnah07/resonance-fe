@@ -16,7 +16,7 @@ import {
   createCheckIn,
   createArtistCheckIn,
   searchArtists,
-  createRating,
+  createCheckInReview,
   uploadFile,
   createPhoto,
 } from "@/lib/api";
@@ -27,15 +27,18 @@ interface ConcertCardProps {
   concert: ConcertProperties & { distance?: number };
 }
 
+interface CheckInData {
+  selectedArtists: string[];
+  review?: string;
+  photo?: File;
+  rating?: number;
+}
+
 function ConcertCard({ concert }: ConcertCardProps) {
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const { isAuthenticated } = useAuth();
 
-  const handleCheckIn = async (data: {
-    selectedArtists: string[];
-    rating?: number;
-    photo?: File;
-  }) => {
+  const handleCheckIn = async (data: CheckInData) => {
     if (!isAuthenticated) {
       toast.error("Please sign in to check in");
       return;
@@ -66,9 +69,29 @@ function ConcertCard({ concert }: ConcertCardProps) {
         createArtistCheckIn(checkIn.id, artist.id)
       );
 
+      // Create review if provided
+      const reviewPromise = data.review
+        ? createCheckInReview(checkIn.id, data.review)
+        : Promise.resolve();
+
       // Create rating if provided
       const ratingPromise = data.rating
-        ? createRating(checkIn.id, data.rating)
+        ? fetch("/api/checkin-ratings", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              checkin_id: checkIn.id,
+              rating: data.rating,
+            }),
+          }).then((res) => {
+            if (!res.ok) {
+              throw new Error("Failed to create rating");
+            }
+          })
         : Promise.resolve();
 
       // Handle photo if provided
@@ -87,20 +110,20 @@ function ConcertCard({ concert }: ConcertCardProps) {
       // Wait for all operations to complete
       await Promise.all([
         ...artistCheckInPromises,
+        reviewPromise,
         ratingPromise,
         photoPromise,
       ]);
 
-      // Show success toast
-      toast.success("Check-in successful!", {
-        description: "Your check-in has been recorded.",
-      });
+      toast.success("Check-in successful!");
+      setIsCheckInOpen(false);
     } catch (error) {
-      console.error("Check-in failed:", error);
-      toast.error("Check-in failed", {
-        description:
-          error instanceof Error ? error.message : "Please try again later.",
-      });
+      console.error("Check-in error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to check in. Please try again."
+      );
     }
   };
 

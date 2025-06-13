@@ -39,6 +39,10 @@ export async function POST(request: NextRequest) {
         hostname: options.hostname,
         path: options.path,
         hasAuthHeader: !!options.headers.Authorization,
+        body: {
+          checkin_id: body.checkin_id,
+          artist_id: body.artist_id,
+        },
       });
 
       const req = https.request(options, (res) => {

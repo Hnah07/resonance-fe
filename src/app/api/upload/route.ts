@@ -15,11 +15,11 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const folder = formData.get("folder") as string;
+    const type = formData.get("type") as string;
 
-    if (!file || !folder) {
+    if (!file || !type) {
       return NextResponse.json(
-        { message: "File and folder are required" },
+        { message: "File and type are required" },
         { status: 400 }
       );
     }
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
         Buffer.from(`Content-Type: ${file.type}\r\n\r\n`),
         buffer,
         Buffer.from(`\r\n--${boundary}\r\n`),
-        Buffer.from(`Content-Disposition: form-data; name="folder"\r\n\r\n`),
-        Buffer.from(folder),
+        Buffer.from(`Content-Disposition: form-data; name="type"\r\n\r\n`),
+        Buffer.from(type),
         Buffer.from(`\r\n--${boundary}--\r\n`),
       ]);
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         hasAuthHeader: !!options.headers.Authorization,
         fileName: file.name,
         fileType: file.type,
-        folder: folder,
+        type: type,
         contentLength: formDataBuffer.length,
       });
 

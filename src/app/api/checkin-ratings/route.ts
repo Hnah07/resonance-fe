@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const response = await new Promise((resolve, reject) => {
       const options = {
         hostname: apiHost,
-        path: "/api/ratings",
+        path: "/api/checkin-ratings",
         method: "POST",
         headers: {
           "Content-Type": "application/json",

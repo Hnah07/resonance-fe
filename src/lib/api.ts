@@ -336,7 +336,7 @@ export const createArtistCheckIn = async (
     },
     credentials: "include",
     body: JSON.stringify({
-      check_in_id: checkInId,
+      checkin_id: checkInId,
       artist_id: artistId,
     }),
   });
@@ -437,11 +437,19 @@ export const createComment = async (
   }
 };
 
-export const createRating = async (
+export interface CheckInReviewResponse {
+  id: string;
+  checkin_id: string;
+  review: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const createCheckInReview = async (
   checkInId: string,
-  rating: number
-): Promise<void> => {
-  const response = await fetch("/api/ratings", {
+  review: string
+): Promise<CheckInReviewResponse> => {
+  const response = await fetch("/api/checkin-reviews", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -449,21 +457,53 @@ export const createRating = async (
     },
     credentials: "include",
     body: JSON.stringify({
-      check_in_id: checkInId,
-      rating: rating,
+      checkin_id: checkInId,
+      review: review,
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Failed to create rating: ${error}`);
+    throw new Error(`Failed to create check-in review: ${error}`);
   }
+
+  return response.json();
+};
+
+export const getCheckInReview = async (
+  checkInId: string
+): Promise<{ review: CheckInReviewResponse | null }> => {
+  const response = await fetch(`/api/checkin-reviews?checkin_id=${checkInId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get check-in review: ${error}`);
+  }
+
+  return response.json();
 };
 
 export const createPhoto = async (
   checkInId: string,
   photoUrl: string
 ): Promise<void> => {
+  // Get the API host from environment
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  if (!apiHost) {
+    throw new Error("API host not configured");
+  }
+
+  // Convert relative URL to absolute URL, replacing 'storage' with 'public'
+  const absoluteUrl = photoUrl.startsWith("http")
+    ? photoUrl
+    : `https://${apiHost}${photoUrl.replace("/storage/", "/public/")}`;
+
   const response = await fetch("/api/photos", {
     method: "POST",
     headers: {
@@ -472,8 +512,8 @@ export const createPhoto = async (
     },
     credentials: "include",
     body: JSON.stringify({
-      check_in_id: checkInId,
-      photo_url: photoUrl,
+      checkin_id: checkInId,
+      url: absoluteUrl,
     }),
   });
 
@@ -500,7 +540,7 @@ export const uploadFile = async (
   // Create form data
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("folder", type); // Changed from 'type' to 'folder' to match our API route
+  formData.append("type", type); // Changed from 'folder' to 'type' to match backend API
 
   const response = await fetch("/api/upload", {
     method: "POST",
