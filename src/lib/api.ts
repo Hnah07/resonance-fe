@@ -316,12 +316,16 @@ export const createCheckIn = async (
     body: JSON.stringify({ concert_id: concertId }),
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create check-in: ${error}`);
+    if (response.status === 422) {
+      throw new Error("You have already checked in to this concert");
+    }
+    throw new Error(data.message || "Failed to create check-in");
   }
 
-  return response.json();
+  return data;
 };
 
 export const createArtistCheckIn = async (

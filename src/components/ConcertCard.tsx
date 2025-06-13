@@ -42,7 +42,7 @@ function ConcertCard({ concert }: ConcertCardProps) {
     }
 
     try {
-      // First create the check-in
+      // Create the check-in - the backend will handle duplicate validation
       const checkIn = await createCheckIn(concert.id);
 
       // Search for each artist to get their IDs
@@ -93,13 +93,12 @@ function ConcertCard({ concert }: ConcertCardProps) {
 
       // Handle photo if provided
       let photoPromise = Promise.resolve();
-      const photo = data.photo;
-      if (photo instanceof File) {
-        const file = photo; // Type is now narrowed to File
+      if (data.photo instanceof File) {
         photoPromise = (async () => {
-          // Upload the photo first
-          const uploadResult = await uploadFile(file, "checkin-photos");
-          // Then create the photo record
+          const uploadResult = await uploadFile(
+            data.photo as File,
+            "checkin-photos"
+          );
           await createPhoto(checkIn.id, uploadResult.url);
         })();
       }
@@ -114,12 +113,16 @@ function ConcertCard({ concert }: ConcertCardProps) {
 
       toast.success("Check-in successful!");
     } catch (error) {
-      console.error("Check-in error:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to check in. Please try again."
-      );
+      if (error instanceof Error && error.message.includes("422")) {
+        toast.error("You have already checked in to this concert");
+      } else {
+        console.error("Check-in error:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to check in. Please try again."
+        );
+      }
     }
   };
 
