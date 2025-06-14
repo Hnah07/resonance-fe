@@ -10,7 +10,14 @@ const withPWA = pwa({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["media.out.be"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        port: "",
+        pathname: "/**",
+      },
+    ],
   },
   async headers() {
     return [
