@@ -93,36 +93,62 @@ export function CommentButton({
                 const dateB = new Date(`${b.date}T${b.time}`);
                 return dateB.getTime() - dateA.getTime();
               })
-              .map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <div className="flex-shrink-0">
-                    <Image
-                      src={
-                        comment.user.image
-                          ? getFullUrl(comment.user.image)
-                          : "/placeholder-avatar-user.jpg"
-                      }
-                      alt={comment.user.name}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">
-                        {comment.user.name}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {formatRelativeTime(comment.date, comment.time)}
-                      </span>
+              .map((comment) => {
+                // Log the image URL transformation
+                console.log("Comment user image:", {
+                  original: comment.user.image,
+                  isPublic: comment.user.image?.startsWith(
+                    "/public/profile-photos"
+                  ),
+                  transformed: comment.user.image?.startsWith(
+                    "/public/profile-photos"
+                  )
+                    ? getFullUrl(
+                        comment.user.image.replace("/public/", "/storage/")
+                      )
+                    : comment.user.image,
+                });
+
+                return (
+                  <div key={comment.id} className="flex gap-3">
+                    <div className="flex-shrink-0">
+                      <Image
+                        src={
+                          comment.user.image
+                            ? comment.user.image.startsWith(
+                                "/public/profile-photos"
+                              )
+                              ? getFullUrl(
+                                  comment.user.image.replace(
+                                    "/public/",
+                                    "/storage/"
+                                  )
+                                )
+                              : comment.user.image
+                            : "/placeholder-avatar-user.jpg"
+                        }
+                        alt={comment.user.name}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover"
+                      />
                     </div>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                      {comment.text}
-                    </p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">
+                          {comment.user.name}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {formatRelativeTime(comment.date, comment.time)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-700 dark:text-slate-300">
+                        {comment.text}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
       </DialogContent>

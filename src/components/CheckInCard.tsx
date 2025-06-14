@@ -8,7 +8,6 @@ import { StarRating, formatRelativeTime } from "@/lib/helpers";
 import { ExpandableImage } from "./ExpandableImage";
 import { CheckInComment } from "./CheckInComment";
 import Image from "next/image";
-import { getFullUrl } from "@/lib/urls";
 
 interface CheckInCardProps {
   user: {
@@ -50,76 +49,6 @@ interface CheckInCardProps {
 }
 
 function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
-  // Mock comments data for now
-  const mockComments = [
-    {
-      id: "1",
-      user: {
-        id: "user1",
-        name: "John Doe",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      text: "Amazing show! The energy was incredible.",
-      date: "2025-05-30",
-      time: "10:00",
-    },
-    {
-      id: "2",
-      user: {
-        id: "user2",
-        name: "Jane Smith",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      text: "Best concert of the year!",
-      date: "2025-05-30",
-      time: "11:00",
-    },
-    {
-      id: "3",
-      user: {
-        id: "user3",
-        name: "John Doe",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      text: "I loved it!",
-      date: "2025-05-30",
-      time: "12:00",
-    },
-    {
-      id: "4",
-      user: {
-        id: "user4",
-        name: "John Doe",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      text: "I loved it!",
-      date: "2025-05-30",
-      time: "13:00",
-    },
-    {
-      id: "5",
-      user: {
-        id: "user5",
-        name: "John Doe",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      text: "I loved it!",
-      date: "2025-05-30",
-      time: "14:00",
-    },
-    {
-      id: "6",
-      user: {
-        id: "user6",
-        name: "John Doe",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      text: "I loved it!",
-      date: "2025-05-31",
-      time: "15:00",
-    },
-  ];
-
   return (
     <Card className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm gap-2 py-2">
       {/* User Profile Section */}
@@ -130,11 +59,7 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             className="hover:opacity-80 transition-opacity"
           >
             <Image
-              src={
-                user.image
-                  ? getFullUrl(user.image)
-                  : "/placeholder-avatar-user.jpg"
-              }
+              src={user.image || "/placeholder-avatar-user.jpg"}
               alt={user.name || user.username}
               width={40}
               height={40}
@@ -189,23 +114,14 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       <CheckInComment
         comment={checkIn.comment}
         likes={checkIn.likes}
-        comments={mockComments}
+        comments={checkIn.comments}
         onLike={() => {
           // TODO: Implement like functionality
           console.log("Like clicked");
         }}
-        onComment={(Comments: {
-          id: string;
-          user: { id: string; name: string; image?: string };
-          text: string;
-          date: string;
-        }) => {
-          checkIn.comments.push({
-            id: Comments.id,
-            user: Comments.user,
-            text: Comments.text,
-            date: Comments.date,
-          });
+        onComment={(comment) => {
+          // TODO: Implement comment functionality
+          console.log("Comment added:", comment);
         }}
       />
     </Card>
