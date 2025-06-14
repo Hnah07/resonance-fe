@@ -56,6 +56,7 @@ interface CheckInCardProps {
 function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
   const [isLiked, setIsLiked] = useState(checkIn.isLiked || false);
   const [likesCount, setLikesCount] = useState(checkIn.likes);
+  const [comments, setComments] = useState(checkIn.comments);
 
   const handleLike = async () => {
     // Optimistically update the UI
@@ -161,13 +162,14 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       <CheckInComment
         comment={checkIn.comment}
         likes={likesCount}
-        comments={checkIn.comments}
+        comments={comments}
         isLiked={isLiked}
         onLike={handleLike}
         onComment={(comment) => {
-          // TODO: Implement comment functionality
-          console.log("Comment added:", comment);
+          // Update comments state with the new comment
+          setComments((prevComments) => [...prevComments, comment]);
         }}
+        checkInId={checkIn.id}
       />
     </Card>
   );
