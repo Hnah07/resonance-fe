@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { makeAuthRequest } from "../auth/make-auth-request";
 
+// Configure caching
+export const dynamic = "force-dynamic";
+export const revalidate = 30; // Cache for 30 seconds
+
 interface TimelineResponse {
   data: Array<{
     id: string;
@@ -154,7 +158,11 @@ export async function GET(request: NextRequest) {
       JSON.stringify(transformedData.checkIns[0], null, 2)
     );
 
-    return NextResponse.json(transformedData);
+    return NextResponse.json(transformedData, {
+      headers: {
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=59",
+      },
+    });
   } catch (error) {
     console.error("Timeline API error:", error);
     if (error instanceof Error && error.message.includes("404")) {
