@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import https from "https";
 
-// Create a custom agent that doesn't verify certificates in development
-const httpsAgent = new https.Agent({
-  rejectUnauthorized: process.env.NODE_ENV === "production",
-});
-
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
@@ -33,7 +28,9 @@ export async function POST(request: NextRequest) {
           Authorization: `Bearer ${authToken.value}`,
         },
         rejectUnauthorized: false,
-        agent: httpsAgent,
+        agent: new https.Agent({
+          rejectUnauthorized: false,
+        }),
       };
 
       console.log("Making check-in review request to backend:", {
@@ -131,7 +128,9 @@ export async function GET(request: NextRequest) {
           Authorization: `Bearer ${authToken.value}`,
         },
         rejectUnauthorized: false,
-        agent: httpsAgent,
+        agent: new https.Agent({
+          rejectUnauthorized: false,
+        }),
       };
 
       console.log("Making check-in review GET request to backend:", {

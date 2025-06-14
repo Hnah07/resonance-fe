@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { LuMapPin, LuCalendar } from "react-icons/lu";
 import { formatEventDate } from "@/lib/helpers";
+import { getFullUrl } from "@/lib/urls";
 
 const checkIns = [
   {
@@ -96,35 +97,38 @@ export function TabPhotos() {
   return (
     <div className="container mx-auto p-4">
       <div className="grid grid-cols-4 gap-2 sm:gap-4">
-        {checkIns.map((checkIn, index) => (
-          <div
-            key={checkIn.checkIn.id}
-            className="aspect-square bg-muted rounded-lg overflow-hidden relative group cursor-pointer"
-            onClick={() => setSelectedCheckIn(checkIn)}
-          >
-            {/* Loading skeleton */}
-            {!loadedImages[checkIn.concert.image] && (
-              <div className="absolute inset-0 bg-muted animate-pulse" />
-            )}
-            <Image
-              src={checkIn.concert.image}
-              alt={checkIn.concert.event}
-              fill
-              className={`
-                object-cover transition-all duration-500
-                ${
-                  loadedImages[checkIn.concert.image]
-                    ? "opacity-100 scale-100"
-                    : "opacity-0 scale-95"
-                }
-                group-hover:scale-105
-              `}
-              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              onLoad={() => handleImageLoad(checkIn.concert.image)}
-              priority={index < 2}
-            />
-          </div>
-        ))}
+        {checkIns.map((checkIn, index) => {
+          const fullImageUrl = getFullUrl(checkIn.concert.image);
+          return (
+            <div
+              key={checkIn.checkIn.id}
+              className="aspect-square bg-muted rounded-lg overflow-hidden relative group cursor-pointer"
+              onClick={() => setSelectedCheckIn(checkIn)}
+            >
+              {/* Loading skeleton */}
+              {!loadedImages[fullImageUrl] && (
+                <div className="absolute inset-0 bg-muted animate-pulse" />
+              )}
+              <Image
+                src={fullImageUrl}
+                alt={checkIn.concert.event}
+                fill
+                className={`
+                  object-cover transition-all duration-500
+                  ${
+                    loadedImages[fullImageUrl]
+                      ? "opacity-100 scale-100"
+                      : "opacity-0 scale-95"
+                  }
+                  group-hover:scale-105
+                `}
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                onLoad={() => handleImageLoad(fullImageUrl)}
+                priority={index < 2}
+              />
+            </div>
+          );
+        })}
       </div>
 
       <Dialog
@@ -139,7 +143,11 @@ export function TabPhotos() {
           </DialogHeader>
           <div className="relative w-full h-[200px] sm:h-[250px] mb-4">
             <Image
-              src={selectedCheckIn?.concert.image || "/placeholder-concert.jpg"}
+              src={
+                selectedCheckIn
+                  ? getFullUrl(selectedCheckIn.concert.image)
+                  : "/placeholder-concert.jpg"
+              }
               alt={selectedCheckIn?.concert.event || "Concert image"}
               fill
               className="object-cover rounded-lg"

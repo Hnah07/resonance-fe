@@ -8,6 +8,7 @@ import { StarRating, formatRelativeTime } from "@/lib/helpers";
 import { ExpandableImage } from "./ExpandableImage";
 import { CheckInComment } from "./CheckInComment";
 import Image from "next/image";
+import { getFullUrl } from "@/lib/urls";
 
 interface CheckInCardProps {
   user: {
@@ -129,7 +130,11 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             className="hover:opacity-80 transition-opacity"
           >
             <Image
-              src={user.image || "/placeholder-avatar-user.jpg"}
+              src={
+                user.image
+                  ? getFullUrl(user.image)
+                  : "/placeholder-avatar-user.jpg"
+              }
               alt={user.name || user.username}
               width={40}
               height={40}

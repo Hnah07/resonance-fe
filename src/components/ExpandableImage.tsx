@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { getFullUrl } from "@/lib/urls";
 
 interface ExpandableImageProps {
   src: string;
@@ -29,6 +30,9 @@ export function ExpandableImage({
     );
   }
 
+  // Construct the full URL for the image
+  const fullUrl = getFullUrl(src);
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <div
@@ -41,7 +45,7 @@ export function ExpandableImage({
           }`}
         >
           <Image
-            src={src}
+            src={fullUrl}
             alt={alt}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -61,7 +65,7 @@ export function ExpandableImage({
         <DialogTitle className="sr-only">{alt}</DialogTitle>
         <div className="relative w-full h-[80vh]">
           <Image
-            src={src}
+            src={fullUrl}
             alt={alt}
             className="object-contain"
             fill

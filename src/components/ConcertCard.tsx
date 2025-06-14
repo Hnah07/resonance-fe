@@ -13,16 +13,23 @@ import { toast } from "sonner";
 import {
   createCheckIn,
   createArtistCheckIn,
-  searchArtists,
   createCheckInReview,
   uploadFile,
   createPhoto,
 } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 
-// Extend ConcertProperties to include optional distance
+interface ArtistWithId {
+  id: string;
+  name: string;
+}
+
+// Extend ConcertProperties to include optional distance and artistDetails
 interface ConcertCardProps {
-  concert: ConcertProperties & { distance?: number };
+  concert: ConcertProperties & {
+    distance?: number;
+    artistDetails: ArtistWithId[];
+  };
 }
 
 interface CheckInData {
@@ -32,7 +39,7 @@ interface CheckInData {
   rating?: number;
 }
 
-function ConcertCard({ concert }: ConcertCardProps) {
+export default function ConcertCard({ concert }: ConcertCardProps) {
   const { isAuthenticated } = useAuth();
 
   const handleCheckIn = async (data: CheckInData) => {
@@ -45,26 +52,16 @@ function ConcertCard({ concert }: ConcertCardProps) {
       // Create the check-in - the backend will handle duplicate validation
       const checkIn = await createCheckIn(concert.id);
 
-      // Search for each artist to get their IDs
-      const artistSearchPromises = data.selectedArtists.map(
-        async (artistName) => {
-          const searchResult = await searchArtists(artistName);
-          const artist = searchResult.data.find(
-            (a) => a.name.toLowerCase() === artistName.toLowerCase()
-          );
-          if (!artist) {
-            throw new Error(`Artist not found: ${artistName}`);
-          }
-          return artist;
+      // Get artist IDs from the concert data
+      const artistCheckInPromises = data.selectedArtists.map((artistName) => {
+        const artist = concert.artistDetails.find(
+          (a) => a.name.toLowerCase() === artistName.toLowerCase()
+        );
+        if (!artist || !artist.id) {
+          throw new Error(`Artist not found: ${artistName}`);
         }
-      );
-
-      const artists = await Promise.all(artistSearchPromises);
-
-      // Create artist check-ins
-      const artistCheckInPromises = artists.map((artist) =>
-        createArtistCheckIn(checkIn.id, artist.id)
-      );
+        return createArtistCheckIn(checkIn.id, artist.id);
+      });
 
       // Create review if provided
       const reviewPromise = data.review
@@ -99,7 +96,10 @@ function ConcertCard({ concert }: ConcertCardProps) {
             data.photo as File,
             "checkin-photos"
           );
-          await createPhoto(checkIn.id, uploadResult.url);
+          // The backend returns a double-escaped path, so we need to unescape it
+          const unescapedPath = uploadResult.url.replace(/\\/g, "");
+          // Store only the relative path in the database
+          await createPhoto(checkIn.id, unescapedPath);
         })();
       }
 
@@ -186,5 +186,3 @@ function ConcertCard({ concert }: ConcertCardProps) {
     </>
   );
 }
-
-export default ConcertCard;

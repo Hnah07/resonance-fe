@@ -1,6 +1,13 @@
 import { ApiConcert, ConcertProperties } from "@/types/concert";
 
-export const mapConcertFromApi = (c: ApiConcert): ConcertProperties => {
+interface ArtistWithId {
+  id: string;
+  name: string;
+}
+
+export const mapConcertFromApi = (
+  c: ApiConcert
+): ConcertProperties & { artistDetails: ArtistWithId[] } => {
   // If location is a string, we should have already fetched the full location details
   // in the API route, so this should never happen. But just in case:
   if (typeof c.location === "string") {
@@ -21,11 +28,13 @@ export const mapConcertFromApi = (c: ApiConcert): ConcertProperties => {
       image: c.image || "",
       artists: [], // Return empty array if no artists
       genres: [], // Return empty array if no genres
+      artistDetails: [], // Return empty array if no artists
     };
   }
 
   // Map artists to strings by extracting their names and collect all genres
   const artistNames: string[] = [];
+  const artistDetails: ArtistWithId[] = [];
   const allGenres = new Set<string>();
 
   // Add genres from the event object if it exists
@@ -43,8 +52,11 @@ export const mapConcertFromApi = (c: ApiConcert): ConcertProperties => {
   (c.artists || []).forEach((artist) => {
     if (typeof artist === "string") {
       artistNames.push(artist);
+      // If it's just a string, we don't have an ID
+      artistDetails.push({ id: "", name: artist });
     } else {
       artistNames.push(artist.name);
+      artistDetails.push({ id: artist.id, name: artist.name });
       // Add artist's genres to the set
       if (artist.genres && Array.isArray(artist.genres)) {
         artist.genres.forEach((genre) => {
@@ -88,5 +100,6 @@ export const mapConcertFromApi = (c: ApiConcert): ConcertProperties => {
     image: c.image || "",
     artists: artistNames,
     genres: Array.from(allGenres),
+    artistDetails,
   };
 };

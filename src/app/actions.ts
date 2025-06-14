@@ -5,8 +5,13 @@ import { mapConcertFromApi } from "@/lib/mappers";
 import { ConcertProperties } from "@/types/concert";
 import { makeRequest } from "@/lib/api";
 
+interface ArtistWithId {
+  id: string;
+  name: string;
+}
+
 export async function fetchConcerts(filters?: ConcertFilters): Promise<{
-  concerts: ConcertProperties[];
+  concerts: (ConcertProperties & { artistDetails: ArtistWithId[] })[];
   error: string | null;
 }> {
   try {

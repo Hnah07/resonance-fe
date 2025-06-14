@@ -1,6 +1,5 @@
 import https from "https";
 import { cache } from "react";
-import { cookies } from "next/headers";
 
 interface ApiResponse<T> {
   data: T[];
@@ -33,28 +32,6 @@ interface ApiResponseWithCache<T> extends ApiResponse<T> {
   };
 }
 
-export interface AuthResponse {
-  message: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    is_active: boolean;
-    bio: string | null;
-    email_verified_at: string | null;
-    two_factor_confirmed_at: string | null;
-    current_team_id: string | null;
-    profile_photo_path: string | null;
-    created_at: string;
-    updated_at: string;
-    city: string | null;
-    country_id: string | null;
-    profile_photo_url: string;
-  };
-  token: string;
-}
-
 interface RequestOptions {
   next?: {
     revalidate?: number;
@@ -68,27 +45,11 @@ export const makeRequest = cache(
     path: string,
     options?: RequestOptions
   ): Promise<ApiResponse<T>> => {
-    // Try to get the auth token from cookies first
-    const cookieStore = await cookies();
-    const authToken = cookieStore.get("auth_token")?.value;
-
-    // If no auth token is found, use the API token
-    const token = authToken || process.env.API_TOKEN?.trim();
-
-    // Log token state
-    console.log("Token state in makeRequest:", {
-      hasAuthToken: !!authToken,
-      authTokenLength: authToken?.length,
-      hasApiToken: !!process.env.API_TOKEN,
-      apiTokenLength: process.env.API_TOKEN?.length,
-      finalTokenLength: token?.length,
-      nodeEnv: process.env.NODE_ENV,
-      apiHost: process.env.NEXT_PUBLIC_API_HOST,
-    });
+    // Use API token for server-side requests
+    const token = process.env.API_TOKEN?.trim();
 
     if (!token) {
-      console.error("No token available:", {
-        hasAuthToken: !!authToken,
+      console.error("No API token available:", {
         hasApiToken: !!process.env.API_TOKEN,
         nodeEnv: process.env.NODE_ENV,
       });
@@ -101,11 +62,6 @@ export const makeRequest = cache(
       Authorization: `Bearer ${token}`,
     };
 
-    // Only add Cookie header if we have an auth token
-    if (authToken) {
-      headers.Cookie = `auth_token=${authToken}`;
-    }
-
     const hostname =
       process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
     const url = `https://${hostname}${path}`;
@@ -114,7 +70,6 @@ export const makeRequest = cache(
       headers: {
         ...headers,
         Authorization: headers.Authorization ? "Bearer [REDACTED]" : undefined,
-        Cookie: headers.Cookie ? "[REDACTED]" : undefined,
       },
     });
 
@@ -185,82 +140,6 @@ export const makeRequest = cache(
   }
 );
 
-export const makeAuthRequest = async <
-  T extends Record<string, unknown>,
-  R = AuthResponse
->(
-  path: string,
-  method: string,
-  body: T
-): Promise<R> => {
-  // Get the auth token from cookies
-  const cookieStore = await cookies();
-  const authToken = cookieStore.get("auth_token");
-
-  if (!authToken) {
-    throw new Error("No authentication token available");
-  }
-
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
-      path,
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${authToken.value}`,
-      },
-      rejectUnauthorized: false,
-      agent: new https.Agent({
-        rejectUnauthorized: false,
-      }),
-    };
-
-    console.log("Making auth request:", {
-      hostname: options.hostname,
-      path: options.path,
-      method: options.method,
-      hasAuthHeader: !!options.headers.Authorization,
-    });
-
-    const req = https.request(options, (res) => {
-      let data = "";
-      res.on("data", (chunk) => {
-        data += chunk;
-      });
-      res.on("end", () => {
-        console.log("Auth request response:", {
-          status: res.statusCode,
-          data: data,
-        });
-
-        if (res.statusCode && res.statusCode >= 400) {
-          reject(
-            new Error(
-              `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
-            )
-          );
-          return;
-        }
-        try {
-          resolve(JSON.parse(data));
-        } catch {
-          reject(new Error(`Failed to parse response: ${data}`));
-        }
-      });
-    });
-
-    req.on("error", (error) => {
-      console.error("Auth request error:", error);
-      reject(error);
-    });
-
-    req.write(JSON.stringify(body));
-    req.end();
-  });
-};
-
 // Helper function to fetch all pages of data
 export const fetchAllPages = cache(async <T>(path: string): Promise<T[]> => {
   const allItems: T[] = [];
@@ -316,16 +195,14 @@ export const createCheckIn = async (
     body: JSON.stringify({ concert_id: concertId }),
   });
 
-  const data = await response.json();
-
   if (!response.ok) {
-    if (response.status === 422) {
-      throw new Error("You have already checked in to this concert");
-    }
-    throw new Error(data.message || "Failed to create check-in");
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP Error: ${response.status} ${response.statusText} - ${errorText}`
+    );
   }
 
-  return data;
+  return response.json();
 };
 
 export const createArtistCheckIn = async (
@@ -339,15 +216,14 @@ export const createArtistCheckIn = async (
       Accept: "application/json",
     },
     credentials: "include",
-    body: JSON.stringify({
-      checkin_id: checkInId,
-      artist_id: artistId,
-    }),
+    body: JSON.stringify({ checkin_id: checkInId, artist_id: artistId }),
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create artist check-in: ${error}`);
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP Error: ${response.status} ${response.statusText} - ${errorText}`
+    );
   }
 };
 
@@ -399,21 +275,21 @@ export interface PhotoResponse {
 export const searchArtists = async (
   searchTerm: string
 ): Promise<ArtistSearchResponse> => {
-  const hostname = process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
-  const url = `https://${hostname}/api/artists?search=${encodeURIComponent(
-    searchTerm
-  )}&per_page=10`;
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-    credentials: "include",
-  });
+  const response = await fetch(
+    `/api/artists/search?q=${encodeURIComponent(searchTerm)}`,
+    {
+      headers: {
+        Accept: "application/json",
+      },
+      credentials: "include",
+    }
+  );
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to search artists: ${error}`);
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP Error: ${response.status} ${response.statusText} - ${errorText}`
+    );
   }
 
   return response.json();
@@ -460,15 +336,14 @@ export const createCheckInReview = async (
       Accept: "application/json",
     },
     credentials: "include",
-    body: JSON.stringify({
-      checkin_id: checkInId,
-      review: review,
-    }),
+    body: JSON.stringify({ checkin_id: checkInId, review }),
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create check-in review: ${error}`);
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP Error: ${response.status} ${response.statusText} - ${errorText}`
+    );
   }
 
   return response.json();
@@ -497,17 +372,6 @@ export const createPhoto = async (
   checkInId: string,
   photoUrl: string
 ): Promise<void> => {
-  // Get the API host from environment
-  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
-  if (!apiHost) {
-    throw new Error("API host not configured");
-  }
-
-  // Convert relative URL to absolute URL, replacing 'storage' with 'public'
-  const absoluteUrl = photoUrl.startsWith("http")
-    ? photoUrl
-    : `https://${apiHost}${photoUrl.replace("/storage/", "/public/")}`;
-
   const response = await fetch("/api/photos", {
     method: "POST",
     headers: {
@@ -515,15 +379,14 @@ export const createPhoto = async (
       Accept: "application/json",
     },
     credentials: "include",
-    body: JSON.stringify({
-      checkin_id: checkInId,
-      url: absoluteUrl,
-    }),
+    body: JSON.stringify({ checkin_id: checkInId, url: photoUrl }),
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to create photo: ${error}`);
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP Error: ${response.status} ${response.statusText} - ${errorText}`
+    );
   }
 };
 
@@ -541,24 +404,51 @@ export const uploadFile = async (
   file: File,
   type: UploadType
 ): Promise<UploadResponse> => {
-  // Create form data
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("type", type); // Changed from 'folder' to 'type' to match backend API
+  formData.append("type", type);
 
   const response = await fetch("/api/upload", {
     method: "POST",
-    headers: {
-      // Don't set Content-Type header - browser will set it with boundary for multipart/form-data
-      Accept: "application/json",
-    },
     credentials: "include",
     body: formData,
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Failed to upload file: ${error}`);
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP Error: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  return response.json();
+};
+
+// Client-side function for making authenticated requests
+export const makeClientRequest = async <T>(
+  path: string
+): Promise<ApiResponse<T>> => {
+  // Get the base URL based on the environment
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
+
+  // Convert relative URL to absolute URL if needed
+  const url = path.startsWith("http") ? path : `${baseUrl}${path}`;
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP error! status: ${response.status}, message: ${errorText}`
+    );
   }
 
   return response.json();
