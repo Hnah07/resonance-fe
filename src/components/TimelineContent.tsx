@@ -132,6 +132,7 @@ export function TimelineContent() {
     try {
       const response = await fetch(`/api/timeline?page=${pageNum}`, {
         credentials: "include",
+        next: { revalidate: 30 },
       });
 
       if (!response.ok) {
