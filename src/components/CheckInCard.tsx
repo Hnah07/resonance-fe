@@ -8,6 +8,9 @@ import { StarRating, formatRelativeTime } from "@/lib/helpers";
 import { ExpandableImage } from "./ExpandableImage";
 import { CheckInComment } from "./CheckInComment";
 import Image from "next/image";
+import { useState } from "react";
+import { toggleCheckInLike } from "@/lib/api";
+import { toast } from "sonner";
 
 interface CheckInCardProps {
   user: {
@@ -35,6 +38,7 @@ interface CheckInCardProps {
     time: string;
     comment: string;
     likes: number;
+    isLiked?: boolean;
     comments: {
       id: string;
       user: {
@@ -50,6 +54,43 @@ interface CheckInCardProps {
 }
 
 function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
+  const [isLiked, setIsLiked] = useState(checkIn.isLiked || false);
+  const [likesCount, setLikesCount] = useState(checkIn.likes);
+
+  const handleLike = async () => {
+    // Optimistically update the UI
+    const newIsLiked = !isLiked;
+    setIsLiked(newIsLiked);
+    setLikesCount((prev) => (newIsLiked ? prev + 1 : prev - 1));
+
+    try {
+      await toggleCheckInLike(checkIn.id, isLiked);
+    } catch (error) {
+      // Revert the optimistic update on error
+      setIsLiked(isLiked);
+      setLikesCount((prev) => (isLiked ? prev : prev - 1));
+
+      // Extract the actual error message from the backend
+      let errorMessage = "Failed to update like";
+      if (error instanceof Error) {
+        const match = error.message.match(/\{.*\}/);
+        if (match?.[0]) {
+          try {
+            const parsed = JSON.parse(match[0]);
+            errorMessage = parsed.message || error.message;
+          } catch {
+            errorMessage = error.message;
+          }
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(errorMessage);
+      console.error("Error toggling like:", error);
+    }
+  };
+
   return (
     <Card className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm gap-2 py-2">
       {/* User Profile Section */}
@@ -106,20 +147,23 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         <ArtistBadges title="Artists seen" artists={concert.artists} />
       </div>
 
-      {/* Concert Image */}
-      <div className="relative w-full h-[300px]">
-        <ExpandableImage src={concert.image} alt={`${concert.event} concert`} />
-      </div>
+      {/* Concert Image - Only show if there's a real image */}
+      {concert.image && concert.image !== "/placeholder-concert.jpg" && (
+        <div className="relative w-full h-[300px]">
+          <ExpandableImage
+            src={concert.image}
+            alt={`${concert.event} concert`}
+          />
+        </div>
+      )}
 
       {/* Check-in Comment */}
       <CheckInComment
         comment={checkIn.comment}
-        likes={checkIn.likes}
+        likes={likesCount}
         comments={checkIn.comments}
-        onLike={() => {
-          // TODO: Implement like functionality
-          console.log("Like clicked");
-        }}
+        isLiked={isLiked}
+        onLike={handleLike}
         onComment={(comment) => {
           // TODO: Implement comment functionality
           console.log("Comment added:", comment);

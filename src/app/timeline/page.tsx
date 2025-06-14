@@ -46,6 +46,7 @@ interface BackendTimelineResponse {
         profile_photo_url: string;
       };
     }>;
+    is_liked: boolean;
   }>;
 }
 
@@ -92,6 +93,7 @@ async function getInitialTimelineData() {
           time: new Date(item.created_at).toLocaleTimeString(),
           comment: item.review || "",
           likes: item.likes_count,
+          isLiked: item.is_liked,
           comments: item.comments.map((comment) => ({
             id: comment.id,
             user: {

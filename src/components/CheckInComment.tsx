@@ -8,6 +8,7 @@ interface CheckInCommentProps {
   comment: string;
   likes: number;
   comments: Comment[];
+  isLiked?: boolean;
   onLike?: () => void;
   onComment?: (comment: Comment) => void;
 }
@@ -16,6 +17,7 @@ export function CheckInComment({
   comment,
   likes,
   comments,
+  isLiked,
   onLike,
   onComment,
 }: CheckInCommentProps) {
@@ -24,7 +26,7 @@ export function CheckInComment({
       <p className="text-slate-700 dark:text-slate-300 mb-4">{comment}</p>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <LikeButton count={likes} onClick={onLike} />
+          <LikeButton count={likes} onClick={onLike} isLiked={isLiked} />
           <CommentButton
             count={comments.length}
             onAddComment={onComment || (() => {})}

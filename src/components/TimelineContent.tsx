@@ -34,6 +34,7 @@ interface TimelineCheckIn {
     time: string;
     comment: string;
     likes: number;
+    isLiked: boolean;
     comments: Array<{
       id: string;
       user: {
@@ -77,6 +78,7 @@ interface TimelineResponse {
       time: string;
       comment: string;
       likes: number;
+      isLiked: boolean;
       comments: Array<{
         id: string;
         user: {
@@ -130,6 +132,7 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
     },
     checkIn: {
       ...checkIn.checkIn,
+      isLiked: checkIn.checkIn.isLiked,
       comments: checkIn.checkIn.comments.map((comment) => ({
         ...comment,
         user: {
