@@ -91,9 +91,17 @@ interface TimelineResponse {
   }>;
 }
 
-export function TimelineContent() {
-  const [checkIns, setCheckIns] = useState<TimelineCheckIn[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface TimelineContentProps {
+  initialData: {
+    checkIns: TimelineCheckIn[];
+  };
+}
+
+export function TimelineContent({ initialData }: TimelineContentProps) {
+  const [checkIns, setCheckIns] = useState<TimelineCheckIn[]>(
+    initialData.checkIns
+  );
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const nextPageRef = useRef(1);
@@ -102,6 +110,14 @@ export function TimelineContent() {
     threshold: 0,
     triggerOnce: false,
   });
+
+  // Initialize checkInsMap with initial data
+  useEffect(() => {
+    checkInsMap.current.clear();
+    initialData.checkIns.forEach((checkIn) => {
+      checkInsMap.current.set(checkIn.id, checkIn);
+    });
+  }, [initialData.checkIns]);
 
   const transformCheckIn = (
     checkIn: TimelineResponse["checkIns"][0]
@@ -179,12 +195,6 @@ export function TimelineContent() {
       setIsLoading(false);
     }
   };
-
-  // Initial fetch
-  useEffect(() => {
-    checkInsMap.current.clear();
-    fetchCheckIns(1);
-  }, []);
 
   // Load more when scrolling
   useEffect(() => {
