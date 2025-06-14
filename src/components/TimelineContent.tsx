@@ -43,6 +43,7 @@ interface TimelineCheckIn {
       };
       text: string;
       date: string;
+      time: string;
     }>;
   };
 }
@@ -119,6 +120,10 @@ export function TimelineContent() {
           ...comment.user,
           image: comment.user.image || undefined,
         },
+        time: new Date(comment.date).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       })),
     },
   });
