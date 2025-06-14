@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useInView } from "react-intersection-observer";
+import ConcertCard from "./ConcertCard";
+import CardSkeleton from "./CardSkeleton";
 import { ConcertProperties } from "@/types/concert";
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
-import CardSkeleton from "@/components/CardSkeleton";
 
-const ConcertCard = dynamic(() => import("@/components/ConcertCard"), {
-  loading: () => <CardSkeleton />,
-  ssr: false,
-});
+interface ArtistWithId {
+  id: string;
+  name: string;
+}
 
 interface ConcertListProps {
-  initialConcerts: ConcertProperties[];
+  initialConcerts: (ConcertProperties & {
+    distance?: number;
+    artistDetails: ArtistWithId[];
+  })[];
 }
 
 export function ConcertList({ initialConcerts }: ConcertListProps) {

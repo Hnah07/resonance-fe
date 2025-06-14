@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { makeAuthRequest } from "@/lib/api";
+import https from "https";
 
 export const dynamic = "force-dynamic"; // Disable caching for this route
 
@@ -65,11 +65,63 @@ export async function POST(request: NextRequest) {
       passwordLength: body.password?.length,
     });
 
-    const response = await makeAuthRequest<typeof body, LoginResponse>(
-      "/api/login",
-      "POST",
-      body
-    );
+    // Make direct HTTPS request to backend
+    const response = await new Promise<LoginResponse>((resolve, reject) => {
+      const options = {
+        hostname: apiHost,
+        path: "/api/login",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        rejectUnauthorized: false,
+        agent: new https.Agent({
+          rejectUnauthorized: false,
+        }),
+      };
+
+      const req = https.request(options, (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          console.log("Backend login response:", {
+            status: res.statusCode,
+            data: data,
+          });
+
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(
+              new Error(
+                `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
+              )
+            );
+            return;
+          }
+          try {
+            resolve(JSON.parse(data));
+          } catch (error) {
+            reject(
+              new Error(
+                `Failed to parse response: ${data} - ${
+                  error instanceof Error ? error.message : "Unknown error"
+                }`
+              )
+            );
+          }
+        });
+      });
+
+      req.on("error", (error) => {
+        console.error("Request error:", error);
+        reject(error);
+      });
+
+      req.write(JSON.stringify(body));
+      req.end();
+    });
 
     console.log("Backend response:", response);
 

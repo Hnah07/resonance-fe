@@ -8,37 +8,38 @@ import {
   DrawerTitle,
   DrawerFooter,
   DrawerClose,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LuImage, LuStar, LuStarHalf } from "react-icons/lu";
+import { Textarea } from "@/components/ui/textarea";
+import { LuImage } from "react-icons/lu";
 import { ConcertProperties } from "@/types/concert";
 import { formatEventDate, getEventDisplay } from "@/lib/helpers";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { StarRating } from "@/components/ui/star-rating";
+import { UnauthenticatedCheckIn } from "@/components/UnauthenticatedCheckIn";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { toast } from "sonner";
 
 interface CheckInDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
   concert: ConcertProperties;
   onSubmit: (data: {
     selectedArtists: string[];
-    comment?: string;
-    rating?: number;
+    review?: string;
     photo?: File;
+    rating?: number;
   }) => void;
 }
 
-export function CheckInDrawer({
-  isOpen,
-  onClose,
-  concert,
-  onSubmit,
-}: CheckInDrawerProps) {
+export function CheckInDrawer({ concert, onSubmit }: CheckInDrawerProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
   const [selectedArtists, setSelectedArtists] = useState<string[]>([]);
-  const [comment, setComment] = useState("");
-  const [rating, setRating] = useState<number | undefined>();
+  const [review, setReview] = useState<string>("");
   const [photo, setPhoto] = useState<File | undefined>();
+  const [rating, setRating] = useState<number>(0);
   const [error, setError] = useState<string | undefined>();
-  const [hoverRating, setHoverRating] = useState<number | undefined>();
 
   const handleSubmit = () => {
     if (selectedArtists.length === 0) {
@@ -48,16 +49,16 @@ export function CheckInDrawer({
     setError(undefined);
     onSubmit({
       selectedArtists,
-      comment: comment || undefined,
-      rating,
+      review: review.trim() || undefined,
       photo,
+      rating: rating > 0 ? rating : undefined,
     });
     // Reset form
     setSelectedArtists([]);
-    setComment("");
-    setRating(undefined);
+    setReview("");
     setPhoto(undefined);
-    onClose();
+    setRating(0);
+    setIsOpen(false);
   };
 
   const handleArtistClick = (artist: string) => {
@@ -75,43 +76,21 @@ export function CheckInDrawer({
     }
   };
 
-  const handleStarInteraction = (
-    star: number,
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const isHalf = x < rect.width / 2;
-    const newRating = isHalf ? star - 0.5 : star;
-
-    if (event.type === "mouseenter") {
-      setHoverRating(newRating);
-    } else if (event.type === "click") {
-      if (rating === newRating) {
-        setRating(undefined);
-      } else {
-        setRating(newRating);
-      }
-      setHoverRating(undefined);
-    }
-  };
-
-  const handleStarLeave = () => {
-    setHoverRating(undefined);
-  };
-
-  const getStarFill = (star: number, isHalf: boolean) => {
-    const currentRating = hoverRating ?? rating;
-    if (!currentRating) return false;
-
-    if (isHalf) {
-      return currentRating === star - 0.5;
-    }
-    return currentRating >= star;
-  };
-
   return (
-    <Drawer open={isOpen} onOpenChange={onClose}>
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>
+        <GradientButton
+          className="flex-1"
+          onClick={() => {
+            if (!isAuthenticated) {
+              toast.error("Please sign in to check in");
+              return;
+            }
+          }}
+        >
+          Check In
+        </GradientButton>
+      </DrawerTrigger>
       <DrawerContent className="h-[90vh]">
         <DrawerHeader>
           <DrawerTitle>Check In</DrawerTitle>
@@ -131,126 +110,100 @@ export function CheckInDrawer({
             </p>
           </div>
 
-          {/* Artist Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Artists Seen *</label>
-            <div className="flex flex-wrap gap-2">
-              {concert.artists.map((artist) => (
-                <button
-                  key={artist}
-                  onClick={() => handleArtistClick(artist)}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                    selectedArtists.includes(artist)
-                      ? "bg-accent-cyan/30 border-accent-cyan text-accent-cyan font-medium shadow-sm"
-                      : "border-slate-200 dark:border-slate-700 hover:border-accent-cyan/50 hover:bg-accent-cyan/5"
-                  }`}
-                >
-                  {artist}
-                </button>
-              ))}
-            </div>
-            {error && <p className="text-sm text-destructive mt-1">{error}</p>}
-          </div>
-
-          {/* Comment */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Comment</label>
-            <Input
-              type="text"
-              placeholder="Share your experience..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-          </div>
-
-          {/* Rating */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Rating</label>
-            <p className="text-sm text-muted-foreground">
-              Click on the left side of a star for half ratings. Click the same
-              star again to clear your rating.
-            </p>
-            <div className="flex flex-col gap-2">
-              <div
-                className="flex items-center gap-3"
-                onMouseLeave={handleStarLeave}
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <div
-                    key={star}
-                    className="relative cursor-pointer w-12 h-12 flex items-center justify-center"
-                    onMouseEnter={(e) => handleStarInteraction(star, e)}
-                    onClick={(e) => handleStarInteraction(star, e)}
-                  >
-                    {/* Half star */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <LuStarHalf
-                        className={`w-10 h-10 transition-all duration-200 ${
-                          getStarFill(star, true)
-                            ? "text-yellow-400 fill-yellow-400 scale-110"
-                            : "text-slate-300 dark:text-slate-600"
-                        }`}
-                      />
-                    </div>
-                    {/* Full star */}
-                    <div className="relative flex items-center justify-center">
-                      <LuStar
-                        className={`w-10 h-10 transition-all duration-200 ${
-                          getStarFill(star, false)
-                            ? "text-yellow-400 fill-yellow-400 scale-110"
-                            : "text-slate-300 dark:text-slate-600"
-                        }`}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {rating && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Your rating:</span>
-                  <span className="font-medium">
-                    {rating} {rating === 1 ? "star" : "stars"}
-                  </span>
+          {!isAuthenticated ? (
+            <UnauthenticatedCheckIn />
+          ) : (
+            <>
+              {/* Artist Selection */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Artists Seen *</label>
+                <div className="flex flex-wrap gap-2">
+                  {concert.artists.map((artist) => (
+                    <button
+                      key={artist}
+                      onClick={() => handleArtistClick(artist)}
+                      className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                        selectedArtists.includes(artist)
+                          ? "bg-accent-cyan/30 border-accent-cyan text-accent-cyan font-medium shadow-sm"
+                          : "border-slate-200 dark:border-slate-700 hover:border-accent-cyan/50 hover:bg-accent-cyan/5"
+                      }`}
+                    >
+                      {artist}
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
-          </div>
+                {error && (
+                  <p className="text-sm text-destructive mt-1">{error}</p>
+                )}
+              </div>
 
-          {/* Photo Upload */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Photo</label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="flex-1"
-              />
-              {photo && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setPhoto(undefined)}
-                >
-                  <LuImage className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
+              {/* Rating */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rating</label>
+                <div className="flex items-center gap-2">
+                  <StarRating
+                    rating={rating}
+                    onRatingChange={setRating}
+                    size="lg"
+                  />
+                  {rating > 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      {rating.toFixed(1)} stars
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Review */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Review</label>
+                <Textarea
+                  placeholder="Share your experience at this concert..."
+                  value={review}
+                  onChange={(e) => setReview(e.target.value)}
+                  className="min-h-[100px] resize-none"
+                />
+              </div>
+
+              {/* Photo Upload */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Photo</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                    id="photo-upload"
+                  />
+                  <label
+                    htmlFor="photo-upload"
+                    className="flex items-center gap-2 px-4 py-2 border rounded-lg cursor-pointer hover:bg-accent-cyan/5 hover:border-accent-cyan/50 transition-colors"
+                  >
+                    <LuImage className="w-5 h-5" />
+                    <span className="text-sm">
+                      {photo ? "Change photo" : "Add a photo"}
+                    </span>
+                  </label>
+                  {photo && (
+                    <span className="text-sm text-muted-foreground">
+                      {photo.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        <DrawerFooter>
-          <div className="flex gap-2">
+        {isAuthenticated && (
+          <DrawerFooter>
+            <Button onClick={handleSubmit}>Check In</Button>
             <DrawerClose asChild>
-              <Button variant="outline" className="flex-1">
-                Cancel
-              </Button>
+              <Button variant="outline">Cancel</Button>
             </DrawerClose>
-            <Button onClick={handleSubmit} className="flex-1">
-              Submit
-            </Button>
-          </div>
-        </DrawerFooter>
+          </DrawerFooter>
+        )}
       </DrawerContent>
     </Drawer>
   );

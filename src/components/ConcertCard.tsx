@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { GradientButton } from "@/components/ui/gradient-button";
 import { DetailsButton } from "@/components/ui/details-button";
 import { GenreBadges } from "@/components/GenreBadges";
 import { ArtistBadges } from "@/components/ArtistBadges";
@@ -12,28 +10,120 @@ import { ConcertProperties } from "@/types/concert";
 import { formatEventDate, getEventDisplay } from "@/lib/helpers";
 import { CheckInDrawer } from "@/components/CheckInDrawer";
 import { toast } from "sonner";
+import {
+  createCheckIn,
+  createArtistCheckIn,
+  createCheckInReview,
+  uploadFile,
+  createPhoto,
+} from "@/lib/api";
+import { useAuth } from "@/lib/hooks/useAuth";
 
-// Extend ConcertProperties to include optional distance
-interface ConcertCardProps {
-  concert: ConcertProperties & { distance?: number };
+interface ArtistWithId {
+  id: string;
+  name: string;
 }
 
-function ConcertCard({ concert }: ConcertCardProps) {
-  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+// Extend ConcertProperties to include optional distance and artistDetails
+interface ConcertCardProps {
+  concert: ConcertProperties & {
+    distance?: number;
+    artistDetails: ArtistWithId[];
+  };
+}
 
-  const handleCheckIn = (data: {
-    selectedArtists: string[];
-    comment?: string;
-    rating?: number;
-    photo?: File;
-  }) => {
-    // TODO: Implement backend integration
-    console.log("Check-in data:", data);
+interface CheckInData {
+  selectedArtists: string[];
+  review?: string;
+  photo?: File;
+  rating?: number;
+}
 
-    // Show success toast
-    toast.success("Check-in successful!", {
-      description: "Your check-in has been recorded.",
-    });
+export default function ConcertCard({ concert }: ConcertCardProps) {
+  const { isAuthenticated } = useAuth();
+
+  const handleCheckIn = async (data: CheckInData) => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in to check in");
+      return;
+    }
+
+    try {
+      // Create the check-in - the backend will handle duplicate validation
+      const checkIn = await createCheckIn(concert.id);
+
+      // Get artist IDs from the concert data
+      const artistCheckInPromises = data.selectedArtists.map((artistName) => {
+        const artist = concert.artistDetails.find(
+          (a) => a.name.toLowerCase() === artistName.toLowerCase()
+        );
+        if (!artist || !artist.id) {
+          throw new Error(`Artist not found: ${artistName}`);
+        }
+        return createArtistCheckIn(checkIn.id, artist.id);
+      });
+
+      // Create review if provided
+      const reviewPromise = data.review
+        ? createCheckInReview(checkIn.id, data.review)
+        : Promise.resolve();
+
+      // Create rating if provided
+      const ratingPromise = data.rating
+        ? fetch("/api/checkin-ratings", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              checkin_id: checkIn.id,
+              rating: data.rating,
+            }),
+          }).then((res) => {
+            if (!res.ok) {
+              throw new Error("Failed to create rating");
+            }
+          })
+        : Promise.resolve();
+
+      // Handle photo if provided
+      let photoPromise = Promise.resolve();
+      if (data.photo instanceof File) {
+        photoPromise = (async () => {
+          const uploadResult = await uploadFile(
+            data.photo as File,
+            "checkin-photos"
+          );
+          // The backend returns a double-escaped path, so we need to unescape it
+          const unescapedPath = uploadResult.url.replace(/\\/g, "");
+          // Store only the relative path in the database
+          await createPhoto(checkIn.id, unescapedPath);
+        })();
+      }
+
+      // Wait for all operations to complete
+      await Promise.all([
+        ...artistCheckInPromises,
+        reviewPromise,
+        ratingPromise,
+        photoPromise,
+      ]);
+
+      toast.success("Check-in successful!");
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("422")) {
+        toast.error("You have already checked in to this concert");
+      } else {
+        console.error("Check-in error:", error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to check in. Please try again."
+        );
+      }
+    }
   };
 
   console.log("ConcertCard rendering with concert:", {
@@ -87,26 +177,12 @@ function ConcertCard({ concert }: ConcertCardProps) {
               )}
               <div className="flex space-x-2 pt-2">
                 <DetailsButton className="flex-1">Details</DetailsButton>
-                <GradientButton
-                  className="flex-1"
-                  onClick={() => setIsCheckInOpen(true)}
-                >
-                  Check In
-                </GradientButton>
+                <CheckInDrawer concert={concert} onSubmit={handleCheckIn} />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <CheckInDrawer
-        isOpen={isCheckInOpen}
-        onClose={() => setIsCheckInOpen(false)}
-        concert={concert}
-        onSubmit={handleCheckIn}
-      />
     </>
   );
 }
-
-export default ConcertCard;

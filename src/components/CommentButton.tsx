@@ -14,6 +14,7 @@ import { useState } from "react";
 import { formatRelativeTime } from "@/lib/helpers";
 import { Comment } from "@/types/comment";
 import Image from "next/image";
+import { getFullUrl } from "@/lib/urls";
 
 interface CommentButtonProps {
   count: number;
@@ -56,18 +57,18 @@ export function CommentButton({
       <DialogTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="flex items-center text-slate-500 hover:text-[#03D1FE] hover:bg-transparent transition-colors"
+          size="sm"
+          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
         >
-          <LuMessageCircle className="w-5 h-5" />
-          <span className="text-sm">{count}</span>
+          <LuMessageCircle className="w-4 h-4" />
+          <span>{count}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Comments</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col gap-4 py-4">
+        <div className="space-y-4">
           <div className="flex gap-2">
             <Input
               type="text"
@@ -96,7 +97,11 @@ export function CommentButton({
                 <div key={comment.id} className="flex gap-3">
                   <div className="flex-shrink-0">
                     <Image
-                      src={comment.user.image || "/placeholder-avatar-user.jpg"}
+                      src={
+                        comment.user.image
+                          ? getFullUrl(comment.user.image)
+                          : "/placeholder-avatar-user.jpg"
+                      }
                       alt={comment.user.name}
                       width={32}
                       height={32}
