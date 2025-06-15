@@ -93,29 +93,9 @@ interface TimelineResponse {
   }>;
 }
 
-interface TimelineContentProps {
-  initialData: {
-    checkIns: TimelineCheckIn[];
-  };
-}
-
-export function TimelineContent({ initialData }: TimelineContentProps) {
-  console.log("TimelineContent initialData:", {
-    hasData: !!initialData,
-    checkInsLength: initialData?.checkIns?.length,
-    firstCheckIn: initialData?.checkIns?.[0]
-      ? {
-          id: initialData.checkIns[0].id,
-          user: initialData.checkIns[0].user.username,
-          event: initialData.checkIns[0].concert.event,
-        }
-      : null,
-  });
-
-  const [checkIns, setCheckIns] = useState<TimelineCheckIn[]>(
-    initialData.checkIns
-  );
-  const [isLoading, setIsLoading] = useState(false);
+export function TimelineContent() {
+  const [checkIns, setCheckIns] = useState<TimelineCheckIn[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const nextPageRef = useRef(1);
@@ -125,17 +105,63 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
     triggerOnce: false,
   });
 
-  // Initialize checkInsMap with initial data
+  // Fetch initial data when component mounts
   useEffect(() => {
-    console.log("Initializing checkInsMap with:", {
-      initialDataLength: initialData.checkIns.length,
-      mapSize: checkInsMap.current.size,
-    });
-    checkInsMap.current.clear();
-    initialData.checkIns.forEach((checkIn) => {
-      checkInsMap.current.set(checkIn.id, checkIn);
-    });
-  }, [initialData.checkIns]);
+    const fetchInitialData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/timeline?page=1", {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null);
+          throw new Error(
+            errorData?.message ||
+              `Failed to fetch timeline (${response.status})`
+          );
+        }
+
+        const data = await response.json();
+        console.log("Initial timeline data:", {
+          hasData: !!data,
+          checkInsLength: data.checkIns?.length,
+          firstCheckIn: data.checkIns?.[0]
+            ? {
+                id: data.checkIns[0].id,
+                user: data.checkIns[0].user.username,
+                event: data.checkIns[0].concert.event,
+              }
+            : null,
+        });
+
+        if (data.checkIns?.length > 0) {
+          const transformedCheckIns = data.checkIns.map(transformCheckIn);
+          checkInsMap.current.clear();
+          transformedCheckIns.forEach((checkIn: TimelineCheckIn) => {
+            checkInsMap.current.set(checkIn.id, checkIn);
+          });
+          setCheckIns(transformedCheckIns);
+          setHasMore(true);
+        } else {
+          setCheckIns([]);
+          setHasMore(false);
+        }
+      } catch (err) {
+        console.error("Error fetching initial timeline data:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch timeline"
+        );
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load timeline data"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []); // Empty dependency array means this runs once on mount
 
   const transformCheckIn = (
     checkIn: TimelineResponse["checkIns"][0]
