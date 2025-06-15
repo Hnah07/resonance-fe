@@ -110,17 +110,12 @@ export function TimelineContent() {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        // Use window.location.origin to get the current domain
-        const baseUrl =
-          typeof window !== "undefined" ? window.location.origin : "";
-        const response = await fetch(`${baseUrl}/api/timeline?page=1`, {
+        // Use relative path instead of full URL
+        const response = await fetch("/api/timeline?page=1", {
           credentials: "include",
         });
 
-        console.log(
-          "Fetching timeline from:",
-          `${baseUrl}/api/timeline?page=1`
-        );
+        console.log("Fetching timeline from:", "/api/timeline?page=1");
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);
@@ -210,6 +205,7 @@ export function TimelineContent() {
   const fetchCheckIns = useCallback(async (pageNum: number) => {
     console.log("Fetching check-ins for page:", pageNum);
     try {
+      // Use relative path here as well
       const response = await fetch(`/api/timeline?page=${pageNum}`, {
         credentials: "include",
         next: { revalidate: 30 },
