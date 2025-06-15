@@ -36,12 +36,12 @@ export const makeAuthRequest = async <
   const authToken = cookieStore.get("auth_token");
 
   if (!authToken) {
-    console.error("No auth token available in cookies");
+    console.error("[makeAuthRequest] No auth token available in cookies");
     throw new Error("No authentication token available");
   }
 
   const apiHost = process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
-  console.log("Making auth request with config:", {
+  console.log("[makeAuthRequest] Making request with config:", {
     apiHost,
     path,
     method,
@@ -67,10 +67,16 @@ export const makeAuthRequest = async <
       }),
     };
 
-    console.log("Making auth request to:", {
+    console.log("[makeAuthRequest] Request options:", {
       fullUrl: `https://${options.hostname}${options.path}`,
       method: options.method,
       hasAuthHeader: !!options.headers.Authorization,
+      headers: {
+        ...options.headers,
+        Authorization: options.headers.Authorization
+          ? "Bearer [REDACTED]"
+          : undefined,
+      },
     });
 
     const req = https.request(options, (res) => {
@@ -79,11 +85,11 @@ export const makeAuthRequest = async <
         data += chunk;
       });
       res.on("end", () => {
-        console.log("Auth request response:", {
+        console.log("[makeAuthRequest] Response received:", {
           status: res.statusCode,
           statusMessage: res.statusMessage,
           headers: res.headers,
-          data: data,
+          dataLength: data.length,
           url: res.url,
         });
 
@@ -91,7 +97,7 @@ export const makeAuthRequest = async <
           const error = new Error(
             `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
           );
-          console.error("Auth request failed:", {
+          console.error("[makeAuthRequest] Request failed:", {
             error,
             status: res.statusCode,
             data,
@@ -109,14 +115,17 @@ export const makeAuthRequest = async <
 
         try {
           const parsedData = JSON.parse(data);
-          console.log("Successfully parsed response data:", {
+          console.log("[makeAuthRequest] Successfully parsed response:", {
             hasData: !!parsedData,
             dataType: typeof parsedData,
             keys: Object.keys(parsedData),
+            dataLength: Array.isArray(parsedData.data)
+              ? parsedData.data.length
+              : undefined,
           });
           resolve(parsedData);
         } catch (error) {
-          console.error("Failed to parse response:", {
+          console.error("[makeAuthRequest] Failed to parse response:", {
             error,
             data,
             url: res.url,
@@ -127,11 +136,12 @@ export const makeAuthRequest = async <
     });
 
     req.on("error", (error) => {
-      console.error("Auth request error:", {
+      console.error("[makeAuthRequest] Request error:", {
         error,
         message: error.message,
         hostname: options.hostname,
         path: options.path,
+        stack: error.stack,
       });
       reject(error);
     });

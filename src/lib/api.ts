@@ -1,7 +1,7 @@
 import https from "https";
 import { cache } from "react";
 
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
   data: T[];
   meta: {
     current_page: number;
