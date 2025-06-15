@@ -71,7 +71,7 @@ export function ProfileContent() {
   >("check-ins");
   const [checkIns, setCheckIns] = useState<ProfileCheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -103,38 +103,57 @@ export function ProfileContent() {
     <>
       <div className="flex items-center gap-2 mb-4 justify-center">
         <Avatar className="w-32 h-32 border-4 border-accent-cyan/50">
-          <AvatarImage
-            src={user?.profile_photo_url || "/placeholder-avatar-user.jpg"}
-          />
-          <AvatarFallback>
-            <Image
-              src="/placeholder-avatar-user.jpg"
-              alt="Placeholder avatar"
-              width={128}
-              height={128}
-              className="rounded-full"
-            />
-          </AvatarFallback>
+          {isUserLoading || !user ? (
+            <div className="w-full h-full bg-muted animate-pulse rounded-full" />
+          ) : user.profile_photo_url ? (
+            <AvatarImage src={user.profile_photo_url} />
+          ) : (
+            <AvatarFallback>
+              <Image
+                src="/placeholder-avatar-user.jpg"
+                alt="Placeholder avatar"
+                width={128}
+                height={128}
+                className="rounded-full"
+              />
+            </AvatarFallback>
+          )}
         </Avatar>
       </div>
       <div className="flex flex-col items-center gap-4 text-accent-cyan mb-8">
-        <div className="flex items-baseline gap-2">
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-            {user?.name || "Anonymous"}
-          </h1>
-          <span className="text-sm text-muted-foreground self-center">
-            @{user?.username || "user"}
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {user?.bio || "No bio yet"}
-        </p>
-        <div className="flex gap-2">
-          <LuMapPin className="w-4 h-4" />
-          <p className="text-sm text-muted-foreground">
-            {user?.city || "No location set"}
-          </p>
-        </div>
+        {isUserLoading || !user ? (
+          <>
+            <div className="flex items-baseline gap-2">
+              <div className="h-8 w-32 bg-muted animate-pulse rounded" />
+              <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+            </div>
+            <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+            <div className="flex gap-2">
+              <LuMapPin className="w-4 h-4 text-muted-foreground" />
+              <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+                {user.name || "Anonymous"}
+              </h1>
+              <span className="text-sm text-muted-foreground self-center">
+                @{user.username || "user"}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {user.bio || "No bio yet"}
+            </p>
+            <div className="flex gap-2">
+              <LuMapPin className="w-4 h-4" />
+              <p className="text-sm text-muted-foreground">
+                {user.city || "No location set"}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
