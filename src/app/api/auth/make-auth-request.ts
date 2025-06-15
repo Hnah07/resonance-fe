@@ -36,12 +36,24 @@ export const makeAuthRequest = async <
   const authToken = cookieStore.get("auth_token");
 
   if (!authToken) {
+    console.error("No auth token available in cookies");
     throw new Error("No authentication token available");
   }
 
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
+  console.log("Making auth request with config:", {
+    apiHost,
+    path,
+    method,
+    hasAuthToken: !!authToken,
+    tokenLength: authToken.value.length,
+    environment: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+      hostname: apiHost,
       path,
       method,
       headers: {
@@ -55,9 +67,8 @@ export const makeAuthRequest = async <
       }),
     };
 
-    console.log("Making auth request:", {
-      hostname: options.hostname,
-      path: options.path,
+    console.log("Making auth request to:", {
+      fullUrl: `https://${options.hostname}${options.path}`,
       method: options.method,
       hasAuthHeader: !!options.headers.Authorization,
     });
@@ -70,15 +81,23 @@ export const makeAuthRequest = async <
       res.on("end", () => {
         console.log("Auth request response:", {
           status: res.statusCode,
+          statusMessage: res.statusMessage,
+          headers: res.headers,
           data: data,
+          url: res.url,
         });
 
         if (res.statusCode && res.statusCode >= 400) {
-          reject(
-            new Error(
-              `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
-            )
+          const error = new Error(
+            `HTTP Error: ${res.statusCode} ${res.statusMessage} - ${data}`
           );
+          console.error("Auth request failed:", {
+            error,
+            status: res.statusCode,
+            data,
+            url: res.url,
+          });
+          reject(error);
           return;
         }
 
@@ -89,15 +108,31 @@ export const makeAuthRequest = async <
         }
 
         try {
-          resolve(JSON.parse(data));
-        } catch {
+          const parsedData = JSON.parse(data);
+          console.log("Successfully parsed response data:", {
+            hasData: !!parsedData,
+            dataType: typeof parsedData,
+            keys: Object.keys(parsedData),
+          });
+          resolve(parsedData);
+        } catch (error) {
+          console.error("Failed to parse response:", {
+            error,
+            data,
+            url: res.url,
+          });
           reject(new Error(`Failed to parse response: ${data}`));
         }
       });
     });
 
     req.on("error", (error) => {
-      console.error("Auth request error:", error);
+      console.error("Auth request error:", {
+        error,
+        message: error.message,
+        hostname: options.hostname,
+        path: options.path,
+      });
       reject(error);
     });
 
