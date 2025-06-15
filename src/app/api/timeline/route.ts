@@ -85,15 +85,29 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const page = searchParams.get("page") || "1";
 
+    console.log("Timeline API called with page:", page);
+    console.log("API Host:", process.env.NEXT_PUBLIC_API_HOST);
+
     const response = await makeAuthRequest<
       Record<string, never>,
       TimelineResponse
     >(`/api/timeline?page=${page}`, "GET", {});
 
-    console.log(
-      "Backend timeline response:",
-      JSON.stringify(response.data[0], null, 2)
-    );
+    console.log("Backend timeline response status:", {
+      hasData: !!response.data,
+      dataLength: response.data?.length,
+      firstItem: response.data?.[0]
+        ? {
+            id: response.data[0].id,
+            user: response.data[0].user.username,
+            event: response.data[0].concert.event.name,
+          }
+        : null,
+    });
+
+    if (!response.data || response.data.length === 0) {
+      console.log("No check-ins found in response");
+    }
 
     // Transform the response to match the frontend's expected format
     const transformedData = {

@@ -100,6 +100,18 @@ interface TimelineContentProps {
 }
 
 export function TimelineContent({ initialData }: TimelineContentProps) {
+  console.log("TimelineContent initialData:", {
+    hasData: !!initialData,
+    checkInsLength: initialData?.checkIns?.length,
+    firstCheckIn: initialData?.checkIns?.[0]
+      ? {
+          id: initialData.checkIns[0].id,
+          user: initialData.checkIns[0].user.username,
+          event: initialData.checkIns[0].concert.event,
+        }
+      : null,
+  });
+
   const [checkIns, setCheckIns] = useState<TimelineCheckIn[]>(
     initialData.checkIns
   );
@@ -115,6 +127,10 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
 
   // Initialize checkInsMap with initial data
   useEffect(() => {
+    console.log("Initializing checkInsMap with:", {
+      initialDataLength: initialData.checkIns.length,
+      mapSize: checkInsMap.current.size,
+    });
     checkInsMap.current.clear();
     initialData.checkIns.forEach((checkIn) => {
       checkInsMap.current.set(checkIn.id, checkIn);
@@ -148,14 +164,21 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
   });
 
   const fetchCheckIns = useCallback(async (pageNum: number) => {
+    console.log("Fetching check-ins for page:", pageNum);
     try {
       const response = await fetch(`/api/timeline?page=${pageNum}`, {
         credentials: "include",
         next: { revalidate: 30 },
       });
 
+      console.log("Timeline fetch response status:", response.status);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        console.error("Timeline fetch error:", {
+          status: response.status,
+          errorData,
+        });
         if (response.status === 404) {
           throw new Error(
             "Timeline feature is not available yet. Please check back later."
@@ -167,9 +190,27 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
       }
 
       const data = (await response.json()) as TimelineResponse;
+      console.log("Timeline fetch data:", {
+        hasData: !!data,
+        checkInsLength: data.checkIns?.length,
+        firstCheckIn: data.checkIns?.[0]
+          ? {
+              id: data.checkIns[0].id,
+              user: data.checkIns[0].user.username,
+              event: data.checkIns[0].concert.event,
+            }
+          : null,
+      });
+
       const newCheckIns = (data.checkIns || [])
         .map(transformCheckIn)
         .filter((checkIn) => !checkInsMap.current.has(checkIn.id));
+
+      console.log("Processed new check-ins:", {
+        total: data.checkIns?.length,
+        new: newCheckIns.length,
+        existing: checkInsMap.current.size,
+      });
 
       // Add new check-ins to the map
       newCheckIns.forEach((checkIn) => {
@@ -177,12 +218,14 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
       });
 
       if (pageNum === 1) {
+        console.log("Resetting check-ins for page 1");
         checkInsMap.current.clear();
         newCheckIns.forEach((checkIn) => {
           checkInsMap.current.set(checkIn.id, checkIn);
         });
         setCheckIns(newCheckIns);
       } else {
+        console.log("Appending new check-ins to existing ones");
         setCheckIns((prev) => [...prev, ...newCheckIns]);
       }
 
