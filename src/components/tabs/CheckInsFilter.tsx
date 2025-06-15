@@ -25,6 +25,7 @@ interface CheckInsFilterProps {
   onLocationChange: (value: string) => void;
   onCountryChange: (value: string) => void;
   artists?: string[];
+  genres?: string[];
   isLoading?: boolean;
 }
 
@@ -45,8 +46,11 @@ function FilterContent({
   onLocationChange,
   onCountryChange,
   artists = [],
+  genres = [],
   isLoading,
 }: CheckInsFilterProps) {
+  console.log("FilterContent received genres:", genres);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
@@ -121,14 +125,15 @@ function FilterContent({
             <SelectValue placeholder="All Genres" />
           </SelectTrigger>
           <SelectContent>
-            {/* TODO: Add genres from the database */}
             <SelectItem value="all">All Genres</SelectItem>
-            <SelectItem value="metal">Metal</SelectItem>
-            <SelectItem value="rock">Rock</SelectItem>
-            <SelectItem value="pop">Pop</SelectItem>
-            <SelectItem value="electronic">Electronic</SelectItem>
-            <SelectItem value="jazz">Jazz</SelectItem>
-            <SelectItem value="classical">Classical</SelectItem>
+            {genres.map((genre) => {
+              console.log("Rendering genre option:", genre);
+              return (
+                <SelectItem key={genre} value={genre}>
+                  {genre}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>

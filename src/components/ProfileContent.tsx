@@ -50,7 +50,7 @@ interface ProfileCheckIn {
     time: string;
     comment: string;
     likes: number;
-    comments: {
+    comments: Array<{
       id: string;
       user: {
         id: string;
@@ -60,7 +60,7 @@ interface ProfileCheckIn {
       text: string;
       date: string;
       time: string;
-    }[];
+    }>;
   };
 }
 

@@ -35,7 +35,7 @@ interface TimelineResponse {
       image_url?: string | null;
       genres?: Array<{
         id: string;
-        genre: string;
+        name: string;
       }>;
       pivot: {
         concert_id: string;
@@ -156,6 +156,41 @@ export async function GET(request: NextRequest) {
         (artist: { name: string }) => artist.name
       );
 
+      // Log the raw artist data to see its structure
+      console.log("[Profile Check-ins API] Raw artist data:", {
+        event: item.concert.event.name,
+        artists: item.concert.artists.map((a) => ({
+          name: (a as any).name, // temporarily cast to any to see the data
+          rawGenres: JSON.stringify(a.genres),
+          genresArray: a.genres,
+          genresType: typeof a.genres,
+          isArray: Array.isArray(a.genres),
+        })),
+      });
+
+      // Extract unique genres from all artists
+      const uniqueGenres = Array.from(
+        new Set(
+          item.concert.artists.flatMap(
+            (artist: { genres?: Array<{ id: string; name: string }> }) => {
+              console.log("[Profile Check-ins API] Processing artist:", {
+                name: (artist as any).name,
+                genres: JSON.stringify(artist.genres),
+                mappedGenres: artist.genres?.map((g) => g.name),
+              });
+              if (!artist.genres) return [];
+              return artist.genres.map((g) => g.name);
+            }
+          )
+        )
+      );
+
+      console.log("[Profile Check-ins API] Final genres:", {
+        event: item.concert.event.name,
+        uniqueGenres,
+        genresLength: uniqueGenres.length,
+      });
+
       return {
         id: item.id,
         user: {
@@ -177,7 +212,7 @@ export async function GET(request: NextRequest) {
           date: item.concert.date,
           rating: item.rating ?? 0,
           artists: artistNames,
-          genres: [],
+          genres: uniqueGenres,
         },
         checkIn: {
           id: item.id,

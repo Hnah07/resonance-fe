@@ -161,6 +161,15 @@ export async function GET(request: NextRequest) {
       // Transform artists to just include names for display
       const artistNames = item.concert.artists.map((artist) => artist.name);
 
+      // Extract unique genres from all artists
+      const uniqueGenres = Array.from(
+        new Set(
+          item.concert.artists.flatMap(
+            (artist) => artist.genres?.map((g) => g.genre) || []
+          )
+        )
+      );
+
       return {
         id: item.id,
         user: {
@@ -182,7 +191,7 @@ export async function GET(request: NextRequest) {
           date: item.concert.date,
           rating: item.rating ?? 0,
           artists: artistNames,
-          genres: [],
+          genres: uniqueGenres,
         },
         checkIn: {
           id: item.id,

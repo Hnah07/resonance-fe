@@ -33,7 +33,7 @@ interface TabCheckInsProps {
       time: string;
       comment: string;
       likes: number;
-      comments: {
+      comments: Array<{
         id: string;
         user: {
           id: string;
@@ -43,7 +43,7 @@ interface TabCheckInsProps {
         text: string;
         date: string;
         time: string;
-      }[];
+      }>;
     };
   }>;
 }
@@ -54,13 +54,35 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
   const [selectedArtist, setSelectedArtist] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
 
-  // Get unique artists from all check-ins
-  const uniqueArtists = useMemo(() => {
+  // Get unique artists and genres from all check-ins
+  const { uniqueArtists, uniqueGenres } = useMemo(() => {
     const artists = new Set<string>();
+    const genres = new Set<string>();
+
+    console.log(
+      "Processing check-ins for genres:",
+      checkIns.map((checkIn) => ({
+        event: checkIn.concert.event,
+        genres: checkIn.concert.genres,
+      }))
+    );
+
     checkIns.forEach((checkIn) => {
-      checkIn.concert.artists.forEach((artist) => artists.add(artist));
+      checkIn.concert.artists.forEach((artist) => {
+        artists.add(artist);
+      });
+      checkIn.concert.genres.forEach((genre) => {
+        genres.add(genre);
+      });
     });
-    return Array.from(artists).sort();
+
+    const sortedGenres = Array.from(genres).sort();
+    console.log("Extracted unique genres:", sortedGenres);
+
+    return {
+      uniqueArtists: Array.from(artists).sort(),
+      uniqueGenres: sortedGenres,
+    };
   }, [checkIns]);
 
   const filteredAndSortedCheckIns = useMemo(() => {
@@ -69,9 +91,7 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
     // Apply genre filter
     if (selectedGenre !== "all") {
       filtered = filtered.filter((checkIn) =>
-        checkIn.concert.genres.some(
-          (genre) => genre.toLowerCase() === selectedGenre.toLowerCase()
-        )
+        checkIn.concert.genres.includes(selectedGenre)
       );
     }
 
@@ -125,6 +145,7 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
         onLocationChange={() => {}}
         onCountryChange={() => {}}
         artists={uniqueArtists}
+        genres={uniqueGenres}
       />
       <div className="space-y-6">
         {filteredAndSortedCheckIns.map((checkIn) => (
