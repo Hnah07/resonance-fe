@@ -17,85 +17,85 @@ import {
   LuTicket,
 } from "react-icons/lu";
 import { DetailsButton } from "@/components/ui/details-button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { makeClientRequest } from "@/lib/api";
+import { toast } from "sonner";
+import CardSkeleton from "@/components/CardSkeleton";
+
+interface ProfileCheckIn {
+  user: {
+    id: string;
+    name?: string;
+    username: string;
+    image?: string;
+  };
+  concert: {
+    id: string;
+    event: string;
+    location: {
+      id: string;
+      name: string;
+    };
+    city: string;
+    country: string;
+    image: string;
+    date: string;
+    rating: number;
+    artists: string[];
+    genres: string[];
+  };
+  checkIn: {
+    id: string;
+    date: string;
+    time: string;
+    comment: string;
+    likes: number;
+    comments: {
+      id: string;
+      user: {
+        id: string;
+        name: string;
+        image?: string;
+      };
+      text: string;
+      date: string;
+      time: string;
+    }[];
+  };
+}
 
 export function ProfileContent() {
   const [activeTab, setActiveTab] = useState<
     "check-ins" | "photos" | "stats" | "friends"
   >("check-ins");
+  const [checkIns, setCheckIns] = useState<ProfileCheckIn[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data for check-ins
-  const mockCheckIns = [
-    {
-      user: {
-        id: "1",
-        name: "John Doe",
-        username: "johndoe",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      concert: {
-        id: "1",
-        event: "Metallica World Tour 2024",
-        location: {
-          id: "1",
-          name: "Sportpaleis",
-        },
-        city: "Antwerp",
-        country: "Belgium",
-        image: "/placeholder-concert.jpg",
-        date: "2024-03-15",
-        rating: 5,
-        artists: ["Metallica", "Five Finger Death Punch"],
-        genres: ["Metal", "Heavy Metal"],
-      },
-      checkIn: {
-        id: "1",
-        date: "2024-03-15",
-        time: "20:00",
-        comment:
-          "Incredible show! The energy was amazing and the setlist was perfect. James Hetfield's voice was on point!",
-        likes: 42,
-        comments: [],
-      },
-    },
-    {
-      user: {
-        id: "1",
-        name: "John Doe",
-        username: "johndoe",
-        image: "/placeholder-avatar-user.jpg",
-      },
-      concert: {
-        id: "2",
-        event: "Tomorrowland 2024",
-        location: {
-          id: "2",
-          name: "De Schorre",
-        },
-        city: "Boom",
-        country: "Belgium",
-        image: "/placeholder-concert.jpg",
-        date: "2024-02-20",
-        rating: 4,
-        artists: [
-          "Johan Gielen",
-          "Martin Garrix",
-          "David Guetta",
-          "Armin van Buuren",
-        ],
-        genres: ["EDM", "House", "Trance"],
-      },
-      checkIn: {
-        id: "2",
-        date: "2024-02-20",
-        time: "14:00",
-        comment:
-          "Best festival experience ever! The production was mind-blowing and the atmosphere was electric.",
-        likes: 89,
-        comments: [],
-      },
-    },
-  ];
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await makeClientRequest<ProfileCheckIn>(
+          "/api/profile/check-ins"
+        );
+
+        if (response.data) {
+          setCheckIns(response.data);
+        } else {
+          setCheckIns([]);
+        }
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load profile data"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, []);
 
   const image = "/placeholder-avatar-user.jpg";
 
@@ -196,7 +196,16 @@ export function ProfileContent() {
 
       {/* Tab Contents */}
       <div className="max-w-2xl mx-auto">
-        {activeTab === "check-ins" && <TabCheckIns checkIns={mockCheckIns} />}
+        {activeTab === "check-ins" &&
+          (isLoading ? (
+            <div className="space-y-6">
+              {[...Array(3)].map((_, index) => (
+                <CardSkeleton key={index} />
+              ))}
+            </div>
+          ) : (
+            <TabCheckIns checkIns={checkIns} />
+          ))}
         {activeTab === "photos" && <TabPhotos />}
         {activeTab === "stats" && <TabStats />}
         {activeTab === "friends" && <TabFriends />}
