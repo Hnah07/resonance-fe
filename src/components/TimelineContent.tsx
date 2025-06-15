@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import CheckInCard from "@/components/CheckInCard";
 import { useInView } from "react-intersection-observer";
 import CardSkeleton from "@/components/CardSkeleton";
@@ -147,7 +147,7 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
     },
   });
 
-  const fetchCheckIns = async (pageNum: number) => {
+  const fetchCheckIns = useCallback(async (pageNum: number) => {
     try {
       const response = await fetch(`/api/timeline?page=${pageNum}`, {
         credentials: "include",
@@ -197,7 +197,7 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Load more when scrolling
   useEffect(() => {
@@ -206,7 +206,7 @@ export function TimelineContent({ initialData }: TimelineContentProps) {
       nextPageRef.current = nextPage;
       fetchCheckIns(nextPage);
     }
-  }, [inView, isLoading, hasMore]);
+  }, [inView, isLoading, hasMore, fetchCheckIns]);
 
   if (error) {
     return (

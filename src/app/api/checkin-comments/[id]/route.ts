@@ -1,21 +1,33 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { makeAuthRequest } from "../../auth/make-auth-request";
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export const dynamic = "force-dynamic";
+
+export async function DELETE(request: NextRequest) {
+  // Extract the comment ID from the URL
+  const id = request.url.split("/").pop();
+
+  if (!id) {
+    return NextResponse.json(
+      { message: "Comment ID is required" },
+      { status: 400 }
+    );
+  }
+
   try {
-    console.log("Deleting comment:", params.id);
     const response = await makeAuthRequest(
-      `/api/checkin-comments/${params.id}`,
+      `/api/checkin-comments/${id}`,
       "DELETE",
       {}
     );
-    console.log("Backend delete response:", response);
 
-    // Return a simple success response
-    return NextResponse.json({ success: true });
+    // Return a more detailed success response
+    return NextResponse.json({
+      success: true,
+      message: "Comment deleted successfully",
+      commentId: id,
+      response,
+    });
   } catch (error) {
     console.error("Error deleting comment:", error);
     if (
