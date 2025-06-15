@@ -5,6 +5,7 @@ import CheckInCard from "@/components/CheckInCard";
 import { useInView } from "react-intersection-observer";
 import CardSkeleton from "@/components/CardSkeleton";
 import { toast } from "sonner";
+import { makeClientRequest } from "@/lib/api";
 
 interface TimelineCheckIn {
   id: string;
@@ -50,47 +51,46 @@ interface TimelineCheckIn {
 }
 
 interface TimelineResponse {
-  checkIns: Array<{
+  id: string;
+  user: {
     id: string;
-    user: {
+    name: string | null;
+    username: string;
+    image: string;
+  };
+  concert: {
+    id: string;
+    event: string;
+    location: {
       id: string;
-      name: string | null;
-      username: string;
-      image: string | null;
+      name: string;
     };
-    concert: {
+    city: string;
+    image: string;
+    date: string;
+    rating: number;
+    artists: string[];
+    genres: string[];
+  };
+  checkIn: {
+    id: string;
+    date: string;
+    time: string;
+    comment: string;
+    likes: number;
+    isLiked: boolean;
+    comments: Array<{
       id: string;
-      event: string;
-      location: {
+      user: {
         id: string;
         name: string;
+        image: string;
       };
-      city: string;
-      image: string;
-      date: string;
-      rating: number;
-      artists: string[];
-      genres: string[];
-    };
-    checkIn: {
-      id: string;
+      text: string;
       date: string;
       time: string;
-      comment: string;
-      likes: number;
-      isLiked: boolean;
-      comments: Array<{
-        id: string;
-        user: {
-          id: string;
-          name: string;
-          image: string | null;
-        };
-        text: string;
-        date: string;
-      }>;
-    };
-  }>;
+    }>;
+  };
 }
 
 export function TimelineContent() {
@@ -110,46 +110,24 @@ export function TimelineContent() {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        // Use relative path instead of full URL
-        const response = await fetch("/api/timeline?page=1", {
-          credentials: "include",
-        });
+        const response = await makeClientRequest<TimelineResponse>(
+          "/api/timeline?page=1"
+        );
 
-        console.log("Fetching timeline from:", "/api/timeline?page=1");
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          console.error("Timeline fetch error:", {
-            status: response.status,
-            errorData,
-            url: response.url,
-          });
-          if (response.status === 404) {
-            throw new Error(
-              "Timeline feature is not available yet. Please check back later."
-            );
-          }
-          throw new Error(
-            errorData?.message ||
-              `Failed to fetch timeline (${response.status})`
-          );
-        }
-
-        const data = await response.json();
         console.log("Initial timeline data:", {
-          hasData: !!data,
-          checkInsLength: data.checkIns?.length,
-          firstCheckIn: data.checkIns?.[0]
+          hasData: !!response.data,
+          checkInsLength: response.data?.length,
+          firstCheckIn: response.data?.[0]
             ? {
-                id: data.checkIns[0].id,
-                user: data.checkIns[0].user.username,
-                event: data.checkIns[0].concert.event,
+                id: response.data[0].id,
+                user: response.data[0].user.username,
+                event: response.data[0].concert.event,
               }
             : null,
         });
 
-        if (data.checkIns?.length > 0) {
-          const transformedCheckIns = data.checkIns.map(transformCheckIn);
+        if (response.data?.length > 0) {
+          const transformedCheckIns = response.data.map(transformCheckIn);
           checkInsMap.current.clear();
           transformedCheckIns.forEach((checkIn: TimelineCheckIn) => {
             checkInsMap.current.set(checkIn.id, checkIn);
@@ -176,9 +154,7 @@ export function TimelineContent() {
     fetchInitialData();
   }, []); // Empty dependency array means this runs once on mount
 
-  const transformCheckIn = (
-    checkIn: TimelineResponse["checkIns"][0]
-  ): TimelineCheckIn => ({
+  const transformCheckIn = (checkIn: TimelineResponse): TimelineCheckIn => ({
     ...checkIn,
     user: {
       ...checkIn.user,
@@ -205,49 +181,30 @@ export function TimelineContent() {
   const fetchCheckIns = useCallback(async (pageNum: number) => {
     console.log("Fetching check-ins for page:", pageNum);
     try {
-      // Use relative path here as well
-      const response = await fetch(`/api/timeline?page=${pageNum}`, {
-        credentials: "include",
-        next: { revalidate: 30 },
-      });
+      const response = await makeClientRequest<TimelineResponse>(
+        `/api/timeline?page=${pageNum}`
+      );
 
-      console.log("Timeline fetch response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("Timeline fetch error:", {
-          status: response.status,
-          errorData,
-        });
-        if (response.status === 404) {
-          throw new Error(
-            "Timeline feature is not available yet. Please check back later."
-          );
-        }
-        throw new Error(
-          errorData?.message || `Failed to fetch timeline (${response.status})`
-        );
-      }
-
-      const data = (await response.json()) as TimelineResponse;
       console.log("Timeline fetch data:", {
-        hasData: !!data,
-        checkInsLength: data.checkIns?.length,
-        firstCheckIn: data.checkIns?.[0]
+        hasData: !!response.data,
+        checkInsLength: response.data?.length,
+        firstCheckIn: response.data?.[0]
           ? {
-              id: data.checkIns[0].id,
-              user: data.checkIns[0].user.username,
-              event: data.checkIns[0].concert.event,
+              id: response.data[0].id,
+              user: response.data[0].user.username,
+              event: response.data[0].concert.event,
             }
           : null,
       });
 
-      const newCheckIns = (data.checkIns || [])
+      const newCheckIns = (response.data || [])
         .map(transformCheckIn)
-        .filter((checkIn) => !checkInsMap.current.has(checkIn.id));
+        .filter(
+          (checkIn: TimelineCheckIn) => !checkInsMap.current.has(checkIn.id)
+        );
 
       console.log("Processed new check-ins:", {
-        total: data.checkIns?.length,
+        total: response.data?.length,
         new: newCheckIns.length,
         existing: checkInsMap.current.size,
       });

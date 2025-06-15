@@ -1,83 +1,78 @@
 import { NextRequest, NextResponse } from "next/server";
 import { makeAuthRequest } from "../auth/make-auth-request";
+import { cookies } from "next/headers";
 
 // Configure caching
 export const dynamic = "force-dynamic";
 export const revalidate = 30; // Cache for 30 seconds
 
 interface TimelineResponse {
-  data: Array<{
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    profile_photo_url: string;
+  };
+  concert: {
+    id: string;
+    date: string;
+    event: {
+      id: string;
+      name: string;
+    };
+    location?: {
+      id: string;
+      name: string;
+      city: string;
+    };
+    artists: Array<{
+      id: string;
+      name: string;
+      pivot?: {
+        checkin_id: string;
+        artist_id: string;
+      };
+    }>;
+  };
+  created_at: string;
+  photos: Array<{
+    id: string;
+    url: string;
+  }>;
+  likes: Array<{
+    id: string;
+    user_id: string;
+  }>;
+  comments: Array<{
     id: string;
     user: {
       id: string;
-      name: string | null;
-      username: string;
+      name: string;
       profile_photo_url: string;
     };
-    concert: {
-      id: string;
-      event: {
-        id: string;
-        name: string;
-        type: string;
-        image_url: string;
-      };
-      location: {
-        id: string;
-        name: string;
-        city: string;
-        country: string;
-      };
-      date: string;
-      artists: Array<{
-        id: string;
-        name: string;
-        image_url: string;
-        genres: Array<{
-          id: string;
-          name: string;
-        }>;
-      }>;
-    };
-    photos: Array<{
-      id: string;
-      url: string;
-      caption: string | null;
-    }>;
-    likes_count: number;
-    comments_count: number;
-    is_liked: boolean;
-    rating: number | null;
-    review: string | null;
+    comment: string;
     created_at: string;
-    updated_at: string;
-    comments: Array<{
-      id: string;
-      comment: string;
-      created_at: string;
-      user: {
-        id: string;
-        name: string;
-        username: string;
-        profile_photo_url: string;
-      };
-    }>;
   }>;
-  links: {
-    first: string | null;
-    last: string | null;
-    prev: string | null;
-    next: string | null;
-  };
-  meta: {
-    current_page: number;
-    from: number | null;
-    last_page: number;
-    path: string;
-    per_page: number;
-    to: number | null;
-    total: number;
-  };
+}
+
+interface PaginatedResponse<T> {
+  current_page: number;
+  data: T[];
+  first_page_url: string;
+  from: number;
+  last_page: number;
+  last_page_url: string;
+  links: Array<{
+    url: string | null;
+    label: string;
+    active: boolean;
+  }>;
+  next_page_url: string | null;
+  path: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number;
+  total: number;
 }
 
 export async function GET(request: NextRequest) {
@@ -85,77 +80,159 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const page = searchParams.get("page") || "1";
 
-    console.log("Timeline API called with page:", page);
-    console.log("Environment variables:", {
+    console.log("[Timeline API] Request received:", {
+      page,
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+    });
+
+    console.log("[Timeline API] Environment:", {
       NODE_ENV: process.env.NODE_ENV,
       NEXT_PUBLIC_API_HOST: process.env.NEXT_PUBLIC_API_HOST,
       VERCEL_ENV: process.env.VERCEL_ENV,
       VERCEL_URL: process.env.VERCEL_URL,
     });
 
-    const response = await makeAuthRequest<
-      Record<string, never>,
-      TimelineResponse
-    >(`/api/timeline?page=${page}`, "GET", {});
-
-    console.log("Backend timeline response:", {
-      hasData: !!response.data,
-      dataLength: response.data?.length,
-      firstItem: response.data?.[0]
-        ? {
-            id: response.data[0].id,
-            user: response.data[0].user.username,
-            event: response.data[0].concert.event.name,
-          }
-        : null,
+    // Get the auth token from cookies for logging
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get("auth_token");
+    console.log("[Timeline API] Auth token state:", {
+      hasToken: !!authToken,
+      tokenLength: authToken?.value.length,
     });
 
-    if (!response.data || response.data.length === 0) {
-      console.log("No check-ins found in response");
+    console.log("[Timeline API] Making request to backend:", {
+      path: `/api/checkins?page=${page}`,
+      method: "GET",
+    });
+
+    const response = await makeAuthRequest<
+      Record<string, never>,
+      PaginatedResponse<TimelineResponse>
+    >(`/api/checkins?page=${page}`, "GET", {});
+
+    if (!response || !response.data) {
+      console.log("[Timeline API] No response data received");
+      return NextResponse.json({ data: [] });
+    }
+
+    const { data: checkIns, current_page, last_page, total, links } = response;
+
+    // Log the raw response data for debugging
+    console.log("[Timeline API] Raw response data:", {
+      firstCheckIn: checkIns?.[0] ? JSON.stringify(checkIns[0], null, 2) : null,
+    });
+
+    console.log("[Timeline API] Backend response received:", {
+      hasData: !!checkIns,
+      dataLength: checkIns?.length,
+      firstItem: checkIns?.[0]
+        ? {
+            id: checkIns[0].id,
+            hasUser: !!checkIns[0].user,
+            hasConcert: !!checkIns[0].concert,
+            hasEvent: !!checkIns[0].concert?.event,
+            user: checkIns[0].user
+              ? {
+                  id: checkIns[0].user.id,
+                  username: checkIns[0].user.name,
+                }
+              : null,
+            event: checkIns[0].concert?.event?.name,
+          }
+        : null,
+      meta: {
+        currentPage: current_page,
+        lastPage: last_page,
+        total,
+      },
+      links,
+    });
+
+    if (!checkIns || checkIns.length === 0) {
+      console.log("[Timeline API] No check-ins found in response");
+      return NextResponse.json({ data: [] });
     }
 
     // Transform the response to match the frontend's expected format
-    const transformedData = {
-      checkIns: response.data.map((item) => {
-        console.log("Processing check-in:", {
+    const transformedData = checkIns
+      .filter((item): item is TimelineResponse => {
+        // Validate that the item has all required data
+        const isValid = !!(
+          item &&
+          item.id &&
+          item.user &&
+          item.user.id &&
+          item.user.name &&
+          item.concert &&
+          item.concert.id &&
+          item.concert.event &&
+          item.concert.event.name &&
+          item.concert.date
+        );
+
+        if (!isValid) {
+          console.error("[Timeline API] Invalid check-in data:", {
+            id: item?.id,
+            hasUser: !!item?.user,
+            hasConcert: !!item?.concert,
+            hasEvent: !!item?.concert?.event,
+            raw: JSON.stringify(item, null, 2),
+          });
+        }
+
+        return isValid;
+      })
+      .map((item) => {
+        console.log("[Timeline API] Processing valid check-in:", {
           id: item.id,
-          artists: item.concert.artists,
-          comments: item.comments,
+          user: item.user.name,
+          event: item.concert.event.name,
+          hasComments: item.comments?.length > 0,
+          hasPhotos: item.photos?.length > 0,
+          artists: item.concert.artists.map((a) => ({
+            id: a.id,
+            name: a.name,
+            isCheckedIn: !!a.pivot,
+          })),
         });
+
+        // Filter artists to only include those that were checked in
+        const checkedInArtists = item.concert.artists
+          .filter((artist) => artist.pivot?.checkin_id === item.id)
+          .map((artist) => artist.name);
+
         return {
           id: item.id,
           user: {
             id: item.user.id,
             name: item.user.name,
-            username: item.user.username,
-            image: item.user.profile_photo_url,
+            username: item.user.name,
+            image:
+              item.user.profile_photo_url || "/placeholder-avatar-user.jpg",
           },
           concert: {
             id: item.concert.id,
             event: item.concert.event.name,
             location: {
-              id: item.concert.location.id,
-              name: item.concert.location.name,
+              id: item.concert.location?.id || "default",
+              name: item.concert.location?.name || "Unknown Venue",
             },
-            city: item.concert.location.city,
-            image: item.concert.event.image_url,
+            city: item.concert.location?.city || "Unknown City",
             date: item.concert.date,
-            rating: item.rating || 0,
-            artists: item.concert.artists.map((artist) => artist.name),
-            genres: Array.from(
-              new Set(
-                item.concert.artists.flatMap((artist) =>
-                  artist.genres.map((genre) => genre.name)
-                )
-              )
-            ),
+            rating: 0,
+            artists: checkedInArtists,
+            genres: [],
           },
           checkIn: {
             id: item.id,
             date: item.created_at,
             time: new Date(item.created_at).toLocaleTimeString(),
-            comment: item.review || "",
-            likes: item.likes_count,
+            comment: "", // Since backend doesn't provide review
+            likes: item.likes?.length || 0,
+            isLiked:
+              item.likes?.some((like) => like.user_id === item.user.id) ||
+              false,
             comments: item.comments.map((comment) => ({
               id: comment.id,
               user: {
@@ -169,21 +246,34 @@ export async function GET(request: NextRequest) {
             })),
           },
         };
-      }),
-    };
+      });
 
-    console.log(
-      "Transformed data:",
-      JSON.stringify(transformedData.checkIns[0], null, 2)
-    );
-
-    return NextResponse.json(transformedData, {
-      headers: {
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=59",
-      },
+    console.log("[Timeline API] Sending transformed response:", {
+      checkInsCount: transformedData.length,
+      firstCheckIn: transformedData[0]
+        ? {
+            id: transformedData[0].id,
+            user: transformedData[0].user.username,
+            event: transformedData[0].concert.event,
+          }
+        : null,
     });
+
+    return NextResponse.json(
+      { data: transformedData },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=59",
+        },
+      }
+    );
   } catch (error) {
-    console.error("Timeline API error:", error);
+    console.error("[Timeline API] Error:", {
+      error,
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     if (error instanceof Error && error.message.includes("404")) {
       return NextResponse.json(
         {
@@ -193,8 +283,12 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
+
     return NextResponse.json(
-      { message: "Failed to fetch timeline" },
+      {
+        message: "Failed to fetch timeline",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
