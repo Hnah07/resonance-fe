@@ -86,14 +86,19 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get("page") || "1";
 
     console.log("Timeline API called with page:", page);
-    console.log("API Host:", process.env.NEXT_PUBLIC_API_HOST);
+    console.log("Environment variables:", {
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_API_HOST: process.env.NEXT_PUBLIC_API_HOST,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      VERCEL_URL: process.env.VERCEL_URL,
+    });
 
     const response = await makeAuthRequest<
       Record<string, never>,
       TimelineResponse
     >(`/api/timeline?page=${page}`, "GET", {});
 
-    console.log("Backend timeline response status:", {
+    console.log("Backend timeline response:", {
       hasData: !!response.data,
       dataLength: response.data?.length,
       firstItem: response.data?.[0]
