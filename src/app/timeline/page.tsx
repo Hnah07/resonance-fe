@@ -4,6 +4,14 @@ import { UnauthenticatedCheckIn } from "@/components/UnauthenticatedCheckIn";
 import { TimelineContent } from "@/components/TimelineContent";
 import { makeAuthRequest } from "../api/auth/make-auth-request";
 
+interface User {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  profile_photo_url: string;
+}
+
 interface BackendTimelineResponse {
   data: Array<{
     id: string;
@@ -52,10 +60,38 @@ interface BackendTimelineResponse {
 
 async function getInitialTimelineData() {
   try {
+    // First verify authentication
+    const authResponse = await makeAuthRequest<
+      Record<string, never>,
+      { user: User }
+    >("/api/user", "GET", {});
+
+    if (!authResponse.user) {
+      console.log("No authenticated user found");
+      return { checkIns: [] };
+    }
+
+    console.log(
+      "Fetching timeline for authenticated user:",
+      authResponse.user.username
+    );
+
     const response = await makeAuthRequest<
       Record<string, never>,
       BackendTimelineResponse
     >("/api/timeline?page=1", "GET", {});
+
+    console.log("Timeline response:", {
+      hasData: !!response.data,
+      dataLength: response.data?.length,
+      firstItem: response.data?.[0]
+        ? {
+            id: response.data[0].id,
+            user: response.data[0].user.username,
+            event: response.data[0].concert.event.name,
+          }
+        : null,
+    });
 
     // Transform the response to match the frontend's expected format
     return {
@@ -110,7 +146,13 @@ async function getInitialTimelineData() {
     };
   } catch (error) {
     console.error("Error fetching initial timeline data:", error);
-    return { checkIns: [] };
+    if (
+      error instanceof Error &&
+      error.message.includes("No authentication token available")
+    ) {
+      return { checkIns: [] };
+    }
+    throw error;
   }
 }
 
@@ -120,10 +162,20 @@ export default async function TimelinePage() {
   const authToken = cookieStore.get("auth_token");
   const isAuthenticated = !!authToken;
 
+  if (!isAuthenticated) {
+    return (
+      <>
+        <PageHeader
+          title="Timeline"
+          subtitle="Resonate with your friends through check-ins"
+        />
+        <UnauthenticatedCheckIn />
+      </>
+    );
+  }
+
   // Fetch initial data on the server
-  const initialData = isAuthenticated
-    ? await getInitialTimelineData()
-    : { checkIns: [] };
+  const initialData = await getInitialTimelineData();
 
   return (
     <>
@@ -131,11 +183,7 @@ export default async function TimelinePage() {
         title="Timeline"
         subtitle="Resonate with your friends through check-ins"
       />
-      {isAuthenticated ? (
-        <TimelineContent initialData={initialData} />
-      ) : (
-        <UnauthenticatedCheckIn />
-      )}
+      <TimelineContent initialData={initialData} />
     </>
   );
 }
