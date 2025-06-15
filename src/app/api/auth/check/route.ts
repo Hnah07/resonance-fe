@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic"; // Disable caching for this route
 
 export async function GET() {
+  console.log("Auth check endpoint called");
   const cookieStore = await cookies();
   const authToken = await cookieStore.get("auth_token");
 
@@ -14,6 +15,7 @@ export async function GET() {
   });
 
   if (!authToken) {
+    console.log("No auth token found, returning 401");
     // Create a response that clears any existing cookie
     const res = new NextResponse(null, {
       status: 401,
@@ -36,6 +38,7 @@ export async function GET() {
     return res;
   }
 
+  console.log("Auth token found, returning 200");
   // Return 200 if we have a valid cookie
   return new NextResponse(null, {
     status: 200,

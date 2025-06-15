@@ -169,6 +169,10 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
           // Update comments state with the new comment
           setComments((prevComments) => [...prevComments, comment]);
         }}
+        onUpdateComments={(updatedComments) => {
+          // Update comments state with the new list
+          setComments(updatedComments);
+        }}
         checkInId={checkIn.id}
       />
     </Card>

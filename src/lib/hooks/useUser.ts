@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useAuth } from "./useAuth";
 
 interface User {
   id: string;
@@ -27,37 +28,90 @@ export function useUser() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUser = async () => {
+      // If not authenticated, don't try to fetch user data
+      if (!isAuthenticated) {
+        console.log("User not authenticated, skipping user data fetch");
+        if (isMounted) {
+          setUser(null);
+          setError(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       try {
+        console.log("Fetching user data...");
         const response = await fetch("/api/user", {
           credentials: "include",
+          cache: "no-store", // Disable caching
         });
 
+        console.log("User API response status:", response.status);
         if (!response.ok) {
           if (response.status === 401) {
-            setUser(null);
-            setError(null);
+            console.log("User not authenticated (401)");
+            if (isMounted) {
+              setUser(null);
+              setError(null);
+              setIsLoading(false);
+            }
             return;
           }
           const error = await response.json();
+          console.error("User API error:", error);
           throw new Error(error.message || "Failed to fetch user");
         }
 
         const data = await response.json();
-        setUser(data.user);
-        setError(null);
+        console.log(
+          "User API response data (raw):",
+          JSON.stringify(data, null, 2)
+        );
+        console.log("User API response data type:", typeof data);
+        console.log("User API response data keys:", Object.keys(data));
+
+        if (!data || Object.keys(data).length === 0) {
+          console.error("User API returned empty data");
+          if (isMounted) {
+            setError("Failed to fetch user data");
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (isMounted) {
+          console.log("Setting user state with:", data);
+          setUser(data);
+          console.log("User state after setUser:", data);
+          setError(null);
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error("Error fetching user:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch user");
-      } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Failed to fetch user");
+          setIsLoading(false);
+        }
       }
     };
 
     fetchUser();
-  }, [pathname]); // Re-fetch when the route changes
+
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname, isAuthenticated]);
+
+  // Add debug logging for user state changes
+  useEffect(() => {
+    console.log("User state updated:", { user, isLoading, error });
+  }, [user, isLoading, error]);
 
   return { user, isLoading, error };
 }

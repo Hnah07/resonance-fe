@@ -1,28 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { LuMessageCircle } from "react-icons/lu";
+import { LuMessageCircle, LuTrash2 } from "react-icons/lu";
 import Image from "next/image";
 import { formatRelativeTime } from "@/lib/helpers";
-
-interface Comment {
-  id: string;
-  user: {
-    id: string;
-    name: string;
-    username?: string;
-    profile_photo_url?: string;
-    image?: string;
-  };
-  comment?: string;
-  text?: string;
-  created_at?: string;
-  date?: string;
-  time?: string;
-}
+import { useUser } from "@/lib/hooks/useUser";
+import { Comment } from "@/types/comment";
 
 interface CommentButtonProps {
   count: number;
@@ -37,6 +23,7 @@ interface CommentButtonProps {
       profile_photo_url: string;
     };
   }) => void;
+  onUpdateComments: (comments: Comment[]) => void;
   checkInId: string;
   comments: Comment[];
 }
@@ -90,6 +77,7 @@ function normalizeComment(comment: Comment): {
   user: {
     id: string;
     name: string;
+    username: string;
     profile_photo_url: string;
   };
   comment: string;
@@ -100,6 +88,7 @@ function normalizeComment(comment: Comment): {
     user: {
       id: comment.user.id,
       name: comment.user.name,
+      username: comment.user.username || "",
       profile_photo_url:
         comment.user.profile_photo_url ||
         comment.user.image ||
@@ -113,12 +102,28 @@ function normalizeComment(comment: Comment): {
 export function CommentButton({
   count,
   onAddComment,
+  onUpdateComments,
   checkInId,
   comments,
 }: CommentButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, isLoading, error } = useUser();
+
+  // Add debug logging for user state
+  useEffect(() => {
+    console.log("CommentButton - User state changed:", {
+      user,
+      isLoading,
+      error,
+    });
+  }, [user, isLoading, error]);
+
+  // Add debug logging for comment rendering
+  useEffect(() => {
+    console.log("CommentButton - Comments changed:", comments);
+  }, [comments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,6 +172,40 @@ export function CommentButton({
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const response = await fetch(`/api/checkin-comments/${commentId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Failed to delete comment";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If we can't parse the error JSON, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Remove the comment from the list
+      const updatedComments = comments.filter((c) => c.id !== commentId);
+
+      // Update the parent component with the new comments list
+      onUpdateComments(updatedComments);
+
+      toast.success("Comment deleted successfully");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete comment"
+      );
+    }
+  };
+
   return (
     <div className="relative">
       <Button
@@ -206,8 +245,24 @@ export function CommentButton({
                   const { date, time } = parseCommentDate(
                     normalizedComment.created_at
                   );
+
+                  // More detailed logging for each comment
+                  const isOwnComment = user?.id === normalizedComment.user.id;
+                  console.log("Comment debug:", {
+                    commentId: normalizedComment.id,
+                    commentUserId: normalizedComment.user.id,
+                    currentUserId: user?.id,
+                    isOwnComment,
+                    userName: normalizedComment.user.name,
+                    currentUserName: user?.name,
+                    userState: { user, isLoading, error },
+                  });
+
                   return (
-                    <div key={normalizedComment.id} className="flex gap-3 py-3">
+                    <div
+                      key={normalizedComment.id}
+                      className="flex gap-3 py-3 group relative hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2"
+                    >
                       <Image
                         src={normalizedComment.user.profile_photo_url}
                         alt={normalizedComment.user.name}
@@ -215,16 +270,32 @@ export function CommentButton({
                         height={32}
                         className="w-8 h-8 rounded-full object-cover"
                       />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">
-                            {normalizedComment.user.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatRelativeTime(date, time)}
-                          </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">
+                              {normalizedComment.user.name}
+                              {isOwnComment && " (you)"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatRelativeTime(date, time)}
+                            </span>
+                          </div>
+                          {isLoading ? (
+                            <div className="w-4 h-4 animate-pulse bg-slate-200 dark:bg-slate-700 rounded-full" />
+                          ) : isOwnComment ? (
+                            <button
+                              onClick={() =>
+                                handleDeleteComment(normalizedComment.id)
+                              }
+                              className="p-1.5 hover:bg-destructive/10 rounded-full text-destructive border border-destructive/20"
+                              title="Delete comment"
+                            >
+                              <LuTrash2 className="w-4 h-4" />
+                            </button>
+                          ) : null}
                         </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">
+                        <p className="text-sm text-muted-foreground mt-0.5 break-words">
                           {normalizedComment.comment}
                         </p>
                       </div>

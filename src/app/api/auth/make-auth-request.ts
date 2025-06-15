@@ -81,6 +81,13 @@ export const makeAuthRequest = async <
           );
           return;
         }
+
+        // For DELETE operations, empty response is valid
+        if (method === "DELETE" && (!data || data.trim() === "")) {
+          resolve({ success: true } as R);
+          return;
+        }
+
         try {
           resolve(JSON.parse(data));
         } catch {
@@ -94,7 +101,9 @@ export const makeAuthRequest = async <
       reject(error);
     });
 
-    req.write(JSON.stringify(body));
+    if (method !== "GET") {
+      req.write(JSON.stringify(body));
+    }
     req.end();
   });
 };
