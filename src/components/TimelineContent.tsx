@@ -110,12 +110,30 @@ export function TimelineContent() {
     const fetchInitialData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/timeline?page=1", {
+        // Use window.location.origin to get the current domain
+        const baseUrl =
+          typeof window !== "undefined" ? window.location.origin : "";
+        const response = await fetch(`${baseUrl}/api/timeline?page=1`, {
           credentials: "include",
         });
 
+        console.log(
+          "Fetching timeline from:",
+          `${baseUrl}/api/timeline?page=1`
+        );
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => null);
+          console.error("Timeline fetch error:", {
+            status: response.status,
+            errorData,
+            url: response.url,
+          });
+          if (response.status === 404) {
+            throw new Error(
+              "Timeline feature is not available yet. Please check back later."
+            );
+          }
           throw new Error(
             errorData?.message ||
               `Failed to fetch timeline (${response.status})`
