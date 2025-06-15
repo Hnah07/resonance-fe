@@ -21,6 +21,7 @@ import { useState, useEffect } from "react";
 import { makeClientRequest } from "@/lib/api";
 import { toast } from "sonner";
 import CardSkeleton from "@/components/CardSkeleton";
+import { useUser } from "@/lib/hooks/useUser";
 
 interface ProfileCheckIn {
   user: {
@@ -70,6 +71,7 @@ export function ProfileContent() {
   >("check-ins");
   const [checkIns, setCheckIns] = useState<ProfileCheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -97,13 +99,13 @@ export function ProfileContent() {
     fetchProfileData();
   }, []);
 
-  const image = "/placeholder-avatar-user.jpg";
-
   return (
     <>
       <div className="flex items-center gap-2 mb-4 justify-center">
         <Avatar className="w-32 h-32 border-4 border-accent-cyan/50">
-          <AvatarImage src={image} />
+          <AvatarImage
+            src={user?.profile_photo_url || "/placeholder-avatar-user.jpg"}
+          />
           <AvatarFallback>
             <Image
               src="/placeholder-avatar-user.jpg"
@@ -116,12 +118,22 @@ export function ProfileContent() {
         </Avatar>
       </div>
       <div className="flex flex-col items-center gap-4 text-accent-cyan mb-8">
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
+            {user?.name || "Anonymous"}
+          </h1>
+          <span className="text-sm text-muted-foreground self-center">
+            @{user?.username || "user"}
+          </span>
+        </div>
         <p className="text-sm text-muted-foreground">
-          I am a metalhead, but also into house music
+          {user?.bio || "No bio yet"}
         </p>
         <div className="flex gap-2">
           <LuMapPin className="w-4 h-4" />
-          <p className="text-sm text-muted-foreground">Mortsel, Belgium</p>
+          <p className="text-sm text-muted-foreground">
+            {user?.city || "No location set"}
+          </p>
         </div>
       </div>
 
