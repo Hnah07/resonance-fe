@@ -10,11 +10,14 @@ export function useAuth() {
   useEffect(() => {
     // Check if auth_token cookie exists
     const checkAuth = async () => {
+      console.log("Checking authentication status...");
       try {
         const response = await fetch("/api/auth/check", {
           credentials: "include",
         });
+        console.log("Auth check response status:", response.status);
         const isAuth = response.ok;
+        console.log("Authentication status:", isAuth);
         setIsAuthenticated(isAuth);
       } catch (error) {
         console.error("Auth check failed:", error);

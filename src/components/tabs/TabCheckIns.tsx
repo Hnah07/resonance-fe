@@ -41,6 +41,7 @@ interface TabCheckInsProps {
         };
         text: string;
         date: string;
+        time: string;
       }[];
     };
   }[];

@@ -10,7 +10,30 @@ const withPWA = pwa({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["media.out.be"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "resonance-be.ddev.site",
+      },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+      },
+      {
+        protocol: "https",
+        hostname: "placehold.co",
+      },
+    ],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    domains: ["resonance-be.ddev.site", "ui-avatars.com"],
   },
   async headers() {
     return [

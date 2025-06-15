@@ -453,3 +453,34 @@ export const makeClientRequest = async <T>(
 
   return response.json();
 };
+
+export const toggleCheckInLike = async (
+  checkInId: string,
+  isLiked: boolean
+): Promise<void> => {
+  const method = isLiked ? "DELETE" : "POST";
+  const url = isLiked
+    ? `/api/checkin-likes?checkin_id=${checkInId}`
+    : "/api/checkin-likes";
+
+  const response = await fetch(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    credentials: "include",
+    ...(method === "POST" && {
+      body: JSON.stringify({
+        checkin_id: checkInId,
+      }),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `HTTP Error: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+};
