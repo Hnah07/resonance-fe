@@ -27,9 +27,7 @@ interface TimelineResponse {
       id: string;
       name: string;
       city: string;
-      country: {
-        name: string;
-      };
+      country: string;
     };
     artists: Array<{
       id: string;
@@ -103,7 +101,19 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const authToken = cookieStore.get("auth_token");
 
+    console.log("[Timeline API] Request details:", {
+      url: request.url,
+      method: request.method,
+      headers: Object.fromEntries(request.headers.entries()),
+      searchParams: Object.fromEntries(searchParams.entries()),
+      hasAuthToken: !!authToken,
+      environment: process.env.NODE_ENV,
+      vercelEnv: process.env.VERCEL_ENV,
+      apiHost: process.env.NEXT_PUBLIC_API_HOST,
+    });
+
     if (!authToken) {
+      console.log("[Timeline API] No auth token found");
       return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
     }
 
@@ -112,6 +122,14 @@ export async function GET(request: NextRequest) {
       Record<string, never>,
       PaginatedResponse<TimelineResponse>
     >(`/api/timeline?page=${page}&per_page=${perPage}`, "GET", {});
+
+    console.log("[Timeline API] Backend response:", {
+      hasData: !!response?.data,
+      dataLength: response?.data?.length,
+      currentPage: response?.current_page,
+      lastPage: response?.last_page,
+      total: response?.total,
+    });
 
     if (!response?.data) {
       return NextResponse.json({ data: [] });
@@ -126,6 +144,19 @@ export async function GET(request: NextRequest) {
       const isLiked = currentUserId
         ? likes.some((like) => like.user_id === currentUserId)
         : false;
+
+      // Log the location data structure
+      console.log("[Timeline API] Location data:", {
+        location: item.concert.location,
+        hasLocation: !!item.concert.location,
+        locationKeys: item.concert.location
+          ? Object.keys(item.concert.location)
+          : [],
+        rawLocation: JSON.stringify(item.concert.location),
+        countryValue: item.concert.location?.country,
+        countryType: typeof item.concert.location?.country,
+        fullItem: JSON.stringify(item.concert, null, 2),
+      });
 
       // Transform artists to just include names for display
       const artistNames = item.concert.artists.map((artist) => artist.name);
@@ -144,14 +175,14 @@ export async function GET(request: NextRequest) {
           location: {
             id: item.concert.location?.id || "default",
             name: item.concert.location?.name || "Unknown Venue",
-            city: item.concert.location?.city || "Unknown City",
-            country: item.concert.location?.country?.name || "Unknown Country",
           },
+          city: item.concert.location?.city || "Unknown City",
+          country: item.concert.location?.country || "Unknown Country",
           image: item.concert.event.image_url || "/placeholder-concert.jpg",
           date: item.concert.date,
           rating: item.rating ?? 0,
-          artists: artistNames, // Just use the array of artist names
-          genres: [], // Add empty genres array to match the interface
+          artists: artistNames,
+          genres: [],
         },
         checkIn: {
           id: item.id,

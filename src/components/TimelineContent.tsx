@@ -23,6 +23,7 @@ interface TimelineCheckIn {
       name: string;
     };
     city: string;
+    country: string;
     image: string;
     date: string;
     rating: number;
@@ -66,6 +67,7 @@ interface TimelineResponse {
       name: string;
     };
     city: string;
+    country: string;
     image: string;
     date: string;
     rating: number;
