@@ -24,14 +24,17 @@ interface CheckInsFilterProps {
   onArtistChange: (value: string) => void;
   onLocationChange: (value: string) => void;
   onCountryChange: (value: string) => void;
+  artists?: string[];
+  genres?: string[];
+  locations?: string[];
   isLoading?: boolean;
 }
 
 function FilterSkeleton() {
   return (
     <div className="space-y-2">
-      <Skeleton className="h-4 w-20" />
-      <Skeleton className="h-9 w-full" />
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-10 w-full" />
     </div>
   );
 }
@@ -43,8 +46,13 @@ function FilterContent({
   onArtistChange,
   onLocationChange,
   onCountryChange,
+  artists = [],
+  genres = [],
+  locations = [],
   isLoading,
 }: CheckInsFilterProps) {
+  console.log("FilterContent received genres:", genres);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
@@ -67,9 +75,11 @@ function FilterContent({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Artists</SelectItem>
-            {/* TODO: Add artists from the database */}
-            <SelectItem value="artist1">Artist 1</SelectItem>
-            <SelectItem value="artist2">Artist 2</SelectItem>
+            {artists.map((artist) => (
+              <SelectItem key={artist} value={artist}>
+                {artist}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -83,9 +93,11 @@ function FilterContent({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Locations</SelectItem>
-            {/* TODO: Add locations from the database */}
-            <SelectItem value="venue1">Venue 1</SelectItem>
-            <SelectItem value="venue2">Venue 2</SelectItem>
+            {locations.map((location) => (
+              <SelectItem key={location} value={location}>
+                {location}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -117,14 +129,15 @@ function FilterContent({
             <SelectValue placeholder="All Genres" />
           </SelectTrigger>
           <SelectContent>
-            {/* TODO: Add genres from the database */}
             <SelectItem value="all">All Genres</SelectItem>
-            <SelectItem value="metal">Metal</SelectItem>
-            <SelectItem value="rock">Rock</SelectItem>
-            <SelectItem value="pop">Pop</SelectItem>
-            <SelectItem value="electronic">Electronic</SelectItem>
-            <SelectItem value="jazz">Jazz</SelectItem>
-            <SelectItem value="classical">Classical</SelectItem>
+            {genres.map((genre) => {
+              console.log("Rendering genre option:", genre);
+              return (
+                <SelectItem key={genre} value={genre}>
+                  {genre}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>

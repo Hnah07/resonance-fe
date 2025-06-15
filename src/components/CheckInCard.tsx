@@ -3,10 +3,10 @@
 import { Card } from "@/components/ui/card";
 import { LuMapPin } from "react-icons/lu";
 import Link from "next/link";
-import { ArtistBadges } from "./ArtistBadges";
+import { ArtistBadges } from "@/components/ArtistBadges";
 import { StarRating, formatRelativeTime } from "@/lib/helpers";
-import { ExpandableImage } from "./ExpandableImage";
-import { CheckInComment } from "./CheckInComment";
+import { ExpandableImage } from "@/components/ExpandableImage";
+import { CheckInComment } from "@/components/CheckInComment";
 import Image from "next/image";
 import { useState } from "react";
 import { toggleCheckInLike } from "@/lib/api";
@@ -23,15 +23,16 @@ interface CheckInCardProps {
     id: string;
     event: string;
     location: {
+      id: string;
       name: string;
     };
     city: string;
+    country: string;
     image: string;
     date: string;
     rating: number;
     artists: string[];
     genres: string[];
-    country: string;
   };
   checkIn: {
     id: string;
@@ -40,7 +41,7 @@ interface CheckInCardProps {
     comment: string;
     likes: number;
     isLiked?: boolean;
-    comments: {
+    comments: Array<{
       id: string;
       user: {
         id: string;
@@ -50,7 +51,12 @@ interface CheckInCardProps {
       text: string;
       date: string;
       time: string;
-    }[];
+    }>;
+    photos?: Array<{
+      id: string;
+      url: string;
+      caption: string;
+    }>;
   };
 }
 
@@ -146,7 +152,7 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
 
       {/* Artists seen */}
       <div className="px-4 pb-2">
-        <ArtistBadges title="Artists seen" artists={concert.artists} />
+        <ArtistBadges title="Artists" artists={concert.artists} />
       </div>
 
       {/* Concert Image - Only show if there's a real image */}

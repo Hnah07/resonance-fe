@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { makeAuthRequest } from "../auth/make-auth-request";
+import { makeAuthRequest } from "@/app/api/auth/make-auth-request";
 import { cookies } from "next/headers";
 
 // Configure caching
 export const dynamic = "force-dynamic";
-export const revalidate = 30; // Cache for 30 seconds
+export const revalidate = 30;
 
 interface TimelineResponse {
   id: string;
@@ -35,7 +35,7 @@ interface TimelineResponse {
       image_url?: string | null;
       genres?: Array<{
         id: string;
-        genre: string;
+        name: string;
       }>;
       pivot: {
         concert_id: string;
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const authToken = cookieStore.get("auth_token");
 
-    console.log("[Timeline API] Request details:", {
+    console.log("[Profile Check-ins API] Request details:", {
       url: request.url,
       method: request.method,
       headers: Object.fromEntries(request.headers.entries()),
@@ -113,17 +113,24 @@ export async function GET(request: NextRequest) {
     });
 
     if (!authToken) {
-      console.log("[Timeline API] No auth token found");
+      console.log("[Profile Check-ins API] No auth token found");
       return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
     }
 
-    // Make request to the correct endpoint
+    // Get the user ID from the auth token
+    const userId = authToken.value.split("|")[0];
+
+    // Make request to the timeline API with a user filter
     const response = await makeAuthRequest<
       Record<string, never>,
       PaginatedResponse<TimelineResponse>
-    >(`/api/timeline?page=${page}&per_page=${perPage}`, "GET", {});
+    >(
+      `/api/timeline?page=${page}&per_page=${perPage}&user_id=${userId}`,
+      "GET",
+      {}
+    );
 
-    console.log("[Timeline API] Backend response:", {
+    console.log("[Profile Check-ins API] Backend response:", {
       hasData: !!response?.data,
       dataLength: response?.data?.length,
       currentPage: response?.current_page,
@@ -138,37 +145,53 @@ export async function GET(request: NextRequest) {
     const { data: checkIns, current_page, last_page, total, links } = response;
 
     // Transform the response with fallback values
-    const transformedData = checkIns.map((item) => {
-      const currentUserId = authToken.value.split("|")[0];
+    const transformedData = checkIns.map((item: TimelineResponse) => {
       const likes = item.likes ?? [];
-      const isLiked = currentUserId
-        ? likes.some((like) => like.user_id === currentUserId)
-        : false;
-
-      // Log the location data structure
-      console.log("[Timeline API] Location data:", {
-        location: item.concert.location,
-        hasLocation: !!item.concert.location,
-        locationKeys: item.concert.location
-          ? Object.keys(item.concert.location)
-          : [],
-        rawLocation: JSON.stringify(item.concert.location),
-        countryValue: item.concert.location?.country,
-        countryType: typeof item.concert.location?.country,
-        fullItem: JSON.stringify(item.concert, null, 2),
-      });
+      const isLiked = likes.some(
+        (like: { user_id: string }) => like.user_id === userId
+      );
 
       // Transform artists to just include names for display
-      const artistNames = item.concert.artists.map((artist) => artist.name);
+      const artistNames = item.concert.artists.map(
+        (artist: { name: string }) => artist.name
+      );
+
+      // Log the raw artist data to see its structure
+      console.log("[Profile Check-ins API] Raw artist data:", {
+        event: item.concert.event.name,
+        artists: item.concert.artists.map(
+          (a: TimelineResponse["concert"]["artists"][0]) => ({
+            name: a.name,
+            rawGenres: JSON.stringify(a.genres),
+            genresArray: a.genres,
+            genresType: typeof a.genres,
+            isArray: Array.isArray(a.genres),
+          })
+        ),
+      });
 
       // Extract unique genres from all artists
       const uniqueGenres = Array.from(
         new Set(
           item.concert.artists.flatMap(
-            (artist) => artist.genres?.map((g) => g.genre) || []
+            (artist: TimelineResponse["concert"]["artists"][0]) => {
+              console.log("[Profile Check-ins API] Processing artist:", {
+                name: artist.name,
+                genres: JSON.stringify(artist.genres),
+                mappedGenres: artist.genres?.map((g) => g.name),
+              });
+              if (!artist.genres) return [];
+              return artist.genres.map((g) => g.name);
+            }
           )
         )
       );
+
+      console.log("[Profile Check-ins API] Final genres:", {
+        event: item.concert.event.name,
+        uniqueGenres,
+        genresLength: uniqueGenres.length,
+      });
 
       return {
         id: item.id,
@@ -200,24 +223,37 @@ export async function GET(request: NextRequest) {
           comment: item.review || "",
           likes: likes.length,
           isLiked,
-          comments: (item.comments ?? []).map((comment) => ({
-            id: comment.id,
-            user: {
-              id: comment.user.id,
-              name: comment.user.name,
-              image:
-                comment.user.profile_photo_url ||
-                "/placeholder-avatar-user.jpg",
-            },
-            text: comment.comment,
-            date: new Date(comment.created_at).toISOString().split("T")[0],
-            time: new Date(comment.created_at).toLocaleTimeString(),
-          })),
-          photos: (item.photos ?? []).map((photo) => ({
-            id: photo.id,
-            url: photo.url,
-            caption: photo.caption || "",
-          })),
+          comments: (item.comments ?? []).map(
+            (comment: {
+              id: string;
+              user: {
+                id: string;
+                name: string;
+                profile_photo_url: string | null;
+              };
+              comment: string;
+              created_at: string;
+            }) => ({
+              id: comment.id,
+              user: {
+                id: comment.user.id,
+                name: comment.user.name,
+                image:
+                  comment.user.profile_photo_url ||
+                  "/placeholder-avatar-user.jpg",
+              },
+              text: comment.comment,
+              date: new Date(comment.created_at).toISOString().split("T")[0],
+              time: new Date(comment.created_at).toLocaleTimeString(),
+            })
+          ),
+          photos: (item.photos ?? []).map(
+            (photo: { id: string; url: string; caption: string | null }) => ({
+              id: photo.id,
+              url: photo.url,
+              caption: photo.caption || "",
+            })
+          ),
         },
       };
     });
@@ -241,19 +277,19 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error("[Timeline API] Error:", error);
+    console.error("[Profile Check-ins API] Error:", error);
 
     // More specific error handling
     if (error instanceof Error) {
       if (error.message.includes("401")) {
         return NextResponse.json(
-          { message: "Please log in to view the timeline" },
+          { message: "Please log in to view your check-ins" },
           { status: 401 }
         );
       }
       if (error.message.includes("404")) {
         return NextResponse.json(
-          { message: "Timeline not found" },
+          { message: "Profile check-ins not found" },
           { status: 404 }
         );
       }
@@ -267,7 +303,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Failed to fetch timeline",
+        message: "Failed to fetch profile check-ins",
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

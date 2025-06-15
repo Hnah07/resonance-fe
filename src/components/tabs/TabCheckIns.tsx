@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from "react";
 import CheckInCard from "@/components/CheckInCard";
-import { CheckInsFilter } from "./CheckInsFilter";
+import { CheckInsFilter } from "@/components/tabs/CheckInsFilter";
 
 interface TabCheckInsProps {
-  checkIns: {
+  checkIns: Array<{
     user: {
       id: string;
       name?: string;
@@ -33,7 +33,7 @@ interface TabCheckInsProps {
       time: string;
       comment: string;
       likes: number;
-      comments: {
+      comments: Array<{
         id: string;
         user: {
           id: string;
@@ -43,15 +43,51 @@ interface TabCheckInsProps {
         text: string;
         date: string;
         time: string;
-      }[];
+      }>;
     };
-  }[];
+  }>;
 }
 
 export function TabCheckIns({ checkIns }: TabCheckInsProps) {
   const [selectedGenre, setSelectedGenre] = useState("all");
   const [selectedRating, setSelectedRating] = useState("all");
+  const [selectedArtist, setSelectedArtist] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+
+  // Get unique artists, genres, and locations from all check-ins
+  const { uniqueArtists, uniqueGenres, uniqueLocations } = useMemo(() => {
+    const artists = new Set<string>();
+    const genres = new Set<string>();
+    const locations = new Set<string>();
+
+    console.log(
+      "Processing check-ins for genres:",
+      checkIns.map((checkIn) => ({
+        event: checkIn.concert.event,
+        genres: checkIn.concert.genres,
+      }))
+    );
+
+    checkIns.forEach((checkIn) => {
+      checkIn.concert.artists.forEach((artist) => {
+        artists.add(artist);
+      });
+      checkIn.concert.genres.forEach((genre) => {
+        genres.add(genre);
+      });
+      locations.add(checkIn.concert.location.name);
+    });
+
+    const sortedGenres = Array.from(genres).sort();
+    console.log("Extracted unique genres:", sortedGenres);
+
+    return {
+      uniqueArtists: Array.from(artists).sort(),
+      uniqueGenres: sortedGenres,
+      uniqueLocations: Array.from(locations).sort(),
+    };
+  }, [checkIns]);
 
   const filteredAndSortedCheckIns = useMemo(() => {
     let filtered = [...checkIns];
@@ -59,9 +95,21 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
     // Apply genre filter
     if (selectedGenre !== "all") {
       filtered = filtered.filter((checkIn) =>
-        checkIn.concert.genres.some(
-          (genre) => genre.toLowerCase() === selectedGenre.toLowerCase()
-        )
+        checkIn.concert.genres.includes(selectedGenre)
+      );
+    }
+
+    // Apply artist filter
+    if (selectedArtist !== "all") {
+      filtered = filtered.filter((checkIn) =>
+        checkIn.concert.artists.includes(selectedArtist)
+      );
+    }
+
+    // Apply location filter
+    if (selectedLocation !== "all") {
+      filtered = filtered.filter(
+        (checkIn) => checkIn.concert.location.name === selectedLocation
       );
     }
 
@@ -96,7 +144,14 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
     });
 
     return filtered;
-  }, [checkIns, selectedGenre, selectedRating, sortBy]);
+  }, [
+    checkIns,
+    selectedGenre,
+    selectedArtist,
+    selectedRating,
+    selectedLocation,
+    sortBy,
+  ]);
 
   return (
     <div>
@@ -104,9 +159,12 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
         onGenreChange={setSelectedGenre}
         onRatingChange={setSelectedRating}
         onSortChange={setSortBy}
-        onArtistChange={() => {}}
-        onLocationChange={() => {}}
+        onArtistChange={setSelectedArtist}
+        onLocationChange={setSelectedLocation}
         onCountryChange={() => {}}
+        artists={uniqueArtists}
+        genres={uniqueGenres}
+        locations={uniqueLocations}
       />
       <div className="space-y-6">
         {filteredAndSortedCheckIns.map((checkIn) => (
