@@ -159,22 +159,24 @@ export async function GET(request: NextRequest) {
       // Log the raw artist data to see its structure
       console.log("[Profile Check-ins API] Raw artist data:", {
         event: item.concert.event.name,
-        artists: item.concert.artists.map((a) => ({
-          name: (a as any).name, // temporarily cast to any to see the data
-          rawGenres: JSON.stringify(a.genres),
-          genresArray: a.genres,
-          genresType: typeof a.genres,
-          isArray: Array.isArray(a.genres),
-        })),
+        artists: item.concert.artists.map(
+          (a: TimelineResponse["concert"]["artists"][0]) => ({
+            name: a.name,
+            rawGenres: JSON.stringify(a.genres),
+            genresArray: a.genres,
+            genresType: typeof a.genres,
+            isArray: Array.isArray(a.genres),
+          })
+        ),
       });
 
       // Extract unique genres from all artists
       const uniqueGenres = Array.from(
         new Set(
           item.concert.artists.flatMap(
-            (artist: { genres?: Array<{ id: string; name: string }> }) => {
+            (artist: TimelineResponse["concert"]["artists"][0]) => {
               console.log("[Profile Check-ins API] Processing artist:", {
-                name: (artist as any).name,
+                name: artist.name,
                 genres: JSON.stringify(artist.genres),
                 mappedGenres: artist.genres?.map((g) => g.name),
               });
