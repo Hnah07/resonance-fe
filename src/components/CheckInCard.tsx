@@ -31,6 +31,7 @@ interface CheckInCardProps {
     rating: number;
     artists: string[];
     genres: string[];
+    country: string;
   };
   checkIn: {
     id: string;
@@ -135,7 +136,7 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             <div className="flex items-center gap-2">
               <LuMapPin className="text-sm text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                {concert.location.name}, {concert.city}
+                {concert.location.name}, {concert.city}, {concert.country}
               </p>
             </div>
           </div>
