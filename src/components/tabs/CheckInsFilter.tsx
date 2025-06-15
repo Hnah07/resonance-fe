@@ -24,14 +24,15 @@ interface CheckInsFilterProps {
   onArtistChange: (value: string) => void;
   onLocationChange: (value: string) => void;
   onCountryChange: (value: string) => void;
+  artists?: string[];
   isLoading?: boolean;
 }
 
 function FilterSkeleton() {
   return (
     <div className="space-y-2">
-      <Skeleton className="h-4 w-20" />
-      <Skeleton className="h-9 w-full" />
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-10 w-full" />
     </div>
   );
 }
@@ -43,6 +44,7 @@ function FilterContent({
   onArtistChange,
   onLocationChange,
   onCountryChange,
+  artists = [],
   isLoading,
 }: CheckInsFilterProps) {
   if (isLoading) {
@@ -67,9 +69,11 @@ function FilterContent({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Artists</SelectItem>
-            {/* TODO: Add artists from the database */}
-            <SelectItem value="artist1">Artist 1</SelectItem>
-            <SelectItem value="artist2">Artist 2</SelectItem>
+            {artists.map((artist) => (
+              <SelectItem key={artist} value={artist}>
+                {artist}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

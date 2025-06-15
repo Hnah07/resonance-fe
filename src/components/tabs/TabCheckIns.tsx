@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from "react";
 import CheckInCard from "@/components/CheckInCard";
-import { CheckInsFilter } from "./CheckInsFilter";
+import { CheckInsFilter } from "@/components/tabs/CheckInsFilter";
 
 interface TabCheckInsProps {
-  checkIns: {
+  checkIns: Array<{
     user: {
       id: string;
       name?: string;
@@ -45,13 +45,23 @@ interface TabCheckInsProps {
         time: string;
       }[];
     };
-  }[];
+  }>;
 }
 
 export function TabCheckIns({ checkIns }: TabCheckInsProps) {
   const [selectedGenre, setSelectedGenre] = useState("all");
   const [selectedRating, setSelectedRating] = useState("all");
+  const [selectedArtist, setSelectedArtist] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+
+  // Get unique artists from all check-ins
+  const uniqueArtists = useMemo(() => {
+    const artists = new Set<string>();
+    checkIns.forEach((checkIn) => {
+      checkIn.concert.artists.forEach((artist) => artists.add(artist));
+    });
+    return Array.from(artists).sort();
+  }, [checkIns]);
 
   const filteredAndSortedCheckIns = useMemo(() => {
     let filtered = [...checkIns];
@@ -62,6 +72,13 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
         checkIn.concert.genres.some(
           (genre) => genre.toLowerCase() === selectedGenre.toLowerCase()
         )
+      );
+    }
+
+    // Apply artist filter
+    if (selectedArtist !== "all") {
+      filtered = filtered.filter((checkIn) =>
+        checkIn.concert.artists.includes(selectedArtist)
       );
     }
 
@@ -96,7 +113,7 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
     });
 
     return filtered;
-  }, [checkIns, selectedGenre, selectedRating, sortBy]);
+  }, [checkIns, selectedGenre, selectedArtist, selectedRating, sortBy]);
 
   return (
     <div>
@@ -104,9 +121,10 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
         onGenreChange={setSelectedGenre}
         onRatingChange={setSelectedRating}
         onSortChange={setSortBy}
-        onArtistChange={() => {}}
+        onArtistChange={setSelectedArtist}
         onLocationChange={() => {}}
         onCountryChange={() => {}}
+        artists={uniqueArtists}
       />
       <div className="space-y-6">
         {filteredAndSortedCheckIns.map((checkIn) => (
