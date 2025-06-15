@@ -427,7 +427,7 @@ export const uploadFile = async (
 // Client-side function for making authenticated requests
 export const makeClientRequest = async <T>(
   path: string
-): Promise<ApiResponse<T>> => {
+): Promise<ApiResponse<T> | { data: T[] }> => {
   // Get the base URL based on the environment
   const baseUrl =
     typeof window !== "undefined"
@@ -436,6 +436,8 @@ export const makeClientRequest = async <T>(
 
   // Convert relative URL to absolute URL if needed
   const url = path.startsWith("http") ? path : `${baseUrl}${path}`;
+
+  console.log("[makeClientRequest] Making request to:", url);
 
   const response = await fetch(url, {
     headers: {
@@ -446,12 +448,74 @@ export const makeClientRequest = async <T>(
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("[makeClientRequest] Request failed:", {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText,
+      url,
+    });
     throw new Error(
       `HTTP error! status: ${response.status}, message: ${errorText}`
     );
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("[makeClientRequest] Response data:", {
+    hasData: !!data,
+    dataType: typeof data,
+    keys: Object.keys(data),
+    isArray: Array.isArray(data),
+    isApiResponse: "data" in data && "meta" in data,
+  });
+
+  // If the response is already in ApiResponse format, return it as is
+  if ("data" in data && "meta" in data) {
+    return data as ApiResponse<T>;
+  }
+
+  // If the response is a direct data array, wrap it in ApiResponse format
+  if (Array.isArray(data)) {
+    return {
+      data,
+      meta: {
+        current_page: 1,
+        last_page: 1,
+        from: 1,
+        to: data.length,
+        total: data.length,
+        links: [],
+        path: path,
+        per_page: data.length,
+      },
+      links: {
+        first: path,
+        last: path,
+        prev: null,
+        next: null,
+      },
+    };
+  }
+
+  // If the response is a single object, wrap it in an array
+  return {
+    data: [data as T],
+    meta: {
+      current_page: 1,
+      last_page: 1,
+      from: 1,
+      to: 1,
+      total: 1,
+      links: [],
+      path: path,
+      per_page: 1,
+    },
+    links: {
+      first: path,
+      last: path,
+      prev: null,
+      next: null,
+    },
+  };
 };
 
 export const toggleCheckInLike = async (

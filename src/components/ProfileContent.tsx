@@ -73,6 +73,21 @@ export function ProfileContent() {
   const [isLoading, setIsLoading] = useState(true);
   const { user, isLoading: isUserLoading } = useUser();
 
+  // Add debug logging for user data
+  useEffect(() => {
+    console.log("[ProfileContent] User data:", {
+      hasUser: !!user,
+      userId: user?.id,
+      userName: user?.name,
+      hasCity: !!user?.city,
+      city: user?.city,
+      hasCountryId: !!user?.country_id,
+      countryId: user?.country_id,
+      hasCountryName: !!user?.country_name,
+      countryName: user?.country_name,
+    });
+  }, [user]);
+
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -149,7 +164,9 @@ export function ProfileContent() {
             <div className="flex gap-2">
               <LuMapPin className="w-4 h-4" />
               <p className="text-sm text-muted-foreground">
-                {user.city || "No location set"}
+                {user.city && user.country_name
+                  ? `${user.city}, ${user.country_name}`
+                  : user.city || user.country_name || "No location set"}
               </p>
             </div>
           </>
