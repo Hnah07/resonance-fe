@@ -26,6 +26,7 @@ interface CheckInsFilterProps {
   onCountryChange: (value: string) => void;
   artists?: string[];
   genres?: string[];
+  locations?: string[];
   isLoading?: boolean;
 }
 
@@ -47,6 +48,7 @@ function FilterContent({
   onCountryChange,
   artists = [],
   genres = [],
+  locations = [],
   isLoading,
 }: CheckInsFilterProps) {
   console.log("FilterContent received genres:", genres);
@@ -91,9 +93,11 @@ function FilterContent({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Locations</SelectItem>
-            {/* TODO: Add locations from the database */}
-            <SelectItem value="venue1">Venue 1</SelectItem>
-            <SelectItem value="venue2">Venue 2</SelectItem>
+            {locations.map((location) => (
+              <SelectItem key={location} value={location}>
+                {location}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
