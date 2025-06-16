@@ -25,7 +25,7 @@ export const mapConcertFromApi = (
       city: "", // Since location is a string, we don't have city/country
       country: "",
       date: c.date,
-      image: c.image || "",
+      image: typeof c.event === "object" ? c.event.image || "" : "",
       artists: [], // Return empty array if no artists
       genres: [], // Return empty array if no genres
       artistDetails: [], // Return empty array if no artists
@@ -97,7 +97,7 @@ export const mapConcertFromApi = (
     city: c.location.city,
     country: c.location.country,
     date: c.date,
-    image: c.image || "",
+    image: typeof c.event === "object" ? c.event.image || "" : "",
     artists: artistNames,
     genres: Array.from(allGenres),
     artistDetails,
