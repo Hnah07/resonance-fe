@@ -35,29 +35,50 @@ const COLORS = [
   "var(--chart-5)",
 ];
 
-export function TabStats() {
+interface TabStatsProps {
+  isActive: boolean;
+}
+
+export function TabStats({ isActive }: TabStatsProps) {
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchStats = async () => {
+      if (!isActive) return;
+
       try {
+        setLoading(true);
         const response = await fetch("/api/profile/stats");
         if (!response.ok) {
           throw new Error("Failed to fetch stats");
         }
         const data = await response.json();
-        setStats(data);
+        if (isMounted) {
+          setStats(data);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch stats");
+        if (isMounted) {
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch stats"
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchStats();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isActive]);
 
   if (loading) {
     return (
