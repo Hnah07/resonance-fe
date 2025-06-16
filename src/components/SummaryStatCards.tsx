@@ -35,7 +35,20 @@ export function SummaryStatCards() {
   }, []);
 
   if (loading) {
-    return <div className="text-center">Loading statistics...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 py-8">
+        <div className="flex items-center space-x-2">
+          <LuMusic className="w-8 h-8 animate-bounce text-primary" />
+          <LuMusic
+            className="w-8 h-8 animate-bounce text-primary"
+            style={{ animationDelay: "0.2s" }}
+          />
+        </div>
+        <div className="text-lg font-medium text-gray-600">
+          Loading your concert stats...
+        </div>
+      </div>
+    );
   }
 
   if (error || !stats) {
