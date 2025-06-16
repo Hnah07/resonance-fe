@@ -205,14 +205,19 @@ export function TabStats() {
       {/* Monthly Attendance */}
       <Card>
         <CardHeader>
-          <CardTitle>Monthly Concert Attendance</CardTitle>
+          <CardTitle>Monthly Concerts</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px]">
+          <div className="h-[320px]">
             <ChartContainer config={chartConfig}>
               <BarChart data={stats.monthly_attendance}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis
+                  dataKey="month"
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis />
                 <ChartTooltip
                   content={
