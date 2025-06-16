@@ -79,28 +79,55 @@ export function SummaryStatCards() {
         value={stats.countries_visited}
         details={`You've seen concerts in ${stats.countries_list.join(", ")}.`}
       />
-      <StatCard
-        icon={<LuMusic className="w-6 h-6" />}
-        title="Favorite Genre"
-        value={stats.favorite_genre.genre}
-        details={`${stats.favorite_genre.genre} is your most frequently attended genre, with ${stats.favorite_genre.count} concerts.`}
-      />
-      <StatCard
-        icon={<LuHeart className="w-6 h-6" />}
-        title="Most Seen Artist"
-        value={stats.most_seen_artist.name}
-        details={`You've seen ${stats.most_seen_artist.name} ${
-          stats.most_seen_artist.count
-        } time${stats.most_seen_artist.count !== 1 ? "s" : ""}.`}
-      />
-      <StatCard
-        icon={<LuStar className="w-6 h-6" />}
-        title="Top Venue"
-        value={stats.top_venue.name}
-        details={`You've visited ${stats.top_venue.name} ${
-          stats.top_venue.count
-        } time${stats.top_venue.count !== 1 ? "s" : ""}.`}
-      />
+      {stats.favorite_genre ? (
+        <StatCard
+          icon={<LuMusic className="w-6 h-6" />}
+          title="Favorite Genre"
+          value={stats.favorite_genre.genre}
+          details={`${stats.favorite_genre.genre} is your most frequently attended genre, with ${stats.favorite_genre.count} concerts.`}
+        />
+      ) : (
+        <StatCard
+          icon={<LuMusic className="w-6 h-6" />}
+          title="Favorite Genre"
+          value="No data yet"
+          details="Start checking in to concerts to see your favorite genres!"
+        />
+      )}
+      {stats.most_seen_artist ? (
+        <StatCard
+          icon={<LuHeart className="w-6 h-6" />}
+          title="Most Seen Artist"
+          value={stats.most_seen_artist.name}
+          details={`You've seen ${stats.most_seen_artist.name} ${
+            stats.most_seen_artist.count
+          } time${stats.most_seen_artist.count !== 1 ? "s" : ""}.`}
+        />
+      ) : (
+        <StatCard
+          icon={<LuHeart className="w-6 h-6" />}
+          title="Most Seen Artist"
+          value="No data yet"
+          details="Start checking in to concerts to see your most seen artists!"
+        />
+      )}
+      {stats.top_venue ? (
+        <StatCard
+          icon={<LuStar className="w-6 h-6" />}
+          title="Top Venue"
+          value={stats.top_venue.name}
+          details={`You've visited ${stats.top_venue.name} ${
+            stats.top_venue.count
+          } time${stats.top_venue.count !== 1 ? "s" : ""}.`}
+        />
+      ) : (
+        <StatCard
+          icon={<LuStar className="w-6 h-6" />}
+          title="Top Venue"
+          value="No data yet"
+          details="Start checking in to concerts to see your top venues!"
+        />
+      )}
     </div>
   );
 }
