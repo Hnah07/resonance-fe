@@ -52,10 +52,10 @@ interface CheckInCardProps {
       date: string;
       time: string;
     }>;
-    photos?: Array<{
+    photos: Array<{
       id: string;
       url: string;
-      caption: string;
+      caption: string | null;
     }>;
   };
 }
@@ -155,13 +155,45 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         <ArtistBadges title="Artists" artists={concert.artists} />
       </div>
 
-      {/* Concert Image - Only show if there's a real image */}
-      {concert.image && concert.image !== "/placeholder-concert.jpg" && (
-        <div className="relative w-full h-[300px]">
-          <ExpandableImage
-            src={concert.image}
-            alt={`${concert.event} concert`}
-          />
+      {/* Check-in Photos */}
+      {checkIn.photos && checkIn.photos.length > 0 && (
+        <div className="relative w-full">
+          {checkIn.photos.length === 1 ? (
+            <div className="relative w-full h-[300px]">
+              <ExpandableImage
+                src={checkIn.photos[0].url}
+                alt={
+                  checkIn.photos[0].caption || `${concert.event} concert photo`
+                }
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-1">
+              {checkIn.photos.slice(0, 4).map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className={`relative ${
+                    index === 0 ? "col-span-2 h-[300px]" : "h-[150px]"
+                  }`}
+                >
+                  <ExpandableImage
+                    src={photo.url}
+                    alt={
+                      photo.caption ||
+                      `${concert.event} concert photo ${index + 1}`
+                    }
+                  />
+                  {index === 3 && checkIn.photos.length > 4 && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="text-white text-lg font-semibold">
+                        +{checkIn.photos.length - 4} more
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

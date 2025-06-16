@@ -210,7 +210,9 @@ export function ProfileContent() {
           ) : (
             <TabCheckIns checkIns={checkIns} />
           ))}
-        {activeTab === "photos" && <TabPhotos />}
+        {activeTab === "photos" && (
+          <TabPhotos isActive={activeTab === "photos"} />
+        )}
         {activeTab === "stats" && <TabStats isActive={activeTab === "stats"} />}
         {activeTab === "friends" && <TabFriends />}
       </div>

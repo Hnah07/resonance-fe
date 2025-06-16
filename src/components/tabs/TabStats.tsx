@@ -26,6 +26,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { makeClientRequest } from "@/lib/api";
+import { toast } from "sonner";
 
 const COLORS = [
   "var(--chart-1)",
@@ -37,50 +39,43 @@ const COLORS = [
 
 interface TabStatsProps {
   isActive: boolean;
+  userId?: string;
 }
 
-export function TabStats({ isActive }: TabStatsProps) {
+export function TabStats({ isActive, userId }: TabStatsProps) {
   const [stats, setStats] = useState<ProfileStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
     const fetchStats = async () => {
-      if (!isActive) return;
-
       try {
-        setLoading(true);
-        const response = await fetch("/api/profile/stats");
-        if (!response.ok) {
-          throw new Error("Failed to fetch stats");
-        }
-        const data = await response.json();
-        if (isMounted) {
-          setStats(data);
+        setIsLoading(true);
+        const endpoint = userId
+          ? `/api/users/${userId}/stats`
+          : "/api/profile/stats";
+        const response = await makeClientRequest<ProfileStats>(endpoint);
+
+        if ("data" in response && !Array.isArray(response.data)) {
+          setStats(response.data);
+        } else if (Array.isArray(response.data)) {
+          setStats(response.data[0]);
         }
       } catch (err) {
-        if (isMounted) {
-          setError(
-            err instanceof Error ? err.message : "Failed to fetch stats"
-          );
-        }
+        console.error("Error fetching stats:", err);
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load statistics"
+        );
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
-    fetchStats();
+    if (isActive) {
+      fetchStats();
+    }
+  }, [isActive, userId]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [isActive]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-[200px] w-full" />
@@ -88,10 +83,6 @@ export function TabStats({ isActive }: TabStatsProps) {
         <Skeleton className="h-[200px] w-full" />
       </div>
     );
-  }
-
-  if (error) {
-    return <div className="text-center text-red-500">{error}</div>;
   }
 
   if (!stats) {
