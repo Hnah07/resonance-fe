@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import CheckInCard from "@/components/CheckInCard";
 import { CheckInsFilter } from "@/components/tabs/CheckInsFilter";
+import { LuTicket } from "react-icons/lu";
 
 interface TabCheckInsProps {
   checkIns: Array<{
@@ -166,16 +167,29 @@ export function TabCheckIns({ checkIns }: TabCheckInsProps) {
         genres={uniqueGenres}
         locations={uniqueLocations}
       />
-      <div className="space-y-6">
-        {filteredAndSortedCheckIns.map((checkIn) => (
-          <CheckInCard
-            key={checkIn.checkIn.id}
-            user={checkIn.user}
-            concert={checkIn.concert}
-            checkIn={checkIn.checkIn}
-          />
-        ))}
-      </div>
+      {filteredAndSortedCheckIns.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <LuTicket className="w-12 h-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium text-slate-800 dark:text-white mb-2">
+            No check-ins yet
+          </h3>
+          <p className="text-muted-foreground max-w-sm">
+            Start your concert journey by checking in to your first show! Your
+            check-ins will appear here and help you track your concert history.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {filteredAndSortedCheckIns.map((checkIn) => (
+            <CheckInCard
+              key={checkIn.checkIn.id}
+              user={checkIn.user}
+              concert={checkIn.concert}
+              checkIn={checkIn.checkIn}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
