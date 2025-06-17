@@ -30,6 +30,7 @@ import { LocationSearch } from "@/components/LocationSearch";
 import { MultiCombobox } from "@/components/ui/multi-combobox";
 import { Switch } from "@/components/ui/switch";
 import { EventType } from "@/types/concert";
+import { useSearchParams } from "next/navigation";
 
 interface FilterOptions {
   locations: string[];
@@ -58,6 +59,7 @@ interface FilterDialogProps {
 }
 
 export const FilterDialog = ({ onApply }: FilterDialogProps) => {
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
@@ -82,6 +84,55 @@ export const FilterDialog = ({ onApply }: FilterDialogProps) => {
     eventTypes: [],
   });
   const [genres, setGenres] = useState<Genre[]>([]);
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const dateFrom = searchParams.get("dateFrom");
+    const dateTo = searchParams.get("dateTo");
+    const cityParam = searchParams.get("city");
+    const locationParam = searchParams.get("location");
+    const genresParam = searchParams.get("genres");
+    const genreFilterModeParam = searchParams.get("genreFilterMode");
+    const eventTypeParam = searchParams.get("eventType");
+
+    // Set date range
+    if (dateFrom || dateTo) {
+      setDateRange({
+        from: dateFrom ? new Date(dateFrom) : undefined,
+        to: dateTo ? new Date(dateTo) : undefined,
+      });
+    }
+
+    // Set city
+    if (cityParam) {
+      setCity(cityParam);
+    }
+
+    // Set location (simplified - just store the name)
+    if (locationParam) {
+      setLocation({
+        id: "",
+        name: locationParam,
+        city: "",
+        country: "",
+      });
+    }
+
+    // Set genres
+    if (genresParam) {
+      setSelectedGenres(genresParam.split(","));
+    }
+
+    // Set genre filter mode
+    if (genreFilterModeParam === "all" || genreFilterModeParam === "any") {
+      setGenreFilterMode(genreFilterModeParam);
+    }
+
+    // Set event type
+    if (eventTypeParam && eventTypeParam !== "all") {
+      setEventType(eventTypeParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchData = async () => {

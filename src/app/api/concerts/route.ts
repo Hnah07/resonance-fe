@@ -52,6 +52,18 @@ export async function GET(request: Request) {
   const city = searchParams.get("city");
   const genreFilterMode = searchParams.get("genreFilterMode");
   const genres = searchParams.get("genres");
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+
+  console.log("=== CONCERTS API ROUTE DEBUG ===");
+  console.log("Received parameters:", {
+    city,
+    genreFilterMode,
+    genres,
+    dateFrom,
+    dateTo,
+    allParams: Object.fromEntries(searchParams.entries()),
+  });
 
   try {
     // Create a new URLSearchParams for the backend request
@@ -59,10 +71,30 @@ export async function GET(request: Request) {
 
     // Copy all parameters except the ones we need to transform
     for (const [key, value] of searchParams.entries()) {
-      if (key !== "genres" && key !== "genreFilterMode" && key !== "city") {
+      if (
+        key !== "genres" &&
+        key !== "genreFilterMode" &&
+        key !== "city" &&
+        key !== "dateFrom" &&
+        key !== "dateTo"
+      ) {
         backendParams.append(key, value);
       }
     }
+
+    // Convert date parameters to backend format
+    if (dateFrom) {
+      backendParams.append("date_from", dateFrom);
+    }
+    if (dateTo) {
+      backendParams.append("date_to", dateTo);
+    }
+
+    console.log("Parameters being sent to backend:", {
+      date_from: backendParams.get("date_from"),
+      date_to: backendParams.get("date_to"),
+      allBackendParams: Object.fromEntries(backendParams.entries()),
+    });
 
     // Convert city parameter to location_city for the backend
     if (city) {

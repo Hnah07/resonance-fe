@@ -87,15 +87,56 @@ export default async function DiscoverPage({
 
   console.log("API concerts before filtering:", apiConcerts.length);
 
-  // Filter out concerts before today
+  // Log the actual dates being returned
+  console.log("=== DATE DEBUGGING ===");
+  console.log("User selected dateFrom:", params.dateFrom);
+  console.log("User selected dateTo:", params.dateTo);
+  console.log("Concerts returned from API with dates:");
+  apiConcerts.forEach((concert, index) => {
+    console.log(`Concert ${index + 1}:`, {
+      id: concert.id,
+      date: concert.date,
+      event:
+        typeof concert.event === "string" ? concert.event : concert.event.name,
+    });
+  });
+
+  // Apply client-side date filtering if user selected a date range
+  let filteredConcerts = apiConcerts;
+  if (params.dateFrom || params.dateTo) {
+    console.log("=== APPLYING CLIENT-SIDE DATE FILTERING ===");
+    filteredConcerts = apiConcerts.filter((concert) => {
+      const concertDate = concert.date;
+      const isAfterFrom = !params.dateFrom || concertDate >= params.dateFrom;
+      const isBeforeTo = !params.dateTo || concertDate <= params.dateTo;
+      const isInRange = isAfterFrom && isBeforeTo;
+
+      console.log(`Concert ${concert.id}:`, {
+        date: concertDate,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
+        isAfterFrom,
+        isBeforeTo,
+        isInRange,
+      });
+
+      return isInRange;
+    });
+    console.log(
+      "Concerts after client-side date filtering:",
+      filteredConcerts.length
+    );
+  }
+
+  // Filter out concerts before today as a safety net
   const today = new Date().toLocaleDateString("en-CA");
-  const filteredConcerts = apiConcerts.filter(
+  const futureConcerts = filteredConcerts.filter(
     (concert) => concert.date >= today
   );
 
-  console.log("Concerts after date filtering:", filteredConcerts.length);
+  console.log("Concerts after future date filtering:", futureConcerts.length);
 
-  let concerts = filteredConcerts.map(mapConcertFromApi);
+  let concerts = futureConcerts.map(mapConcertFromApi);
   console.log("Mapped concerts:", concerts.length);
 
   // If a city is selected, sort concerts by distance
