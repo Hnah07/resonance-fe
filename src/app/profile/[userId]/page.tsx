@@ -4,9 +4,9 @@ import { UnauthenticatedCheckIn } from "@/components/UnauthenticatedCheckIn";
 import { UserProfileContent } from "@/components/UserProfileContent";
 
 interface ProfilePageProps {
-  params: {
+  params: Promise<{
     userId: string;
-  };
+  }>;
 }
 
 export default async function UserProfilePage({ params }: ProfilePageProps) {
@@ -15,11 +15,14 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   const authToken = cookieStore.get("auth_token");
   const isAuthenticated = !!authToken;
 
+  // Await the params to get the userId
+  const { userId } = await params;
+
   return (
     <>
       <PageHeader title="Profile" subtitle="View user's concert journey" />
       {isAuthenticated ? (
-        <UserProfileContent userId={params.userId} />
+        <UserProfileContent userId={userId} />
       ) : (
         <UnauthenticatedCheckIn />
       )}

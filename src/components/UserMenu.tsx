@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { useUser } from "@/lib/hooks/useUser";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 
 const UserMenu = () => {
@@ -12,6 +14,7 @@ const UserMenu = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { user } = useUser();
 
   useEffect(() => {
     console.log("UserMenu - Auth status:", isAuthenticated);
@@ -75,13 +78,21 @@ const UserMenu = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-center w-8 h-8 rounded-full overflow-hidden border-2 border-[#FF0086] hover:border-[#03D1FE] transition-colors focus:outline-none focus:ring-2 focus:ring-[#03D1FE] focus:ring-offset-2"
       >
-        <Image
-          src="/default-avatar.svg"
-          alt="Profile"
-          width={32}
-          height={32}
-          className="object-cover"
-        />
+        <Avatar className="w-full h-full">
+          {user?.profile_photo_url ? (
+            <AvatarImage src={user.profile_photo_url} alt="Profile" />
+          ) : (
+            <AvatarFallback>
+              <Image
+                src="/placeholder-avatar-user.jpg"
+                alt="Placeholder avatar"
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
+            </AvatarFallback>
+          )}
+        </Avatar>
       </button>
 
       {isOpen && (

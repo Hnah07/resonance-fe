@@ -10,7 +10,7 @@ import Image from "next/image";
 import { LuMapPin } from "react-icons/lu";
 import { DetailsButton } from "@/components/ui/details-button";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { makeClientRequest } from "@/lib/api";
 import { toast } from "sonner";
 import CardSkeleton from "@/components/CardSkeleton";
@@ -72,6 +72,11 @@ interface ProfileCheckIn {
       date: string;
       time: string;
     }>;
+    photos: Array<{
+      id: string;
+      url: string;
+      caption: string | null;
+    }>;
   };
 }
 
@@ -89,68 +94,80 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
   const [isFollowing, setIsFollowing] = useState(false);
   const { user: currentUser } = useUser();
 
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        setIsLoading(true);
-        const [profileResponse, checkInsResponse] = await Promise.all([
-          makeClientRequest<UserProfile>(`/api/users/${userId}`),
-          makeClientRequest<ProfileCheckIn>(`/api/users/${userId}/check-ins`),
-        ]);
+  const fetchProfileData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [profileResponse, checkInsResponse] = await Promise.all([
+        makeClientRequest<UserProfile>(`/api/users/${userId}`),
+        makeClientRequest<ProfileCheckIn>(`/api/users/${userId}/check-ins`),
+      ]);
 
-        let profileData: UserProfile | null = null;
-        if ("data" in profileResponse && !Array.isArray(profileResponse.data)) {
-          profileData = profileResponse.data;
-        } else if (Array.isArray(profileResponse.data)) {
-          profileData = profileResponse.data[0];
-        }
-
-        if (profileData) {
-          setProfile(profileData);
-          setIsFollowing(profileData.is_following);
-        }
-
-        if (checkInsResponse.data) {
-          setCheckIns(checkInsResponse.data);
-        }
-      } catch (err) {
-        console.error("Error fetching profile data:", err);
-        toast.error(
-          err instanceof Error ? err.message : "Failed to load profile data"
-        );
-      } finally {
-        setIsLoading(false);
+      let profileData: UserProfile | null = null;
+      if ("data" in profileResponse && !Array.isArray(profileResponse.data)) {
+        profileData = profileResponse.data;
+      } else if (Array.isArray(profileResponse.data)) {
+        profileData = profileResponse.data[0];
       }
-    };
 
-    fetchProfileData();
+      if (profileData) {
+        setProfile(profileData);
+        setIsFollowing(profileData.is_following);
+      }
+
+      if (checkInsResponse.data) {
+        setCheckIns(checkInsResponse.data);
+      }
+    } catch (err) {
+      console.error("Error fetching profile data:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load profile data"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    fetchProfileData();
+  }, [fetchProfileData]);
 
   const handleFollowToggle = async () => {
     if (!profile) return;
 
+    console.log("handleFollowToggle - Starting with isFollowing:", isFollowing);
+    console.log("handleFollowToggle - User ID:", userId);
+
     try {
+      const method = isFollowing ? "DELETE" : "POST";
+      console.log("handleFollowToggle - Using method:", method);
+
       const response = await fetch(`/api/users/${userId}/follow`, {
-        method: "POST",
+        method,
         credentials: "include",
       });
 
+      console.log("handleFollowToggle - Response status:", response.status);
+      console.log("handleFollowToggle - Response ok:", response.ok);
+
+      if (response.status === 409) {
+        // Conflict - state is out of sync, refresh profile data
+        console.log("Follow state conflict detected, refreshing profile data");
+        await fetchProfileData();
+        return;
+      }
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log("handleFollowToggle - Error response:", errorText);
         throw new Error("Failed to update follow status");
       }
 
       const data = await response.json();
+      console.log("handleFollowToggle - Success response:", data);
+
       if (data) {
-        setIsFollowing(!isFollowing);
-        setProfile((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            followers_count: isFollowing
-              ? prev.followers_count - 1
-              : prev.followers_count + 1,
-          };
-        });
+        // Refresh the profile data to get the updated follow status
+        await fetchProfileData();
         toast.success(
           isFollowing ? "Unfollowed successfully" : "Followed successfully"
         );
@@ -162,6 +179,17 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
       );
     }
   };
+
+  console.log("UserProfileContent - Rendering with profile:", profile);
+  console.log("UserProfileContent - Current user:", currentUser);
+  console.log(
+    "UserProfileContent - Profile is_current_user:",
+    profile?.is_current_user
+  );
+  console.log(
+    "UserProfileContent - Should show follow button:",
+    !profile?.is_current_user && currentUser
+  );
 
   if (isLoading) {
     return (
@@ -247,6 +275,14 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
             {isFollowing ? "Unfollow" : "Follow"}
           </Button>
         )}
+        {/* Debug button - remove after testing */}
+        <Button
+          onClick={handleFollowToggle}
+          variant="outline"
+          className="mt-2 ml-2"
+        >
+          Debug: {isFollowing ? "Unfollow" : "Follow"}
+        </Button>
       </div>
 
       <SummaryStatCards />

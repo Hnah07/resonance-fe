@@ -54,6 +54,11 @@ interface ProfileCheckIn {
       date: string;
       time: string;
     }>;
+    photos: Array<{
+      id: string;
+      url: string;
+      caption: string | null;
+    }>;
   };
 }
 

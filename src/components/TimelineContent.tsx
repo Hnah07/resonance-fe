@@ -48,6 +48,11 @@ interface TimelineCheckIn {
       date: string;
       time: string;
     }>;
+    photos: Array<{
+      id: string;
+      url: string;
+      caption: string | null;
+    }>;
   };
 }
 
@@ -91,6 +96,11 @@ interface TimelineResponse {
       text: string;
       date: string;
       time: string;
+    }>;
+    photos: Array<{
+      id: string;
+      url: string;
+      caption: string | null;
     }>;
   };
 }
