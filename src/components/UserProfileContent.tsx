@@ -307,7 +307,7 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
         )}
       </div>
 
-      <SummaryStatCards />
+      <SummaryStatCards userId={userId} profile={profile} />
 
       <div className="flex flex-wrap gap-2 justify-center mb-8 px-4">
         <DetailsButton
