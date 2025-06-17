@@ -91,7 +91,6 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [checkIns, setCheckIns] = useState<ProfileCheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(false);
   const { user: currentUser } = useUser();
 
   const fetchProfileData = useCallback(async () => {
@@ -102,16 +101,39 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
         makeClientRequest<ProfileCheckIn>(`/api/users/${userId}/check-ins`),
       ]);
 
+      console.log("Profile response:", profileResponse);
+      console.log("Profile response data:", profileResponse.data);
+
       let profileData: UserProfile | null = null;
-      if ("data" in profileResponse && !Array.isArray(profileResponse.data)) {
+
+      // Handle the array structure: {data: [{data: {...}}]}
+      if (
+        Array.isArray(profileResponse.data) &&
+        profileResponse.data.length > 0
+      ) {
+        const firstItem = profileResponse.data[0];
+        if (firstItem && typeof firstItem === "object" && "data" in firstItem) {
+          profileData = firstItem.data as UserProfile;
+        } else {
+          profileData = firstItem as UserProfile;
+        }
+      } else if (
+        profileResponse.data &&
+        typeof profileResponse.data === "object" &&
+        "data" in profileResponse.data
+      ) {
+        profileData = profileResponse.data.data as UserProfile;
+      } else if (
+        "data" in profileResponse &&
+        !Array.isArray(profileResponse.data)
+      ) {
         profileData = profileResponse.data;
-      } else if (Array.isArray(profileResponse.data)) {
-        profileData = profileResponse.data[0];
       }
+
+      console.log("Extracted profile data:", profileData);
 
       if (profileData) {
         setProfile(profileData);
-        setIsFollowing(profileData.is_following);
       }
 
       if (checkInsResponse.data) {
@@ -134,11 +156,14 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
   const handleFollowToggle = async () => {
     if (!profile) return;
 
-    console.log("handleFollowToggle - Starting with isFollowing:", isFollowing);
+    console.log(
+      "handleFollowToggle - Current is_following:",
+      profile.is_following
+    );
     console.log("handleFollowToggle - User ID:", userId);
 
     try {
-      const method = isFollowing ? "DELETE" : "POST";
+      const method = profile.is_following ? "DELETE" : "POST";
       console.log("handleFollowToggle - Using method:", method);
 
       const response = await fetch(`/api/users/${userId}/follow`, {
@@ -147,11 +172,10 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
       });
 
       console.log("handleFollowToggle - Response status:", response.status);
-      console.log("handleFollowToggle - Response ok:", response.ok);
 
       if (response.status === 409) {
-        // Conflict - state is out of sync, refresh profile data
-        console.log("Follow state conflict detected, refreshing profile data");
+        // Conflict - user is already in the desired state, just refresh data
+        console.log("Follow state conflict - refreshing profile data");
         await fetchProfileData();
         return;
       }
@@ -166,10 +190,12 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
       console.log("handleFollowToggle - Success response:", data);
 
       if (data) {
-        // Refresh the profile data to get the updated follow status
+        // Refresh the profile data to get the updated follow status and counts
         await fetchProfileData();
         toast.success(
-          isFollowing ? "Unfollowed successfully" : "Followed successfully"
+          profile.is_following
+            ? "Unfollowed successfully"
+            : "Followed successfully"
         );
       }
     } catch (err) {
@@ -189,6 +215,10 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
   console.log(
     "UserProfileContent - Should show follow button:",
     !profile?.is_current_user && currentUser
+  );
+  console.log(
+    "UserProfileContent - Profile is_following:",
+    profile?.is_following
   );
 
   if (isLoading) {
@@ -269,20 +299,12 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
         {!profile.is_current_user && currentUser && (
           <Button
             onClick={handleFollowToggle}
-            variant={isFollowing ? "outline" : "default"}
+            variant={profile.is_following ? "outline" : "default"}
             className="mt-2"
           >
-            {isFollowing ? "Unfollow" : "Follow"}
+            {profile.is_following ? "Unfollow" : "Follow"}
           </Button>
         )}
-        {/* Debug button - remove after testing */}
-        <Button
-          onClick={handleFollowToggle}
-          variant="outline"
-          className="mt-2 ml-2"
-        >
-          Debug: {isFollowing ? "Unfollow" : "Follow"}
-        </Button>
       </div>
 
       <SummaryStatCards />

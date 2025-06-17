@@ -47,17 +47,24 @@ export async function DELETE(
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
 
+  console.log("Unfollow API - Auth token exists:", !!authToken);
+
   if (!authToken) {
     return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
   }
 
   try {
     const { userId } = await params;
+    console.log("Unfollow API - User ID:", userId);
+    console.log("Unfollow API - Making request to backend...");
+
     const response = await makeAuthRequest(
       `/api/users/${userId}/follow`,
       "DELETE",
       {}
     );
+
+    console.log("Unfollow API - Backend response:", response);
     return NextResponse.json(response);
   } catch (error) {
     console.error("Unfollow API error:", error);
@@ -66,6 +73,7 @@ export async function DELETE(
     const status = statusMatch ? parseInt(statusMatch[1]) : 500;
     const message =
       error instanceof Error ? error.message : "Unfollow action failed";
+    console.log("Unfollow API - Returning error:", { status, message });
     return NextResponse.json({ message }, { status });
   }
 }
