@@ -65,9 +65,10 @@ interface CheckIn {
 interface TabPhotosProps {
   isActive: boolean;
   userId?: string;
+  username?: string;
 }
 
-export function TabPhotos({ isActive, userId }: TabPhotosProps) {
+export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
@@ -82,7 +83,9 @@ export function TabPhotos({ isActive, userId }: TabPhotosProps) {
 
       try {
         setIsLoading(true);
-        const endpoint = userId
+        const endpoint = username
+          ? `/api/users/${username}/check-ins`
+          : userId
           ? `/api/users/${userId}/check-ins`
           : "/api/profile/check-ins";
         console.log("[TabPhotos] Fetching check-ins from endpoint:", endpoint);
@@ -184,7 +187,7 @@ export function TabPhotos({ isActive, userId }: TabPhotosProps) {
     };
 
     fetchCheckIns();
-  }, [isActive, userId]);
+  }, [isActive, userId, username]);
 
   return (
     <div className="space-y-6">

@@ -40,19 +40,28 @@ const COLORS = [
 interface TabStatsProps {
   isActive: boolean;
   userId?: string;
+  username?: string;
 }
 
-export function TabStats({ isActive, userId }: TabStatsProps) {
+export function TabStats({ isActive, userId, username }: TabStatsProps) {
   const [stats, setStats] = useState<ProfileStats | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
+      if (!isActive) {
+        console.log("[TabStats] Tab is not active, skipping fetch");
+        return;
+      }
+
       try {
-        setIsLoading(true);
-        const endpoint = userId
+        setLoading(true);
+        const endpoint = username
+          ? `/api/users/${username}/stats`
+          : userId
           ? `/api/users/${userId}/stats`
           : "/api/profile/stats";
+        console.log("[TabStats] Fetching stats from endpoint:", endpoint);
         const response = await makeClientRequest<ProfileStats>(endpoint);
 
         if ("data" in response && !Array.isArray(response.data)) {
@@ -66,16 +75,16 @@ export function TabStats({ isActive, userId }: TabStatsProps) {
           err instanceof Error ? err.message : "Failed to load statistics"
         );
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     if (isActive) {
       fetchStats();
     }
-  }, [isActive, userId]);
+  }, [isActive, userId, username]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-[200px] w-full" />

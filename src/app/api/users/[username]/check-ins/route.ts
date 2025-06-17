@@ -4,7 +4,7 @@ import { makeAuthRequest } from "@/app/api/auth/make-auth-request";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ username: string }> }
 ) {
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
@@ -14,9 +14,9 @@ export async function GET(
   }
 
   try {
-    const { userId } = await params;
+    const { username } = await params;
     const response = await makeAuthRequest(
-      `/api/users/${userId}/check-ins`,
+      `/api/users/${username}/check-ins`,
       "GET",
       {}
     );

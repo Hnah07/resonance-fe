@@ -4,7 +4,7 @@ import { makeAuthRequest } from "@/app/api/auth/make-auth-request";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ username: string }> }
 ) {
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
@@ -16,12 +16,12 @@ export async function POST(
   }
 
   try {
-    const { userId } = await params;
-    console.log("Follow API - User ID:", userId);
+    const { username } = await params;
+    console.log("Follow API - User ID:", username);
     console.log("Follow API - Making request to backend...");
 
     const response = await makeAuthRequest(
-      `/api/users/${userId}/follow`,
+      `/api/users/${username}/follow`,
       "POST",
       {}
     );
@@ -42,7 +42,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ username: string }> }
 ) {
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
@@ -54,12 +54,12 @@ export async function DELETE(
   }
 
   try {
-    const { userId } = await params;
-    console.log("Unfollow API - User ID:", userId);
+    const { username } = await params;
+    console.log("Unfollow API - User ID:", username);
     console.log("Unfollow API - Making request to backend...");
 
     const response = await makeAuthRequest(
-      `/api/users/${userId}/follow`,
+      `/api/users/${username}/follow`,
       "DELETE",
       {}
     );

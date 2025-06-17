@@ -7,10 +7,10 @@ import { ArtistBadges } from "@/components/ArtistBadges";
 import { StarRating, formatRelativeTime } from "@/lib/helpers";
 import { ExpandableImage } from "@/components/ExpandableImage";
 import { CheckInComment } from "@/components/CheckInComment";
-import Image from "next/image";
 import { useState } from "react";
 import { toggleCheckInLike } from "@/lib/api";
 import { toast } from "sonner";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface CheckInCardProps {
   user: {
@@ -105,30 +105,27 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Link
-            href={`/profile/${user.id}`}
-            className="hover:opacity-80 transition-opacity"
+            href={`/profile/${user.username}`}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <Image
-              src={user.image || "/placeholder-avatar-user.jpg"}
-              alt={user.name || user.username}
-              width={40}
-              height={40}
-              className="w-10 h-10 rounded-full object-cover border-2 border-[#03D1FE]/20"
-            />
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.image} />
+              <AvatarFallback>
+                {user.name?.charAt(0) || user.username.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-slate-800 dark:text-white">
+                {user.name}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                @{user.username}
+              </span>
+            </div>
           </Link>
-          <div>
-            <Link
-              href={`/profile/${user.id}`}
-              className="hover:opacity-80 transition-opacity"
-            >
-              <h3 className="font-semibold text-slate-800 dark:text-white">
-                {user.name || user.username}
-              </h3>
-            </Link>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {formatRelativeTime(checkIn.date, checkIn.time)}
-            </p>
-          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {formatRelativeTime(checkIn.date, checkIn.time)}
+          </p>
         </div>
       </div>
 

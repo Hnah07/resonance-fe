@@ -30,24 +30,30 @@ interface UserProfileResponse {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+  { params }: { params: Promise<{ username: string }> }
 ) {
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
 
-  if (!authToken) {
-    return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
-  }
+  console.log("[User API] Request details:", {
+    url: request.url,
+    method: request.method,
+    hasAuthToken: !!authToken,
+    tokenLength: authToken?.value?.length,
+  });
 
   try {
-    const { userId } = await params;
+    const { username } = await params;
+    console.log("[User API] Fetching user with username:", username);
+
+    // Make the request with or without auth token
     const response = (await makeAuthRequest(
-      `/api/users/${userId}`,
+      `/api/users/${username}`,
       "GET",
       {}
     )) as UserProfileResponse;
 
-    console.log("User profile API - Backend response:", response);
+    console.log("[User API] Complete backend response:", response);
 
     // Handle the backend response structure
     if (response && response.data) {
@@ -71,14 +77,20 @@ export async function GET(
         is_current_user: userData.is_current_user || false,
       };
 
-      console.log("User profile API - Transformed user:", transformedUser);
+      console.log("[User API] Transformed user:", transformedUser);
 
       return NextResponse.json({ data: transformedUser });
     }
 
+    console.log("[User API] No data in response, returning null");
     return NextResponse.json({ data: null });
   } catch (error) {
-    console.error("User profile API error:", error);
+    console.error("[User API] Error details:", {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      username: await params.then((p) => p.username),
+    });
+
     const statusMatch =
       error instanceof Error ? error.message.match(/HTTP Error: (\d+)/) : null;
     const status = statusMatch ? parseInt(statusMatch[1]) : 500;

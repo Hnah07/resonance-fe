@@ -121,10 +121,10 @@ interface UserDataResponse {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ username: string }> }
 ) {
   try {
-    const { userId } = params;
+    const { username } = await params;
 
     // Get the auth token from cookies
     const cookieStore = await cookies();
@@ -133,7 +133,7 @@ export async function GET(
     console.log("[User Data API] Request details:", {
       url: request.url,
       method: request.method,
-      userId,
+      username,
       headers: Object.fromEntries(request.headers.entries()),
       hasAuthToken: !!authToken,
       environment: process.env.NODE_ENV,
@@ -154,27 +154,27 @@ export async function GET(
       photosResponse,
     ] = await Promise.allSettled([
       makeAuthRequest<Record<string, never>, UserProfileResponse>(
-        `/api/users/${userId}`,
+        `/api/users/${username}`,
         "GET",
         {}
       ),
       makeAuthRequest<Record<string, never>, CheckIn[]>(
-        `/api/users/${userId}/check-ins`,
+        `/api/users/${username}/check-ins`,
         "GET",
         {}
       ),
       makeAuthRequest<Record<string, never>, ProfileStats>(
-        `/api/users/${userId}/stats`,
+        `/api/users/${username}/stats`,
         "GET",
         {}
       ),
       makeAuthRequest<Record<string, never>, SummaryStatsResponse>(
-        `/api/users/${userId}/summary-stats`,
+        `/api/users/${username}/summary-stats`,
         "GET",
         {}
       ),
       makeAuthRequest<Record<string, never>, Photo[]>(
-        `/api/users/${userId}/photos`,
+        `/api/users/${username}/photos`,
         "GET",
         {}
       ),

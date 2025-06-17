@@ -81,10 +81,10 @@ interface ProfileCheckIn {
 }
 
 interface UserProfileContentProps {
-  userId: string;
+  username: string;
 }
 
-export function UserProfileContent({ userId }: UserProfileContentProps) {
+export function UserProfileContent({ username }: UserProfileContentProps) {
   const [activeTab, setActiveTab] = useState<
     "check-ins" | "photos" | "stats" | "friends"
   >("check-ins");
@@ -97,8 +97,8 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
     try {
       setIsLoading(true);
       const [profileResponse, checkInsResponse] = await Promise.all([
-        makeClientRequest<UserProfile>(`/api/users/${userId}`),
-        makeClientRequest<ProfileCheckIn>(`/api/users/${userId}/check-ins`),
+        makeClientRequest<UserProfile>(`/api/users/${username}`),
+        makeClientRequest<ProfileCheckIn>(`/api/users/${username}/check-ins`),
       ]);
 
       console.log("Profile response:", profileResponse);
@@ -134,6 +134,10 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
 
       if (profileData) {
         setProfile(profileData);
+      } else {
+        // User not found
+        setProfile(null);
+        toast.error(`User @${username} not found`);
       }
 
       if (checkInsResponse.data) {
@@ -141,13 +145,23 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
       }
     } catch (err) {
       console.error("Error fetching profile data:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to load profile data"
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load profile data";
+
+      // Check if it's a 404 error (user not found)
+      if (
+        errorMessage.includes("404") ||
+        errorMessage.includes("No query results")
+      ) {
+        toast.error(`User @${username} not found`);
+        setProfile(null);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [username]);
 
   useEffect(() => {
     fetchProfileData();
@@ -160,13 +174,13 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
       "handleFollowToggle - Current is_following:",
       profile.is_following
     );
-    console.log("handleFollowToggle - User ID:", userId);
+    console.log("handleFollowToggle - User ID:", username);
 
     try {
       const method = profile.is_following ? "DELETE" : "POST";
       console.log("handleFollowToggle - Using method:", method);
 
-      const response = await fetch(`/api/users/${userId}/follow`, {
+      const response = await fetch(`/api/users/${username}/follow`, {
         method,
         credentials: "include",
       });
@@ -244,13 +258,22 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
   if (!profile) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-xl font-semibold text-slate-800 dark:text-white">
-          User not found
-        </h2>
-        <p className="text-muted-foreground mt-2">
-          The user you&apos;re looking for doesn&apos;t exist or has been
-          removed.
-        </p>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-32 h-32 bg-muted rounded-full flex items-center justify-center">
+            <span className="text-4xl">👤</span>
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-white">
+              User not found
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              The user @{username} doesn&apos;t exist or has been removed.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Check the username and try again.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -307,7 +330,7 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
         )}
       </div>
 
-      <SummaryStatCards userId={userId} profile={profile} />
+      <SummaryStatCards username={username} profile={profile} />
 
       <div className="flex flex-wrap gap-2 justify-center mb-8 px-4">
         <DetailsButton
@@ -344,12 +367,12 @@ export function UserProfileContent({ userId }: UserProfileContentProps) {
       <div className="max-w-2xl mx-auto">
         {activeTab === "check-ins" && <TabCheckIns checkIns={checkIns} />}
         {activeTab === "photos" && (
-          <TabPhotos isActive={activeTab === "photos"} userId={userId} />
+          <TabPhotos isActive={activeTab === "photos"} username={username} />
         )}
         {activeTab === "stats" && (
-          <TabStats isActive={activeTab === "stats"} userId={userId} />
+          <TabStats isActive={activeTab === "stats"} username={username} />
         )}
-        {activeTab === "friends" && <TabFriends userId={userId} />}
+        {activeTab === "friends" && <TabFriends username={username} />}
       </div>
     </>
   );

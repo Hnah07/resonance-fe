@@ -29,10 +29,15 @@ interface UserProfile {
 
 interface SummaryStatCardsProps {
   userId?: string;
+  username?: string;
   profile?: UserProfile | null;
 }
 
-export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
+export function SummaryStatCards({
+  userId,
+  username,
+  profile,
+}: SummaryStatCardsProps) {
   const [stats, setStats] = useState<SummaryStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,9 +45,9 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // If we have a userId, try to fetch detailed stats
-        if (userId) {
-          const url = `/api/users/${userId}/summary-stats`;
+        // If we have a username, try to fetch detailed stats
+        if (username) {
+          const url = `/api/users/${username}/summary-stats`;
           const response = await fetch(url);
 
           if (response.ok) {
@@ -52,6 +57,21 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
             return;
           } else {
             // If detailed stats fail, fall back to basic profile stats
+            console.log(
+              "Detailed stats not available, using profile stats as fallback"
+            );
+          }
+        } else if (userId) {
+          // Fallback for userId (backward compatibility)
+          const url = `/api/users/${userId}/summary-stats`;
+          const response = await fetch(url);
+
+          if (response.ok) {
+            const data = await response.json();
+            setStats(data);
+            setLoading(false);
+            return;
+          } else {
             console.log(
               "Detailed stats not available, using profile stats as fallback"
             );
@@ -102,7 +122,7 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
     };
 
     fetchStats();
-  }, [userId, profile]);
+  }, [userId, username, profile]);
 
   if (loading) {
     return (
@@ -137,7 +157,7 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
               No concert data yet
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {userId
+              {username || userId
                 ? "This user hasn't checked in to any concerts yet."
                 : "You haven't checked in to any concerts yet."}
             </p>
@@ -147,13 +167,15 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
     );
   }
 
+  const isOtherUser = username || userId;
+
   return (
     <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-8">
       <StatCard
         icon={<LuCalendar className="w-6 h-6" />}
         title="Concerts This Year"
         value={stats.concerts_this_year || 0}
-        details={`${userId ? "They" : "You"}'ve been to ${
+        details={`${isOtherUser ? "They" : "You"}'ve been to ${
           stats.concerts_this_year || 0
         } concerts in ${new Date().getFullYear()} so far.`}
       />
@@ -161,17 +183,17 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
         icon={<LuTicket className="w-6 h-6" />}
         title="Concerts Attended"
         value={stats.total_concerts || 0}
-        details={`${userId ? "They" : "You"}'ve attended ${
+        details={`${isOtherUser ? "They" : "You"}'ve attended ${
           stats.total_concerts || 0
-        } concerts in total since ${userId ? "they" : "you"} started tracking ${
-          userId ? "their" : "your"
-        } concert history.`}
+        } concerts in total since ${
+          isOtherUser ? "they" : "you"
+        } started tracking ${isOtherUser ? "their" : "your"} concert history.`}
       />
       <StatCard
         icon={<LuGlobe className="w-6 h-6" />}
         title="Countries Visited"
         value={stats.countries_visited || 0}
-        details={`${userId ? "They" : "You"}'ve seen concerts in ${(
+        details={`${isOtherUser ? "They" : "You"}'ve seen concerts in ${(
           stats.countries_list || []
         ).join(", ")}.`}
       />
@@ -181,7 +203,7 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
           title="Favorite Genre"
           value={stats.favorite_genre.genre}
           details={`${stats.favorite_genre.genre} is ${
-            userId ? "their" : "your"
+            isOtherUser ? "their" : "your"
           } most frequently attended genre, with ${
             stats.favorite_genre.count
           } concerts.`}
@@ -199,7 +221,7 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
           icon={<LuHeart className="w-6 h-6" />}
           title="Most Seen Artist"
           value={stats.most_seen_artist.name}
-          details={`${userId ? "They" : "You"}'ve seen ${
+          details={`${isOtherUser ? "They" : "You"}'ve seen ${
             stats.most_seen_artist.name
           } ${stats.most_seen_artist.count} time${
             stats.most_seen_artist.count !== 1 ? "s" : ""
@@ -218,7 +240,7 @@ export function SummaryStatCards({ userId, profile }: SummaryStatCardsProps) {
           icon={<LuStar className="w-6 h-6" />}
           title="Top Venue"
           value={stats.top_venue.name}
-          details={`${userId ? "They" : "You"}'ve visited ${
+          details={`${isOtherUser ? "They" : "You"}'ve visited ${
             stats.top_venue.name
           } ${stats.top_venue.count} time${
             stats.top_venue.count !== 1 ? "s" : ""

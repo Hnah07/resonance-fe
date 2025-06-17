@@ -9,23 +9,40 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { UserSummary } from "@/types/summary-stats";
 import { User } from "@/lib/hooks/useUser";
+import { useUser } from "@/lib/hooks/useUser";
+import { UserSearch } from "@/components/UserSearch";
 
 interface TabFriendsProps {
   userId?: string;
+  username?: string;
 }
 
-export function TabFriends({ userId }: TabFriendsProps) {
-  const [followers, setFollowers] = useState<UserSummary[]>([]);
-  const [following, setFollowing] = useState<UserSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function TabFriends({ userId, username }: TabFriendsProps) {
+  const [friends, setFriends] = useState<{
+    followers: UserSummary[];
+    following: UserSummary[];
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { user: currentUser, isLoading: userLoading } = useUser();
+
+  console.log("[TabFriends] Debug info:", {
+    currentUser: currentUser?.username,
+    username,
+    userLoading,
+    shouldShowSearch:
+      currentUser && username && currentUser.username === username,
+  });
 
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        setIsLoading(true);
-        const endpoint = userId
+        setLoading(true);
+        const endpoint = username
+          ? `/api/users/${username}/friends`
+          : userId
           ? `/api/users/${userId}/friends`
           : "/api/profile/friends";
+        console.log("[TabFriends] Fetching friends from endpoint:", endpoint);
         const response = await makeClientRequest<{
           followers: User[];
           following: User[];
@@ -39,8 +56,10 @@ export function TabFriends({ userId }: TabFriendsProps) {
         }
 
         if (friendsData) {
-          setFollowers(friendsData.followers);
-          setFollowing(friendsData.following);
+          setFriends({
+            followers: friendsData.followers,
+            following: friendsData.following,
+          });
         }
       } catch (err) {
         console.error("Error fetching friends:", err);
@@ -48,14 +67,14 @@ export function TabFriends({ userId }: TabFriendsProps) {
           err instanceof Error ? err.message : "Failed to load friends"
         );
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchFriends();
-  }, [userId]);
+  }, [userId, username]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
@@ -99,83 +118,94 @@ export function TabFriends({ userId }: TabFriendsProps) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Followers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {followers.length === 0 ? (
-            <p className="text-center text-muted-foreground">
-              No followers yet
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {followers.map((follower) => (
-                <Link
-                  key={follower.id}
-                  href={`/profile/${follower.id}`}
-                  className="flex items-center gap-3 hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={follower.profile_photo_url} />
-                    <AvatarFallback>
-                      {follower.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{follower.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      @{follower.username}
+    <>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Followers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!friends || friends.followers.length === 0 ? (
+              <p className="text-center text-muted-foreground">
+                No followers yet
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {friends.followers.map((follower) => (
+                  <Link
+                    key={follower.id}
+                    href={`/profile/${follower.username}`}
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={follower.profile_photo_url} />
+                      <AvatarFallback>
+                        {follower.name?.charAt(0) ||
+                          follower.username.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {follower.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        @{follower.username}
+                      </p>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Following</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {following.length === 0 ? (
-            <p className="text-center text-muted-foreground">
-              Not following anyone yet
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {following.map((following) => (
-                <Link
-                  key={following.id}
-                  href={`/profile/${following.id}`}
-                  className="flex items-center gap-3 hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={following.profile_photo_url} />
-                    <AvatarFallback>
-                      {following.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{following.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      @{following.username}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Following</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!friends || friends.following.length === 0 ? (
+              <p className="text-center text-muted-foreground">
+                Not following anyone yet
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {friends.following.map((following) => (
+                  <Link
+                    key={following.id}
+                    href={`/profile/${following.username}`}
+                    className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={following.profile_photo_url} />
+                      <AvatarFallback>
+                        {following.name?.charAt(0) ||
+                          following.username.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {following.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        @{following.username}
+                      </p>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      {/* User search only for own profile */}
+      {!userLoading &&
+        currentUser &&
+        username &&
+        currentUser.username === username && (
+          <div className="mt-8">
+            <UserSearch />
+          </div>
+        )}
+    </>
   );
 }

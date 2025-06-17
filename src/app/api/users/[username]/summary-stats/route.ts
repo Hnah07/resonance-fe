@@ -27,10 +27,13 @@ interface SummaryStatsResponse {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ username: string }> }
 ) {
+  let username: string = "";
+
   try {
-    const { userId } = params;
+    const resolvedParams = await params;
+    username = resolvedParams.username;
 
     // Get the auth token from cookies
     const cookieStore = await cookies();
@@ -39,7 +42,7 @@ export async function GET(
     console.log("[User Summary Stats API] Request details:", {
       url: request.url,
       method: request.method,
-      userId,
+      username,
       headers: Object.fromEntries(request.headers.entries()),
       hasAuthToken: !!authToken,
       environment: process.env.NODE_ENV,
@@ -55,7 +58,7 @@ export async function GET(
     const response = await makeAuthRequest<
       Record<string, never>,
       SummaryStatsResponse
-    >(`/api/users/${userId}/summary-stats`, "GET", {});
+    >(`/api/users/${username}/summary-stats`, "GET", {});
 
     console.log("[User Summary Stats API] Backend response:", {
       hasData: !!response,
@@ -103,7 +106,7 @@ export async function GET(
     console.error("[User Summary Stats API] Error details:", {
       message: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
-      userId: params.userId,
+      username: username,
     });
 
     // More specific error handling

@@ -219,7 +219,7 @@ export function ProfileContent() {
           <TabPhotos isActive={activeTab === "photos"} />
         )}
         {activeTab === "stats" && <TabStats isActive={activeTab === "stats"} />}
-        {activeTab === "friends" && <TabFriends />}
+        {activeTab === "friends" && <TabFriends username={user?.username} />}
       </div>
     </>
   );
