@@ -25,6 +25,18 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        port: "",
+        pathname: "/storage/checkin-photos/**",
+      },
+      {
+        protocol: "https",
+        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        port: "",
+        pathname: "/storage/**",
+      },
+      {
+        protocol: "https",
         hostname: "ui-avatars.com",
         port: "",
         pathname: "/**",
@@ -35,11 +47,24 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/api/proxy-image/**",
+      },
+      {
+        protocol: "https",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/api/proxy-image/**",
+      },
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     unoptimized: true,
+    formats: ["image/webp", "image/avif"],
   },
   async headers() {
     return [

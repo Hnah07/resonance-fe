@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { getFullUrl } from "@/lib/urls";
@@ -19,8 +19,49 @@ export function ExpandableImage({
   priority = false,
 }: ExpandableImageProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const previousSrcRef = useRef<string>("");
+  const loadedImagesRef = useRef<Set<string>>(new Set());
+
+  // Memoize the full URL to prevent unnecessary recalculations
+  const fullUrl = useMemo(() => getFullUrl(src), [src]);
+
+  // Create a unified cache key that works for both mobile and desktop
+  const cacheKey = useMemo(() => {
+    // Extract the original path from the URL to create a consistent cache key
+    const url = new URL(fullUrl, window.location.origin);
+    if (url.pathname.startsWith("/api/proxy-image")) {
+      // For proxy URLs, extract the original path from the query parameter
+      const pathParam = url.searchParams.get("path");
+      return pathParam || src;
+    }
+    // For direct URLs, use the pathname
+    return url.pathname || src;
+  }, [fullUrl, src]);
+
+  // Check if image is already loaded in browser cache using the unified cache key
+  const isImageCached = useMemo(() => {
+    return loadedImagesRef.current.has(cacheKey);
+  }, [cacheKey]);
+
+  // Only reset states when src actually changes
+  useEffect(() => {
+    if (src !== previousSrcRef.current) {
+      previousSrcRef.current = src;
+      setError(false);
+      setRetryCount(0);
+
+      // If image is cached, mark it as loaded immediately
+      if (isImageCached) {
+        setImageLoaded(true);
+      } else {
+        setImageLoaded(false);
+      }
+    }
+  }, [src, isImageCached]);
 
   // Don't render the image component if src is empty
   if (!src) {
@@ -31,13 +72,28 @@ export function ExpandableImage({
     );
   }
 
-  // Construct the full URL for the image
-  const fullUrl = getFullUrl(src);
+  const handleRetry = () => {
+    setError(false);
+    setImageLoaded(false);
+    setRetryCount((prev) => prev + 1);
+  };
 
   if (error) {
     return (
-      <div className={`${className} bg-muted flex items-center justify-center`}>
-        <span className="text-muted-foreground">Failed to load image</span>
+      <div
+        className={`${className} bg-muted flex items-center justify-center cursor-pointer`}
+        onClick={handleRetry}
+      >
+        <div className="text-center">
+          <span className="text-muted-foreground block">
+            Failed to load image
+          </span>
+          <span className="text-xs text-muted-foreground block mt-1">
+            {retryCount < 3
+              ? `Tap to retry (${retryCount}/3)`
+              : "Max retries reached"}
+          </span>
+        </div>
       </div>
     );
   }
@@ -50,22 +106,44 @@ export function ExpandableImage({
       >
         <div
           className={`relative w-full h-full ${
-            isLoading ? "animate-pulse bg-muted" : ""
+            !imageLoaded ? "animate-pulse bg-muted" : ""
           }`}
         >
           <Image
+            ref={imageRef}
             src={fullUrl}
             alt={alt}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className={`${className} transition-opacity duration-300 ${
-              isLoading ? "opacity-0" : "opacity-100"
+              imageLoaded ? "opacity-100" : "opacity-0"
             }`}
             priority={priority}
             loading={priority ? "eager" : "lazy"}
-            onLoad={() => setIsLoading(false)}
-            onError={() => setError(true)}
+            onLoad={() => {
+              setImageLoaded(true);
+              // Add to loaded images set using the unified cache key
+              loadedImagesRef.current.add(cacheKey);
+            }}
+            onError={() => {
+              console.error("Image failed to load:", {
+                url: fullUrl,
+                originalSrc: src,
+                cacheKey,
+                retryCount,
+              });
+
+              // Only retry automatically for the first few attempts
+              if (retryCount < 2) {
+                setTimeout(() => {
+                  handleRetry();
+                }, 1000 * (retryCount + 1)); // Exponential backoff
+              } else {
+                setError(true);
+              }
+            }}
             quality={75}
+            unoptimized={true}
           />
         </div>
       </div>
@@ -81,6 +159,7 @@ export function ExpandableImage({
             priority
             quality={90}
             onError={() => setError(true)}
+            unoptimized={true}
           />
         </div>
       </DialogContent>
