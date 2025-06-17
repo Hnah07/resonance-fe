@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { makeAuthRequest } from "@/app/api/auth/make-auth-request";
+import {
+  makeAuthRequest,
+  makePublicRequest,
+} from "@/app/api/auth/make-auth-request";
 
 export async function GET(
   request: NextRequest,
@@ -9,17 +12,25 @@ export async function GET(
   const cookieStore = await cookies();
   const authToken = cookieStore.get("auth_token");
 
-  if (!authToken) {
-    return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
-  }
-
   try {
     const { username } = await params;
-    const response = await makeAuthRequest(
-      `/api/users/${username}/check-ins`,
-      "GET",
-      {}
-    );
+    let response;
+
+    if (authToken) {
+      // Use authenticated request if token is available
+      response = await makeAuthRequest(
+        `/api/users/${username}/check-ins`,
+        "GET",
+        {}
+      );
+    } else {
+      // Use public request if no token is available
+      response = await makePublicRequest(
+        `/api/users/${username}/check-ins`,
+        "GET",
+        {}
+      );
+    }
 
     console.log("User check-ins API - Backend response:", response);
 

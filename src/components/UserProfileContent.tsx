@@ -96,10 +96,11 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
   const fetchProfileData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [profileResponse, checkInsResponse] = await Promise.all([
-        makeClientRequest<UserProfile>(`/api/users/${username}`),
-        makeClientRequest<ProfileCheckIn>(`/api/users/${username}/check-ins`),
-      ]);
+
+      // Fetch profile data first
+      const profileResponse = await makeClientRequest<UserProfile>(
+        `/api/users/${username}`
+      );
 
       console.log("Profile response:", profileResponse);
       console.log("Profile response data:", profileResponse.data);
@@ -138,10 +139,21 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
         // User not found
         setProfile(null);
         toast.error(`User @${username} not found`);
+        return;
       }
 
-      if (checkInsResponse.data) {
-        setCheckIns(checkInsResponse.data);
+      // Try to fetch check-ins data, but don't fail if it doesn't work
+      try {
+        const checkInsResponse = await makeClientRequest<ProfileCheckIn>(
+          `/api/users/${username}/check-ins`
+        );
+        if (checkInsResponse.data) {
+          setCheckIns(checkInsResponse.data);
+        }
+      } catch (checkInsError) {
+        console.warn("Failed to fetch check-ins data:", checkInsError);
+        // Don't show error toast for check-ins failure, just log it
+        setCheckIns([]);
       }
     } catch (err) {
       console.error("Error fetching profile data:", err);

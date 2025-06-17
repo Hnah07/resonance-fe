@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { makeAuthRequest } from "@/app/api/auth/make-auth-request";
+import {
+  makeAuthRequest,
+  makePublicRequest,
+} from "@/app/api/auth/make-auth-request";
 
 interface UserProfileResponse {
   data: {
@@ -47,11 +50,23 @@ export async function GET(
     console.log("[User API] Fetching user with username:", username);
 
     // Make the request with or without auth token
-    const response = (await makeAuthRequest(
-      `/api/users/${username}`,
-      "GET",
-      {}
-    )) as UserProfileResponse;
+    let response: UserProfileResponse;
+
+    if (authToken) {
+      // Use authenticated request if token is available
+      response = (await makeAuthRequest(
+        `/api/users/${username}`,
+        "GET",
+        {}
+      )) as UserProfileResponse;
+    } else {
+      // Use public request if no token is available
+      response = (await makePublicRequest(
+        `/api/users/${username}`,
+        "GET",
+        {}
+      )) as UserProfileResponse;
+    }
 
     console.log("[User API] Complete backend response:", response);
 
