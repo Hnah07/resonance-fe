@@ -54,48 +54,28 @@ export async function GET(
       return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
     }
 
-    // Make request to the summary stats API for the specific user
-    const response = await makeAuthRequest<
+    // Fetch the summary stats directly from the backend API
+    const summaryStatsResponse = await makeAuthRequest<
       Record<string, never>,
       SummaryStatsResponse
     >(`/api/users/${username}/summary-stats`, "GET", {});
 
-    console.log("[User Summary Stats API] Backend response:", {
-      hasData: !!response,
-      concertsThisYear: response?.concerts_this_year,
-      totalConcerts: response?.total_concerts,
-      countriesVisited: response?.countries_visited,
+    console.log("[User Summary Stats API] Summary stats response:", {
+      hasData: !!summaryStatsResponse,
+      concertsThisYear: summaryStatsResponse?.concerts_this_year,
+      totalConcerts: summaryStatsResponse?.total_concerts,
+      countriesVisited: summaryStatsResponse?.countries_visited,
     });
 
-    if (!response) {
+    if (!summaryStatsResponse) {
       return NextResponse.json(
         { message: "Failed to fetch summary statistics" },
         { status: 500 }
       );
     }
 
-    // Ensure the response has the expected structure with default values
-    const validatedResponse: SummaryStatsResponse = {
-      concerts_this_year: response.concerts_this_year || 0,
-      total_concerts: response.total_concerts || 0,
-      countries_visited: response.countries_visited || 0,
-      countries_list: response.countries_list || [],
-      favorite_genre: response.favorite_genre || {
-        genre: "No data",
-        count: 0,
-      },
-      most_seen_artist: response.most_seen_artist || {
-        name: "No data",
-        count: 0,
-      },
-      top_venue: response.top_venue || {
-        name: "No data",
-        count: 0,
-      },
-    };
-
     // Return with appropriate caching headers
-    return NextResponse.json(validatedResponse, {
+    return NextResponse.json(summaryStatsResponse, {
       headers: {
         "Cache-Control": "public, s-maxage=30, stale-while-revalidate=59",
         "Content-Type": "application/json",
