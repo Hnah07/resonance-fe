@@ -251,7 +251,11 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
         credentials: "include",
       });
 
-      console.log("handleFollowToggle - Response status:", response.status);
+      const responseData = await response.json();
+      console.log("handleFollowToggle - Response:", {
+        status: response.status,
+        data: responseData,
+      });
 
       if (response.status === 409) {
         // Conflict - user is already in the desired state, just refresh data
@@ -261,28 +265,34 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log("handleFollowToggle - Error response:", errorText);
-        throw new Error("Failed to update follow status");
+        // Try to get the error message from the response
+        const errorMessage =
+          responseData?.message ||
+          responseData?.error ||
+          "Failed to update follow status";
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
-      console.log("handleFollowToggle - Success response:", data);
-
-      if (data) {
-        // Refresh the profile data to get the updated follow status and counts
-        await fetchProfileData();
-        toast.success(
-          profile.is_following
-            ? "Unfollowed successfully"
-            : "Followed successfully"
-        );
+      // Check if the response indicates success
+      if (responseData?.success === false) {
+        throw new Error(responseData?.message || "Follow action failed");
       }
+
+      // Refresh the profile data to get the updated follow status and counts
+      await fetchProfileData();
+
+      // Show appropriate success message
+      const successMessage =
+        responseData?.message ||
+        (profile.is_following
+          ? "Unfollowed successfully"
+          : "Followed successfully");
+      toast.success(successMessage);
     } catch (err) {
       console.error("Error toggling follow:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update follow status"
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update follow status";
+      toast.error(errorMessage);
     }
   };
 
