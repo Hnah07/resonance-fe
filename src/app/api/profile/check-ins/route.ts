@@ -120,12 +120,53 @@ export async function GET(request: NextRequest) {
     // Get the user ID from the auth token
     const userId = authToken.value.split("|")[0];
 
-    // Make request to the timeline API with a user filter
+    // First, get the current user's username
+    const userResponse = await makeAuthRequest("/api/user", "GET", {});
+
+    if (!userResponse) {
+      console.log("[Profile Check-ins API] Failed to get user info");
+      return NextResponse.json(
+        { message: "Failed to get user info" },
+        { status: 500 }
+      );
+    }
+
+    // Handle different response structures
+    let username: string;
+    if (
+      userResponse &&
+      typeof userResponse === "object" &&
+      "username" in userResponse
+    ) {
+      username = userResponse.username as string;
+    } else if (
+      userResponse &&
+      typeof userResponse === "object" &&
+      "user" in userResponse &&
+      userResponse.user &&
+      typeof userResponse.user === "object" &&
+      "username" in userResponse.user
+    ) {
+      username = (userResponse.user as { username: string }).username;
+    } else {
+      console.log(
+        "[Profile Check-ins API] No username found in user response:",
+        userResponse
+      );
+      return NextResponse.json(
+        { message: "Failed to get user username" },
+        { status: 500 }
+      );
+    }
+
+    console.log("[Profile Check-ins API] Current user username:", username);
+
+    // Make request to the user-specific check-ins API
     const response = await makeAuthRequest<
       Record<string, never>,
       PaginatedResponse<TimelineResponse>
     >(
-      `/api/timeline?page=${page}&per_page=${perPage}&user_id=${userId}`,
+      `/api/users/${username}/check-ins?page=${page}&per_page=${perPage}`,
       "GET",
       {}
     );
@@ -156,42 +197,17 @@ export async function GET(request: NextRequest) {
         (artist: { name: string }) => artist.name
       );
 
-      // Log the raw artist data to see its structure
-      console.log("[Profile Check-ins API] Raw artist data:", {
-        event: item.concert.event.name,
-        artists: item.concert.artists.map(
-          (a: TimelineResponse["concert"]["artists"][0]) => ({
-            name: a.name,
-            rawGenres: JSON.stringify(a.genres),
-            genresArray: a.genres,
-            genresType: typeof a.genres,
-            isArray: Array.isArray(a.genres),
-          })
-        ),
-      });
-
       // Extract unique genres from all artists
       const uniqueGenres = Array.from(
         new Set(
           item.concert.artists.flatMap(
             (artist: TimelineResponse["concert"]["artists"][0]) => {
-              console.log("[Profile Check-ins API] Processing artist:", {
-                name: artist.name,
-                genres: JSON.stringify(artist.genres),
-                mappedGenres: artist.genres?.map((g) => g.name),
-              });
               if (!artist.genres) return [];
               return artist.genres.map((g) => g.name);
             }
           )
         )
       );
-
-      console.log("[Profile Check-ins API] Final genres:", {
-        event: item.concert.event.name,
-        uniqueGenres,
-        genresLength: uniqueGenres.length,
-      });
 
       return {
         id: item.id,
