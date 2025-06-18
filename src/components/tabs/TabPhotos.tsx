@@ -15,7 +15,8 @@ const formatDate = (dateString: string) => {
   });
 };
 
-interface CheckIn {
+// Interface for own profile check-ins (nested structure)
+interface OwnProfileCheckIn {
   user: {
     id: string;
     name?: string;
@@ -62,6 +63,55 @@ interface CheckIn {
   };
 }
 
+// Interface for other users' check-ins (flat structure)
+interface UserCheckIn {
+  id: string;
+  user: {
+    id: string;
+    name?: string;
+    username: string;
+    image?: string;
+  };
+  concert: {
+    id: string;
+    event: string;
+    location: {
+      id: string;
+      name: string;
+    };
+    city: string;
+    country: string;
+    image: string;
+    date: string;
+    rating: number;
+    artists: string[];
+    genres: string[];
+  };
+  date: string;
+  time: string;
+  comment: string;
+  likes: number;
+  comments: Array<{
+    id: string;
+    user: {
+      id: string;
+      name: string;
+      image?: string;
+    };
+    text: string;
+    date: string;
+    time: string;
+  }>;
+  photos: Array<{
+    id: string;
+    url: string;
+    caption: string | null;
+  }>;
+}
+
+// Union type for both structures
+type CheckIn = OwnProfileCheckIn | UserCheckIn;
+
 interface TabPhotosProps {
   isActive: boolean;
   userId?: string;
@@ -73,6 +123,30 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Helper function to check if it's own profile
+  const isOwnProfile = !username && !userId;
+
+  // Helper function to get check-in ID
+  const getCheckInId = (checkIn: CheckIn): string => {
+    return isOwnProfile
+      ? (checkIn as OwnProfileCheckIn).checkIn.id
+      : (checkIn as UserCheckIn).id;
+  };
+
+  // Helper function to get photos
+  const getPhotos = (checkIn: CheckIn) => {
+    return isOwnProfile
+      ? (checkIn as OwnProfileCheckIn).checkIn.photos
+      : (checkIn as UserCheckIn).photos;
+  };
+
+  // Helper function to get comment
+  const getComment = (checkIn: CheckIn) => {
+    return isOwnProfile
+      ? (checkIn as OwnProfileCheckIn).checkIn.comment
+      : (checkIn as UserCheckIn).comment;
+  };
 
   useEffect(() => {
     const fetchCheckIns = async () => {
@@ -97,6 +171,7 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
           isArray: Array.isArray(response.data),
           responseKeys: Object.keys(response),
           meta: "meta" in response ? response.meta : undefined,
+          isOwnProfile,
           fullResponse: JSON.stringify(response, null, 2),
         });
 
@@ -104,13 +179,14 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
         const checkInsData = Array.isArray(response.data)
           ? response.data
           : [response.data];
+
         console.log(
           "[TabPhotos] First check-in details:",
           checkInsData[0]
             ? {
-                checkInId: checkInsData[0].checkIn.id,
-                hasPhotos: !!checkInsData[0].checkIn.photos,
-                photosArray: checkInsData[0].checkIn.photos?.map((p) => ({
+                checkInId: getCheckInId(checkInsData[0]),
+                hasPhotos: !!getPhotos(checkInsData[0]),
+                photosArray: getPhotos(checkInsData[0])?.map((p) => ({
                   id: p.id,
                   url: p.url,
                   fullUrl: p.url.startsWith("http")
@@ -121,8 +197,9 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
                       )}`,
                   caption: p.caption,
                 })),
-                photosLength: checkInsData[0].checkIn.photos?.length,
-                checkInKeys: Object.keys(checkInsData[0].checkIn),
+                photosLength: getPhotos(checkInsData[0])?.length,
+                checkInKeys: Object.keys(checkInsData[0]),
+                isOwnProfile,
                 fullCheckIn: JSON.stringify(checkInsData[0], null, 2),
               }
             : null
@@ -130,14 +207,15 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
 
         // Filter check-ins that have photos
         const checkInsWithPhotos = checkInsData.filter((checkIn) => {
-          const hasPhotos =
-            checkIn.checkIn.photos && checkIn.checkIn.photos.length > 0;
+          const photos = getPhotos(checkIn);
+          const hasPhotos = photos && photos.length > 0;
           if (!hasPhotos) {
             console.log("[TabPhotos] Check-in without photos:", {
-              checkInId: checkIn.checkIn.id,
+              checkInId: getCheckInId(checkIn),
               concertName: checkIn.concert.event,
-              checkInKeys: Object.keys(checkIn.checkIn),
-              photosField: checkIn.checkIn.photos,
+              checkInKeys: Object.keys(checkIn),
+              photosField: photos,
+              isOwnProfile,
               fullCheckIn: JSON.stringify(checkIn, null, 2),
             });
           }
@@ -145,29 +223,42 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
         });
 
         // Process photo URLs to ensure they're absolute
-        const processedCheckIns = checkInsWithPhotos.map((checkIn) => ({
-          ...checkIn,
-          checkIn: {
-            ...checkIn.checkIn,
-            photos: checkIn.checkIn.photos?.map((photo) => ({
-              ...photo,
-              url: photo.url.startsWith("http")
-                ? photo.url
-                : `https://resonance-be.ddev.site/${photo.url.replace(
-                    /^\//,
-                    ""
-                  )}`,
-            })),
-          },
-        }));
+        const processedCheckIns = checkInsWithPhotos.map((checkIn) => {
+          const photos = getPhotos(checkIn);
+          const processedPhotos = photos?.map((photo) => ({
+            ...photo,
+            url: photo.url.startsWith("http")
+              ? photo.url
+              : `https://resonance-be.ddev.site/${photo.url.replace(
+                  /^\//,
+                  ""
+                )}`,
+          }));
+
+          if (isOwnProfile) {
+            return {
+              ...checkIn,
+              checkIn: {
+                ...(checkIn as OwnProfileCheckIn).checkIn,
+                photos: processedPhotos,
+              },
+            } as OwnProfileCheckIn;
+          } else {
+            return {
+              ...checkIn,
+              photos: processedPhotos,
+            } as UserCheckIn;
+          }
+        });
 
         console.log("[TabPhotos] Final filtered check-ins:", {
           total: processedCheckIns.length,
+          isOwnProfile,
           checkIns: processedCheckIns.map((ci) => ({
-            checkInId: ci.checkIn.id,
+            checkInId: getCheckInId(ci),
             concertName: ci.concert.event,
-            photosCount: ci.checkIn.photos?.length,
-            photos: ci.checkIn.photos?.map((p) => ({
+            photosCount: getPhotos(ci)?.length,
+            photos: getPhotos(ci)?.map((p) => ({
               id: p.id,
               url: p.url,
               hasCaption: !!p.caption,
@@ -207,7 +298,7 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {checkIns.map((checkIn) =>
-            checkIn.checkIn.photos?.map((photo) => (
+            getPhotos(checkIn)?.map((photo) => (
               <div
                 key={photo.id}
                 className="relative aspect-square group cursor-pointer"
@@ -250,12 +341,11 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
             </button>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
               <div className="relative aspect-square">
-                {selectedCheckIn.checkIn.photos?.[0] && (
+                {getPhotos(selectedCheckIn)?.[0] && (
                   <Image
-                    src={selectedCheckIn.checkIn.photos[0].url}
+                    src={getPhotos(selectedCheckIn)![0].url}
                     alt={
-                      selectedCheckIn.checkIn.photos[0].caption ||
-                      "Concert photo"
+                      getPhotos(selectedCheckIn)![0].caption || "Concert photo"
                     }
                     fill
                     className="object-cover rounded-lg"
@@ -275,8 +365,8 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
                     {formatDate(selectedCheckIn.concert.date)}
                   </p>
                 </div>
-                {selectedCheckIn.checkIn.comment && (
-                  <p className="text-sm">{selectedCheckIn.checkIn.comment}</p>
+                {getComment(selectedCheckIn) && (
+                  <p className="text-sm">{getComment(selectedCheckIn)}</p>
                 )}
               </div>
             </div>
