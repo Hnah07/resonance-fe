@@ -32,7 +32,6 @@ interface CheckInCardProps {
     date: string;
     rating: number;
     artists: string[];
-    genres: string[];
   };
   checkIn: {
     id: string;
@@ -116,7 +115,7 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
             </Avatar>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-slate-800 dark:text-white">
-                {user.name}
+                {user.name || "Anonymous"}
               </span>
               <span className="text-xs text-muted-foreground">
                 @{user.username}
@@ -134,16 +133,18 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-bold text-lg text-slate-800 dark:text-white">
-              {concert.event}
+              {concert.event || "Unknown Event"}
             </h4>
             <div className="flex items-center gap-2">
               <LuMapPin className="text-sm text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                {concert.location.name}, {concert.city}, {concert.country}
+                {concert.location?.name || "Unknown Location"},{" "}
+                {concert.city || "Unknown City"},{" "}
+                {concert.country || "Unknown Country"}
               </p>
             </div>
           </div>
-          <StarRating rating={concert.rating} />
+          <StarRating rating={concert.rating || 0} />
         </div>
       </div>
 
@@ -160,7 +161,8 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
               <ExpandableImage
                 src={checkIn.photos[0].url}
                 alt={
-                  checkIn.photos[0].caption || `${concert.event} concert photo`
+                  checkIn.photos[0].caption ||
+                  `${concert.event || "Concert"} photo`
                 }
               />
             </div>
@@ -177,7 +179,7 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
                     src={photo.url}
                     alt={
                       photo.caption ||
-                      `${concert.event} concert photo ${index + 1}`
+                      `${concert.event || "Concert"} photo ${index + 1}`
                     }
                   />
                   {index === 3 && checkIn.photos.length > 4 && (

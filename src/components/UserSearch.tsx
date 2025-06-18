@@ -74,8 +74,24 @@ export function UserSearch() {
         credentials: "include",
       });
 
+      const responseData = await response.json();
+      console.log("Follow toggle response:", {
+        status: response.status,
+        data: responseData,
+      });
+
       if (!response.ok) {
-        throw new Error("Failed to update follow status");
+        // Try to get the error message from the response
+        const errorMessage =
+          responseData?.message ||
+          responseData?.error ||
+          "Failed to update follow status";
+        throw new Error(errorMessage);
+      }
+
+      // Check if the response indicates success
+      if (responseData?.success === false) {
+        throw new Error(responseData?.message || "Follow action failed");
       }
 
       // Update the local state to reflect the change
@@ -87,12 +103,18 @@ export function UserSearch() {
         )
       );
 
-      toast.success(
-        isFollowing ? "Unfollowed successfully" : "Followed successfully"
-      );
+      // Show appropriate success message
+      const successMessage =
+        responseData?.message ||
+        (isFollowing ? "Unfollowed successfully" : "Followed successfully");
+      toast.success(successMessage);
     } catch (error) {
       console.error("Error toggling follow:", error);
-      toast.error("Failed to update follow status");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to update follow status";
+      toast.error(errorMessage);
     }
   };
 

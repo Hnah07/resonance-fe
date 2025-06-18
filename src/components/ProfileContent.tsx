@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import CardSkeleton from "@/components/CardSkeleton";
 import { useUser } from "@/lib/hooks/useUser";
 
-interface ProfileCheckIn {
+interface ProfileCheckInResponse {
+  id: string;
   user: {
     id: string;
     name?: string;
@@ -34,15 +35,23 @@ interface ProfileCheckIn {
     image: string;
     date: string;
     rating: number;
-    artists: string[];
-    genres: string[];
+    artists: (
+      | string
+      | { id?: string; name: string; type?: string; image_url?: string }
+    )[];
+    genres: (
+      | string
+      | { id?: string; name: string; type?: string; image_url?: string }
+    )[];
   };
+  // Profile check-ins API returns a nested checkIn object
   checkIn: {
     id: string;
     date: string;
     time: string;
     comment: string;
     likes: number;
+    isLiked?: boolean;
     comments: Array<{
       id: string;
       user: {
@@ -62,11 +71,69 @@ interface ProfileCheckIn {
   };
 }
 
+// Interface that TabCheckIns expects
+interface TabCheckInsCheckIn {
+  id: string;
+  user: {
+    id: string;
+    name?: string;
+    username: string;
+    image?: string;
+  };
+  concert: {
+    id: string;
+    event: string;
+    location: {
+      id: string;
+      name: string;
+    };
+    city: string;
+    country: string;
+    image: string;
+    date: string;
+    rating: number;
+    artists: (
+      | string
+      | { id?: string; name: string; type?: string; image_url?: string }
+    )[];
+    genres: (
+      | string
+      | { id?: string; name: string; type?: string; image_url?: string }
+    )[];
+  };
+  // Check-in properties are at root level, not nested
+  date: string;
+  time: string;
+  created_at: string;
+  updated_at: string;
+  likes_count: number;
+  comments_count: number;
+  comments: Array<{
+    id: string;
+    user: {
+      id: string;
+      name: string;
+      image?: string;
+    };
+    text: string;
+    date: string;
+    time: string;
+  }>;
+  photos: Array<{
+    id: string;
+    url: string;
+    caption: string | null;
+  }>;
+  is_liked: boolean;
+  rating: number | null;
+  review: string | null;
+}
+
 export function ProfileContent() {
   const [activeTab, setActiveTab] = useState<
     "check-ins" | "photos" | "stats" | "friends"
   >("check-ins");
-  const [checkIns, setCheckIns] = useState<ProfileCheckIn[]>([]);
+  const [checkIns, setCheckIns] = useState<TabCheckInsCheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isLoading: isUserLoading } = useUser();
 
@@ -89,13 +156,57 @@ export function ProfileContent() {
     const fetchProfileData = async () => {
       try {
         setIsLoading(true);
-        const response = await makeClientRequest<ProfileCheckIn>(
+        const response = await makeClientRequest<ProfileCheckInResponse>(
           "/api/profile/check-ins"
         );
 
-        if (response.data) {
-          setCheckIns(response.data);
+        console.log("Profile check-ins response:", response);
+
+        if (response && response.data) {
+          // Transform the API response to match TabCheckIns expectations
+          const transformedData = response.data.map((item) => {
+            console.log("Processing profile check-in item:", {
+              id: item.id,
+              checkInDate: item.checkIn.date,
+              checkInTime: item.checkIn.time,
+              concertDate: item.concert.date,
+              userImage: item.user.image,
+              concertImage: item.concert.image,
+              artistsCount: item.concert.artists?.length || 0,
+              genresCount: item.concert.genres?.length || 0,
+            });
+
+            return {
+              id: item.id,
+              user: item.user,
+              concert: {
+                ...item.concert,
+                // Keep artists and genres as they are for filters
+                artists: item.concert.artists || [],
+                genres: item.concert.genres || [],
+              },
+              // Provide check-in properties at root level as expected by TabCheckInsCheckIn
+              date: item.checkIn.date,
+              time: item.checkIn.time,
+              created_at: item.checkIn.date, // Use checkIn date as created_at
+              updated_at: item.checkIn.date, // Use checkIn date as updated_at
+              likes_count: item.checkIn.likes,
+              comments_count: item.checkIn.comments.length,
+              comments: item.checkIn.comments,
+              photos: item.checkIn.photos,
+              is_liked: item.checkIn.isLiked || false,
+              rating: item.concert.rating,
+              review: item.checkIn.comment,
+            };
+          });
+
+          console.log(
+            "Transformed profile check-ins data count:",
+            transformedData.length
+          );
+          setCheckIns(transformedData);
         } else {
+          console.log("No profile check-ins data found, setting empty array");
           setCheckIns([]);
         }
       } catch (err) {
@@ -103,6 +214,7 @@ export function ProfileContent() {
         toast.error(
           err instanceof Error ? err.message : "Failed to load profile data"
         );
+        setCheckIns([]);
       } finally {
         setIsLoading(false);
       }
@@ -213,7 +325,7 @@ export function ProfileContent() {
               ))}
             </div>
           ) : (
-            <TabCheckIns checkIns={checkIns} />
+            <TabCheckIns checkIns={checkIns} showFilter={true} />
           ))}
         {activeTab === "photos" && (
           <TabPhotos isActive={activeTab === "photos"} />

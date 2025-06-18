@@ -34,6 +34,7 @@ interface UserProfile {
 }
 
 interface ProfileCheckIn {
+  id: string;
   user: {
     id: string;
     name?: string;
@@ -52,32 +53,40 @@ interface ProfileCheckIn {
     image: string;
     date: string;
     rating: number;
-    artists: string[];
-    genres: string[];
+    artists: (
+      | string
+      | { id?: string; name: string; type?: string; image_url?: string }
+    )[];
+    genres: (
+      | string
+      | { id?: string; name: string; type?: string; image_url?: string }
+    )[];
   };
-  checkIn: {
+  date: string;
+  time: string;
+  created_at: string;
+  updated_at: string;
+  likes_count: number;
+  comments_count: number;
+  comments: Array<{
     id: string;
+    user: {
+      id: string;
+      name: string;
+      image?: string;
+    };
+    text: string;
     date: string;
     time: string;
-    comment: string;
-    likes: number;
-    comments: Array<{
-      id: string;
-      user: {
-        id: string;
-        name: string;
-        image?: string;
-      };
-      text: string;
-      date: string;
-      time: string;
-    }>;
-    photos: Array<{
-      id: string;
-      url: string;
-      caption: string | null;
-    }>;
-  };
+  }>;
+  photos: Array<{
+    id: string;
+    url: string;
+    caption: string | null;
+  }>;
+  is_liked: boolean;
+  rating: number | null;
+  review: string | null;
 }
 
 interface UserProfileContentProps {
@@ -101,9 +110,6 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
       const profileResponse = await makeClientRequest<UserProfile>(
         `/api/users/${username}`
       );
-
-      console.log("Profile response:", profileResponse);
-      console.log("Profile response data:", profileResponse.data);
 
       let profileData: UserProfile | null = null;
 
@@ -131,8 +137,6 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
         profileData = profileResponse.data;
       }
 
-      console.log("Extracted profile data:", profileData);
-
       if (profileData) {
         setProfile(profileData);
       } else {
@@ -144,14 +148,64 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
 
       // Try to fetch check-ins data, but don't fail if it doesn't work
       try {
+        console.log(
+          "UserProfileContent - Fetching check-ins for username:",
+          username
+        );
         const checkInsResponse = await makeClientRequest<ProfileCheckIn>(
           `/api/users/${username}/check-ins`
         );
-        if (checkInsResponse.data) {
-          setCheckIns(checkInsResponse.data);
+        console.log(
+          "UserProfileContent - Check-ins response:",
+          checkInsResponse
+        );
+
+        if (checkInsResponse && checkInsResponse.data) {
+          // Ensure we always set an array
+          const checkInsData = Array.isArray(checkInsResponse.data)
+            ? checkInsResponse.data
+            : [checkInsResponse.data];
+
+          console.log(
+            "UserProfileContent - Check-ins data count:",
+            checkInsData.length
+          );
+
+          // Transform the data to ensure artists and genres are strings
+          const transformedCheckIns = checkInsData.map((item) => {
+            const result = {
+              ...item,
+              // Add time field if not present
+              time:
+                item.time ||
+                (item.created_at
+                  ? new Date(item.created_at).toLocaleTimeString()
+                  : ""),
+              concert: {
+                ...item.concert,
+                // Keep artists and genres as objects for filters
+                artists: item.concert?.artists || [],
+                genres: item.concert?.genres || [],
+              },
+            };
+
+            return result;
+          });
+
+          console.log(
+            "UserProfileContent - Setting check-ins:",
+            transformedCheckIns.length
+          );
+          setCheckIns(transformedCheckIns);
+        } else {
+          console.log("UserProfileContent - No check-ins data found");
+          setCheckIns([]);
         }
       } catch (checkInsError) {
-        console.warn("Failed to fetch check-ins data:", checkInsError);
+        console.error(
+          "UserProfileContent - Failed to fetch check-ins data:",
+          checkInsError
+        );
         // Don't show error toast for check-ins failure, just log it
         setCheckIns([]);
       }
@@ -232,20 +286,20 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
     }
   };
 
-  console.log("UserProfileContent - Rendering with profile:", profile);
-  console.log("UserProfileContent - Current user:", currentUser);
-  console.log(
-    "UserProfileContent - Profile is_current_user:",
-    profile?.is_current_user
-  );
-  console.log(
-    "UserProfileContent - Should show follow button:",
-    !profile?.is_current_user && currentUser
-  );
-  console.log(
-    "UserProfileContent - Profile is_following:",
-    profile?.is_following
-  );
+  // console.log("UserProfileContent - Rendering with profile:", profile);
+  // console.log("UserProfileContent - Current user:", currentUser);
+  // console.log(
+  //   "UserProfileContent - Profile is_current_user:",
+  //   profile?.is_current_user
+  // );
+  // console.log(
+  //   "UserProfileContent - Should show follow button:",
+  //   !profile?.is_current_user && currentUser
+  // );
+  // console.log(
+  //   "UserProfileContent - Profile is_following:",
+  //   profile?.is_following
+  // );
 
   if (isLoading) {
     return (
@@ -377,7 +431,9 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
 
       {/* Tab Contents */}
       <div className="max-w-2xl mx-auto">
-        {activeTab === "check-ins" && <TabCheckIns checkIns={checkIns} />}
+        {activeTab === "check-ins" && (
+          <TabCheckIns checkIns={checkIns} showFilter={false} />
+        )}
         {activeTab === "photos" && (
           <TabPhotos isActive={activeTab === "photos"} username={username} />
         )}

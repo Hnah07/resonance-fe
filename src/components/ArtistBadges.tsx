@@ -14,7 +14,10 @@ import { cn } from "@/lib/utils";
 
 interface ArtistBadgesProps {
   title: string;
-  artists: string[];
+  artists: (
+    | string
+    | { id?: string; name: string; type?: string; image_url?: string }
+  )[];
   className?: string;
   showTitle?: boolean;
 }
@@ -26,12 +29,24 @@ export function ArtistBadges({
   showTitle = true,
 }: ArtistBadgesProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Safety check: ensure artists are strings
+  const safeArtists = Array.isArray(artists)
+    ? artists.map((artist) => {
+        if (typeof artist === "string") return artist;
+        if (artist && typeof artist === "object" && "name" in artist) {
+          return (artist as { name: string }).name;
+        }
+        return "Unknown Artist";
+      })
+    : [];
+
   const {
     visibleItems: visibleArtists,
     hiddenItems: hiddenArtists,
     containerRef: artistsContainerRef,
     badgeRef: artistBadgeRef,
-  } = useBadgeCalculation({ items: artists });
+  } = useBadgeCalculation({ items: safeArtists });
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -62,7 +77,7 @@ export function ArtistBadges({
                   </AlertDialogCancel>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {artists.map((artist) => (
+                  {safeArtists.map((artist) => (
                     <span
                       key={artist}
                       className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs border-muted text-foreground"
