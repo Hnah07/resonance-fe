@@ -6,27 +6,40 @@
  * @returns The full URL (e.g., "https://resonance-be.ddev.site/storage/events/xyz.png")
  */
 export const getFullUrl = (relativePath: string): string => {
-  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  const apiHost =
+    process.env.NEXT_PUBLIC_API_HOST ||
+    "resonance-app-cf7lh.ondigitalocean.app";
 
-  if (!apiHost) {
-    console.warn("NEXT_PUBLIC_API_HOST is not defined, using relative path");
+  // If the path is already a full URL, return it as is
+  if (
+    relativePath.startsWith("http://") ||
+    relativePath.startsWith("https://")
+  ) {
     return relativePath;
   }
 
-  // Clean the relative path - remove any leading slashes that might cause issues
-  let cleanPath = relativePath;
-  if (cleanPath.startsWith("/storage/")) {
-    cleanPath = cleanPath.substring(1); // Remove leading slash
-  }
+  // Clean the relative path - remove any leading slashes
+  const cleanPath = relativePath.startsWith("/")
+    ? relativePath.substring(1)
+    : relativePath;
 
-  // Add /storage/ prefix for event images if not already present
-  const path = cleanPath.startsWith("storage/")
-    ? `/${cleanPath}`
-    : cleanPath.startsWith("events/")
-    ? `/storage/${cleanPath}`
-    : cleanPath.startsWith("/")
-    ? cleanPath
-    : `/${cleanPath}`;
+  // Handle different path formats from the database
+  let finalPath: string;
+
+  if (cleanPath.startsWith("storage/")) {
+    // Already has storage prefix (e.g., checkin photos)
+    finalPath = `/${cleanPath}`;
+  } else if (cleanPath.startsWith("events/")) {
+    // Database format: "events/filename.jpg" -> "/storage/events/filename.jpg"
+    finalPath = `/storage/${cleanPath}`;
+  } else if (cleanPath.startsWith("checkin-photos/")) {
+    // This shouldn't happen since checkin photos are stored with storage prefix
+    // But just in case, add the storage prefix
+    finalPath = `/storage/${cleanPath}`;
+  } else {
+    // Fallback: assume it needs storage prefix
+    finalPath = `/storage/${cleanPath}`;
+  }
 
   // Check if we're in production or on mobile and use proxy for better compatibility
   const isMobile =
@@ -39,11 +52,14 @@ export const getFullUrl = (relativePath: string): string => {
 
   // Use proxy for mobile devices and in production to avoid CORS issues
   if (isMobile || isProduction) {
-    const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(path)}`;
+    // Only encode the relative path, not the full URL
+    const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(
+      finalPath
+    )}`;
     return proxyUrl;
   }
 
-  const fullUrl = `https://${apiHost}${path}`;
+  const fullUrl = `https://${apiHost}${finalPath}`;
   return fullUrl;
 };
 
@@ -52,10 +68,8 @@ export const getFullUrl = (relativePath: string): string => {
  * This is useful for constructing full URLs for API endpoints.
  */
 export const getApiBaseUrl = (): string => {
-  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
-  if (!apiHost) {
-    console.warn("NEXT_PUBLIC_API_HOST is not defined");
-    return "";
-  }
+  const apiHost =
+    process.env.NEXT_PUBLIC_API_HOST ||
+    "resonance-app-cf7lh.ondigitalocean.app";
   return `https://${apiHost}`;
 };

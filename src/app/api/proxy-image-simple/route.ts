@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  console.log("=== SIMPLE PROXY IMAGE ROUTE CALLED ===");
-  console.log("Request URL:", request.url);
-
   const { searchParams } = new URL(request.url);
   const imagePath = searchParams.get("path");
-
-  console.log("Image path from query:", imagePath);
 
   if (!imagePath) {
     return NextResponse.json(
@@ -16,19 +11,37 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
-  if (!apiHost) {
-    return NextResponse.json(
-      { error: "API host not configured" },
-      { status: 500 }
-    );
-  }
+  const apiHost =
+    process.env.NEXT_PUBLIC_API_HOST ||
+    "resonance-app-cf7lh.ondigitalocean.app";
 
   try {
-    // Construct the full URL to the backend image
-    const fullUrl = `https://${apiHost}${imagePath}`;
+    // Ensure the path starts with a slash and handle different formats
+    let normalizedPath = imagePath;
 
-    console.log("Fetching image from:", fullUrl);
+    // Remove leading slash if present
+    if (normalizedPath.startsWith("/")) {
+      normalizedPath = normalizedPath.substring(1);
+    }
+
+    // Handle different path formats
+    if (normalizedPath.startsWith("storage/")) {
+      // Already has storage prefix (e.g., checkin photos)
+      normalizedPath = `/${normalizedPath}`;
+    } else if (normalizedPath.startsWith("events/")) {
+      // Database format: "events/filename.jpg" -> "/storage/events/filename.jpg"
+      normalizedPath = `/storage/${normalizedPath}`;
+    } else if (normalizedPath.startsWith("checkin-photos/")) {
+      // This shouldn't happen since checkin photos are stored with storage prefix
+      // But just in case, add the storage prefix
+      normalizedPath = `/storage/${normalizedPath}`;
+    } else {
+      // Fallback: assume it needs storage prefix
+      normalizedPath = `/storage/${normalizedPath}`;
+    }
+
+    // Construct the full URL to the backend image
+    const fullUrl = `https://${apiHost}${normalizedPath}`;
 
     // Use fetch to get the image from the backend
     const response = await fetch(fullUrl, {
@@ -38,20 +51,27 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log("Backend response:", {
-      status: response.status,
-      ok: response.ok,
-      contentType: response.headers.get("content-type"),
-    });
-
     if (!response.ok) {
       console.error(
         "Backend returned error:",
         response.status,
         response.statusText
       );
+
+      // Try to get the error text
+      let errorText = "";
+      try {
+        errorText = await response.text();
+      } catch {
+        errorText = "Could not read error response";
+      }
+
       return NextResponse.json(
-        { error: `Failed to fetch image: ${response.status}` },
+        {
+          error: `Failed to fetch image: ${response.status}`,
+          details: errorText,
+          url: fullUrl,
+        },
         { status: response.status }
       );
     }
@@ -59,11 +79,6 @@ export async function GET(request: NextRequest) {
     // Get the image data
     const imageData = await response.arrayBuffer();
     const contentType = response.headers.get("content-type") || "image/jpeg";
-
-    console.log("Successfully fetched image:", {
-      size: imageData.byteLength,
-      contentType,
-    });
 
     // Return the image with appropriate headers
     return new NextResponse(imageData, {
@@ -77,9 +92,18 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching image:", error);
+    console.error("Error fetching image:", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      apiHost,
+      imagePath,
+    });
     return NextResponse.json(
-      { error: "Failed to proxy image" },
+      {
+        error: "Failed to proxy image",
+        details: error instanceof Error ? error.message : "Unknown error",
+        apiHost,
+        imagePath,
+      },
       { status: 500 }
     );
   }
