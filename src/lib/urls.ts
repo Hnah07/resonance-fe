@@ -6,10 +6,6 @@
  * @returns The full URL (e.g., "https://resonance-be.ddev.site/storage/events/xyz.png")
  */
 export const getFullUrl = (relativePath: string): string => {
-  const apiHost =
-    process.env.NEXT_PUBLIC_API_HOST ||
-    "resonance-app-cf7lh.ondigitalocean.app";
-
   // If the path is already a full URL, return it as is
   if (
     relativePath.startsWith("http://") ||
@@ -37,26 +33,12 @@ export const getFullUrl = (relativePath: string): string => {
     finalPath = `/storage/${cleanPath}`;
   }
 
-  // Check if we're in production or on mobile and use proxy for better compatibility
-  const isMobile =
-    typeof window !== "undefined" &&
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    );
-
-  const isProduction = process.env.NODE_ENV === "production";
-
-  // Use proxy for mobile devices and in production to avoid CORS issues
-  if (isMobile || isProduction) {
-    // Only encode the relative path, not the full URL
-    const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(
-      finalPath
-    )}`;
-    return proxyUrl;
-  }
-
-  const fullUrl = `https://${apiHost}${finalPath}`;
-  return fullUrl;
+  // Always use proxy for external images to avoid CORS issues and ensure consistent behavior
+  // This prevents the backend URL from being exposed directly to the client
+  const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(
+    finalPath
+  )}`;
+  return proxyUrl;
 };
 
 /**
