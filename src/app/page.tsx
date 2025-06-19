@@ -46,16 +46,16 @@ const HomePage = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            href="/check-in"
+            href="/register"
             className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#FF0086] to-[#03D1FE] text-white font-semibold hover:opacity-90 transition-opacity"
           >
-            Check In to a Show
+            Register Now
           </Link>
           <Link
             href="/discover"
             className="px-8 py-3 rounded-lg border border-border hover:bg-accent transition-colors"
           >
-            Discover Concerts
+            Search Concerts
           </Link>
         </div>
       </section>
@@ -133,7 +133,7 @@ const HomePage = () => {
           experiences and discovering new shows on Resonance.
         </p>
         <Link
-          href="/check-in"
+          href="/register"
           className="inline-block px-8 py-3 rounded-lg bg-gradient-to-r from-[#FF0086] to-[#03D1FE] text-white font-semibold hover:opacity-90 transition-opacity"
         >
           Begin Your Timeline
