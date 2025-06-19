@@ -3,7 +3,7 @@
  * This allows for easy switching between environments and future CDN integration.
  *
  * @param relativePath - The relative path (e.g., "events/xyz.png" or "/storage/checkin-photos/xyz.png")
- * @returns The proxy URL (e.g., "/api/proxy-image?path=%2Fstorage%2Fevents%2Fxyz.png")
+ * @returns The full URL or proxy URL depending on the input
  */
 export const getFullUrl = (relativePath: string): string => {
   // If the path is already a full URL, extract the path and use proxy
@@ -42,8 +42,14 @@ export const getFullUrl = (relativePath: string): string => {
     finalPath = `/storage/${cleanPath}`;
   }
 
-  // Always use proxy for external images to avoid CORS issues and ensure consistent behavior
-  // This prevents the backend URL from being exposed directly to the client
+  // For now, let's try using the direct backend URL since the proxy is having issues
+  // This will help us determine if the issue is with the proxy or the backend
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  if (apiHost) {
+    return `https://${apiHost}${finalPath}`;
+  }
+
+  // Fallback to proxy if no API host is configured
   const proxyUrl = `/api/proxy-image?path=${encodeURIComponent(finalPath)}`;
   return proxyUrl;
 };

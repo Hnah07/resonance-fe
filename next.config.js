@@ -37,6 +37,12 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "resonance-app-cf7lh.ondigitalocean.app",
+        port: "",
+        pathname: "/storage/**",
+      },
+      {
+        protocol: "https",
         hostname: "ui-avatars.com",
         port: "",
         pathname: "/**",
