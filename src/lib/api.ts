@@ -62,8 +62,10 @@ export const makeRequest = cache(
       Authorization: `Bearer ${token}`,
     };
 
-    const hostname =
-      process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
+    const hostname = process.env.NEXT_PUBLIC_API_HOST;
+    if (!hostname) {
+      throw new Error("NEXT_PUBLIC_API_HOST environment variable is not set");
+    }
     const url = `https://${hostname}${path}`;
     console.log("Making request to:", {
       url,

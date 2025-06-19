@@ -3,7 +3,7 @@
  * This allows for easy switching between environments and future CDN integration.
  *
  * @param relativePath - The relative path (e.g., "events/xyz.png" or "/storage/checkin-photos/xyz.png")
- * @returns The full URL (e.g., "https://resonance-be.ddev.site/storage/events/xyz.png")
+ * @returns The proxy URL (e.g., "/api/proxy-image-simple?path=%2Fstorage%2Fevents%2Fxyz.png")
  */
 export const getFullUrl = (relativePath: string): string => {
   // If the path is already a full URL, extract the path and use proxy

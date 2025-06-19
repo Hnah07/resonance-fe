@@ -103,8 +103,10 @@ export async function fetchGenre(name: string): Promise<{
       };
     }
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
+    const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
+    if (!baseUrl) {
+      throw new Error("NEXT_PUBLIC_API_HOST environment variable is not set");
+    }
     const url = `https://${baseUrl}/api/genres?name=${encodeURIComponent(
       name
     )}`;
