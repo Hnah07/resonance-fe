@@ -39,7 +39,7 @@ export const getFullUrl = (relativePath: string): string => {
 
   // Use proxy for mobile devices and in production to avoid CORS issues
   if (isMobile || isProduction) {
-    const proxyUrl = `/api/proxy-image?path=${encodeURIComponent(path)}`;
+    const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(path)}`;
     return proxyUrl;
   }
 
