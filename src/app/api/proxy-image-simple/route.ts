@@ -11,9 +11,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const apiHost =
-    process.env.NEXT_PUBLIC_API_HOST ||
-    "resonance-app-cf7lh.ondigitalocean.app";
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  if (!apiHost) {
+    return NextResponse.json(
+      { error: "NEXT_PUBLIC_API_HOST environment variable is not set" },
+      { status: 500 }
+    );
+  }
 
   try {
     // Ensure the path starts with a slash and handle different formats

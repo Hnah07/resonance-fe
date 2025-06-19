@@ -57,8 +57,9 @@ export const getFullUrl = (relativePath: string): string => {
  * This is useful for constructing full URLs for API endpoints.
  */
 export const getApiBaseUrl = (): string => {
-  const apiHost =
-    process.env.NEXT_PUBLIC_API_HOST ||
-    "resonance-app-cf7lh.ondigitalocean.app";
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  if (!apiHost) {
+    throw new Error("NEXT_PUBLIC_API_HOST environment variable is not set");
+  }
   return `https://${apiHost}`;
 };

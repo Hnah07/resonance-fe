@@ -13,25 +13,25 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        hostname: process.env.NEXT_PUBLIC_API_HOST,
         port: "",
         pathname: "/storage/events/**",
       },
       {
         protocol: "https",
-        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        hostname: process.env.NEXT_PUBLIC_API_HOST,
         port: "",
         pathname: "/events/**",
       },
       {
         protocol: "https",
-        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        hostname: process.env.NEXT_PUBLIC_API_HOST,
         port: "",
         pathname: "/storage/checkin-photos/**",
       },
       {
         protocol: "https",
-        hostname: process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site",
+        hostname: process.env.NEXT_PUBLIC_API_HOST,
         port: "",
         pathname: "/storage/**",
       },
