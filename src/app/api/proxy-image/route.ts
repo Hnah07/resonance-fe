@@ -31,7 +31,29 @@ export async function GET(request: NextRequest) {
       originalPath: imagePath,
       fullUrl,
       apiHost,
+      nodeEnv: process.env.NODE_ENV,
+      requestUrl: request.url,
     });
+
+    // Test if backend is accessible
+    try {
+      const testResponse = await fetch(`https://${apiHost}/api/health`, {
+        method: "GET",
+        headers: {
+          "User-Agent": "Resonance App Image Proxy Test",
+        },
+      });
+      console.log("Backend health check:", {
+        status: testResponse.status,
+        ok: testResponse.ok,
+        apiHost,
+      });
+    } catch (testError) {
+      console.error("Backend health check failed:", {
+        error: testError instanceof Error ? testError.message : "Unknown error",
+        apiHost,
+      });
+    }
 
     // Use https.request instead of fetch to handle SSL certificate issues
     const response = await new Promise<{
@@ -52,6 +74,12 @@ export async function GET(request: NextRequest) {
         }),
       };
 
+      console.log("Making HTTPS request with options:", {
+        hostname: options.hostname,
+        path: options.path,
+        fullUrl,
+      });
+
       const req = https.request(options, (res) => {
         const chunks: Buffer[] = [];
 
@@ -61,6 +89,12 @@ export async function GET(request: NextRequest) {
 
         res.on("end", () => {
           const data = Buffer.concat(chunks);
+          console.log("Backend response received:", {
+            statusCode: res.statusCode,
+            contentLength: data.length,
+            headers: res.headers,
+            path: imagePath,
+          });
           resolve({
             statusCode: res.statusCode || 500,
             headers: res.headers,
@@ -70,7 +104,13 @@ export async function GET(request: NextRequest) {
       });
 
       req.on("error", (error) => {
-        console.error("Image proxy request error:", error);
+        console.error("Image proxy request error:", {
+          error: error.message,
+          code: (error as NodeJS.ErrnoException).code,
+          hostname: apiHost,
+          path: imagePath,
+          fullUrl,
+        });
         reject(error);
       });
 
