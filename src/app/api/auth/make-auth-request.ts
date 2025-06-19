@@ -40,7 +40,11 @@ export const makeAuthRequest = async <
     throw new Error("No authentication token available");
   }
 
-  const apiHost = process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  if (!apiHost) {
+    throw new Error("NEXT_PUBLIC_API_HOST environment variable is not set");
+  }
+
   console.log("[makeAuthRequest] Making request with config:", {
     apiHost,
     path,
@@ -161,7 +165,11 @@ export const makePublicRequest = async <
   method: string,
   body: T
 ): Promise<R> => {
-  const apiHost = process.env.NEXT_PUBLIC_API_HOST || "resonance-be.ddev.site";
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  if (!apiHost) {
+    throw new Error("NEXT_PUBLIC_API_HOST environment variable is not set");
+  }
+
   console.log("[makePublicRequest] Making request with config:", {
     apiHost,
     path,

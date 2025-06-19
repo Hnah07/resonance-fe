@@ -190,12 +190,7 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
                 photosArray: getPhotos(checkInsData[0])?.map((p) => ({
                   id: p.id,
                   url: p.url,
-                  fullUrl: p.url.startsWith("http")
-                    ? p.url
-                    : `https://resonance-be.ddev.site/${p.url.replace(
-                        /^\//,
-                        ""
-                      )}`,
+                  fullUrl: getFullUrl(p.url),
                   caption: p.caption,
                 })),
                 photosLength: getPhotos(checkInsData[0])?.length,

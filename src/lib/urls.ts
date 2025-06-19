@@ -3,15 +3,26 @@
  * This allows for easy switching between environments and future CDN integration.
  *
  * @param relativePath - The relative path (e.g., "events/xyz.png" or "/storage/checkin-photos/xyz.png")
- * @returns The full URL (e.g., "https://resonance-be.ddev.site/storage/events/xyz.png")
+ * @returns The proxy URL (e.g., "/api/proxy-image-simple?path=%2Fstorage%2Fevents%2Fxyz.png")
  */
 export const getFullUrl = (relativePath: string): string => {
-  // If the path is already a full URL, return it as is
+  // If the path is already a full URL, extract the path and use proxy
   if (
     relativePath.startsWith("http://") ||
     relativePath.startsWith("https://")
   ) {
-    return relativePath;
+    try {
+      const url = new URL(relativePath);
+      const path = url.pathname;
+      // Use proxy for the extracted path
+      const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(
+        path
+      )}`;
+      return proxyUrl;
+    } catch (error) {
+      console.error("Failed to parse URL:", relativePath, error);
+      // Fallback to original path if URL parsing fails
+    }
   }
 
   // Clean the relative path - remove any leading slashes
@@ -46,8 +57,9 @@ export const getFullUrl = (relativePath: string): string => {
  * This is useful for constructing full URLs for API endpoints.
  */
 export const getApiBaseUrl = (): string => {
-  const apiHost =
-    process.env.NEXT_PUBLIC_API_HOST ||
-    "resonance-app-cf7lh.ondigitalocean.app";
+  const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+  if (!apiHost) {
+    throw new Error("NEXT_PUBLIC_API_HOST environment variable is not set");
+  }
   return `https://${apiHost}`;
 };
