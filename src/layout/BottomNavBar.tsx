@@ -4,10 +4,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LuClock,
-  LuHouse,
-  LuSquarePlus,
+  LuCompass,
   LuUser,
-  LuUsers,
+  // LuSquarePlus,
+  // LuUsers,
 } from "react-icons/lu";
 
 const navItems = [
@@ -18,19 +18,19 @@ const navItems = [
   },
   {
     href: "/discover",
-    icon: LuHouse,
+    icon: LuCompass,
     label: "Discover",
   },
-  {
-    href: "/check-in",
-    icon: LuSquarePlus,
-    label: "Check-in",
-  },
-  {
-    href: "/friends",
-    icon: LuUsers,
-    label: "Friends",
-  },
+  // {
+  //   href: "/check-in",
+  //   icon: LuSquarePlus,
+  //   label: "Check-in",
+  // },
+  // {
+  //   href: "/friends",
+  //   icon: LuUsers,
+  //   label: "Friends",
+  // },
   {
     href: "/profile",
     icon: LuUser,

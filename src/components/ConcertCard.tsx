@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { DetailsButton } from "@/components/ui/details-button";
+// import { DetailsButton } from "@/components/ui/details-button";
 import { GenreBadges } from "@/components/GenreBadges";
 import { ArtistBadges } from "@/components/ArtistBadges";
 import { ExpandableImage } from "@/components/ExpandableImage";
@@ -178,7 +178,7 @@ export default function ConcertCard({ concert }: ConcertCardProps) {
                 <GenreBadges genres={concert.genres} />
               )}
               <div className="flex space-x-2 pt-2">
-                <DetailsButton className="flex-1">Details</DetailsButton>
+                {/* <DetailsButton className="flex-1">Details</DetailsButton> */}
                 <CheckInDrawer concert={concert} onSubmit={handleCheckIn} />
               </div>
             </div>
