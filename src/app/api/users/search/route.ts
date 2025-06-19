@@ -18,13 +18,20 @@ interface UserSearchResult {
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get("q");
+  const query = searchParams.get("query");
   const page = searchParams.get("page") || "1";
   const perPage = searchParams.get("per_page") || "20";
 
+  console.log("[User Search API] Request received:", {
+    query,
+    page,
+    perPage,
+    searchParams: Object.fromEntries(searchParams.entries()),
+  });
+
   if (!query) {
     return NextResponse.json(
-      { error: "Search query parameter 'q' is required" },
+      { error: "Search query parameter 'query' is required" },
       { status: 400 }
     );
   }
@@ -39,16 +46,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Make request to the backend user search API
+    const backendUrl = `/api/users/search?query=${encodeURIComponent(
+      query
+    )}&page=${page}&per_page=${perPage}`;
+
+    console.log("[User Search API] Calling backend:", backendUrl);
+
     const response = await makeAuthRequest<
       Record<string, never>,
       UserSearchResult[]
-    >(
-      `/api/users/search?q=${encodeURIComponent(
-        query
-      )}&page=${page}&per_page=${perPage}`,
-      "GET",
-      {}
-    );
+    >(backendUrl, "GET", {});
 
     console.log("[User Search API] Backend response:", {
       hasData: !!response,

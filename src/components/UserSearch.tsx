@@ -27,12 +27,70 @@ interface UserSearchResult {
   is_following: boolean;
 }
 
+interface BackendUserResponse {
+  id: string;
+  name: string;
+  username: string;
+  profile_photo_url: string;
+  bio: string | null;
+  city: string | null;
+  country_name: string | null;
+  is_following: boolean;
+  stats: {
+    followers_count: number;
+    following_count: number;
+    checkins_count: number;
+    concerts_count: number;
+    artists_count: number;
+  };
+}
+
 export function UserSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const debouncedQuery = useDebounce(query, 500);
+
+  // Transform backend response to match UserSearchResult interface
+  const transformUserData = (
+    backendUser: BackendUserResponse
+  ): UserSearchResult => {
+    return {
+      id: backendUser.id,
+      name: backendUser.name,
+      username: backendUser.username,
+      profile_photo_url: backendUser.profile_photo_url,
+      bio: backendUser.bio,
+      city: backendUser.city,
+      country_name: backendUser.country_name,
+      followers_count: backendUser.stats.followers_count,
+      following_count: backendUser.stats.following_count,
+      checkins_count: backendUser.stats.checkins_count,
+      is_following: backendUser.is_following,
+    };
+  };
+
+  // Type guard function to check if an object is a valid backend user response
+  const isValidBackendUser = (user: unknown): user is BackendUserResponse => {
+    const isValid =
+      user !== null &&
+      typeof user === "object" &&
+      "id" in user &&
+      "username" in user &&
+      "name" in user &&
+      "stats" in user &&
+      typeof (user as Record<string, unknown>).id === "string" &&
+      typeof (user as Record<string, unknown>).username === "string" &&
+      typeof (user as Record<string, unknown>).name === "string" &&
+      typeof (user as Record<string, unknown>).stats === "object";
+
+    if (!isValid) {
+      console.log("[UserSearch] Invalid user object:", user);
+    }
+
+    return isValid;
+  };
 
   useEffect(() => {
     if (debouncedQuery.length >= 2) {
@@ -49,11 +107,67 @@ export function UserSearch() {
       setHasSearched(true);
 
       const response = await makeClientRequest<UserSearchResult>(
-        `/api/users/search?q=${encodeURIComponent(searchQuery)}`
+        `/api/users/search?query=${encodeURIComponent(searchQuery)}`
       );
 
+      console.log("[UserSearch] API Response:", {
+        hasResponse: !!response,
+        responseType: typeof response,
+        hasData: !!(response && response.data),
+        dataLength: response?.data?.length,
+        dataType: Array.isArray(response?.data)
+          ? "array"
+          : typeof response?.data,
+        firstItem: response?.data?.[0],
+      });
+
       if (response && response.data) {
-        setResults(response.data);
+        // Handle both direct array and nested data structure
+        let userData: unknown[] = response.data;
+
+        console.log("[UserSearch] Initial userData:", {
+          type: typeof userData,
+          isArray: Array.isArray(userData),
+          length: Array.isArray(userData) ? userData.length : "not array",
+          firstItem: Array.isArray(userData) ? userData[0] : "not array",
+        });
+
+        // If response.data is an array of objects with data properties, extract the actual arrays
+        if (Array.isArray(userData) && userData.length > 0) {
+          const firstItem = userData[0];
+          if (
+            typeof firstItem === "object" &&
+            firstItem !== null &&
+            "data" in firstItem
+          ) {
+            // Extract data from each wrapper object and flatten
+            const extractedData = userData.flatMap((item) => {
+              if (typeof item === "object" && item !== null && "data" in item) {
+                const nestedData = (item as { data: unknown[] }).data;
+                return Array.isArray(nestedData) ? nestedData : [];
+              }
+              return [];
+            });
+            userData = extractedData;
+            console.log("[UserSearch] Extracted nested data:", {
+              length: userData.length,
+              firstItem: userData[0],
+            });
+          }
+        }
+
+        // Filter out any undefined or null users and ensure all have valid IDs
+        const validUsers = userData
+          .filter(isValidBackendUser)
+          .map(transformUserData);
+
+        console.log("[UserSearch] Transformation result:", {
+          originalLength: userData.length,
+          validUsersLength: validUsers.length,
+          validUsers: validUsers,
+        });
+
+        setResults(validUsers);
       } else {
         setResults([]);
       }
@@ -169,7 +283,7 @@ export function UserSearch() {
                 Found {results.length} user{results.length !== 1 ? "s" : ""}
               </p>
               {results.map((user) => (
-                <Card key={user.id}>
+                <Card key={user.id || user.username}>
                   <CardContent className="p-4">
                     <div className="flex items-center space-x-4">
                       <Link href={`/profile/${user.username}`}>
