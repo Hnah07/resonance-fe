@@ -32,10 +32,6 @@ export const getFullUrl = (relativePath: string): string => {
   } else if (cleanPath.startsWith("events/")) {
     // Database format: "events/filename.jpg" -> "/storage/events/filename.jpg"
     finalPath = `/storage/${cleanPath}`;
-  } else if (cleanPath.startsWith("checkin-photos/")) {
-    // This shouldn't happen since checkin photos are stored with storage prefix
-    // But just in case, add the storage prefix
-    finalPath = `/storage/${cleanPath}`;
   } else {
     // Fallback: assume it needs storage prefix
     finalPath = `/storage/${cleanPath}`;
