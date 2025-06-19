@@ -130,6 +130,7 @@ export default function ConcertCard({ concert }: ConcertCardProps) {
     city: concert.city,
     distance: concert.distance,
     hasDistance: concert.distance !== undefined,
+    image: concert.image,
   });
 
   return (
@@ -144,6 +145,7 @@ export default function ConcertCard({ concert }: ConcertCardProps) {
                   : `${concert.distance.toFixed(1)} km`}
               </div>
             )}
+
             <ExpandableImage
               src={concert.image}
               alt={`${getEventDisplay(concert.event, concert.date)} at ${

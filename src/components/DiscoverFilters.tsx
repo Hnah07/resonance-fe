@@ -49,13 +49,17 @@ export function DiscoverFilters() {
     }
 
     if (newFilters.dateRange.from) {
-      params.set("dateFrom", newFilters.dateRange.from.toISOString());
+      // Convert to YYYY-MM-DD format for the backend
+      const dateFrom = newFilters.dateRange.from.toISOString().split("T")[0];
+      params.set("dateFrom", dateFrom);
     } else {
       params.delete("dateFrom");
     }
 
     if (newFilters.dateRange.to) {
-      params.set("dateTo", newFilters.dateRange.to.toISOString());
+      // Convert to YYYY-MM-DD format for the backend
+      const dateTo = newFilters.dateRange.to.toISOString().split("T")[0];
+      params.set("dateTo", dateTo);
     } else {
       params.delete("dateTo");
     }

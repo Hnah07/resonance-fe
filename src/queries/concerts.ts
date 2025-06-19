@@ -25,9 +25,8 @@ export async function getAllConcerts(
     // Build query parameters
     const queryParams = new URLSearchParams();
 
-    // Always set today as the minimum date for the discover page
+    // Handle date filtering - show today onwards by default, but respect user's future date selection
     const today = new Date();
-    // Get local date string in YYYY-MM-DD format
     const todayISO = today.toLocaleDateString("en-CA"); // This gives YYYY-MM-DD in local timezone
 
     console.log("Date filtering:", {
@@ -37,27 +36,28 @@ export async function getAllConcerts(
       currentTime: new Date().toLocaleString(),
     });
 
-    // Only use dateFrom if it's after today
     if (filters?.dateFrom) {
       const dateFrom = new Date(filters.dateFrom);
       const dateFromLocal = dateFrom.toLocaleDateString("en-CA");
       console.log("Date comparison:", {
         dateFrom: dateFromLocal,
         today: todayISO,
-        isAfterToday: dateFromLocal > todayISO,
+        isAfterToday: dateFromLocal >= todayISO,
       });
 
-      if (dateFromLocal > todayISO) {
+      // Use user's dateFrom if it's today or in the future
+      if (dateFromLocal >= todayISO) {
         queryParams.append("dateFrom", filters.dateFrom);
-        console.log("Using provided dateFrom:", filters.dateFrom);
+        console.log("Using user's dateFrom:", filters.dateFrom);
       } else {
+        // If user selected a past date, use today instead
         queryParams.append("dateFrom", todayISO);
-        console.log("Using today as dateFrom:", todayISO);
+        console.log("User selected past date, using today instead:", todayISO);
       }
     } else {
-      // If no dateFrom is specified, use today
+      // If no dateFrom is specified, use today as default
       queryParams.append("dateFrom", todayISO);
-      console.log("No dateFrom provided, using today:", todayISO);
+      console.log("No dateFrom provided, using today as default:", todayISO);
     }
 
     // Add other filters to query params
@@ -166,8 +166,15 @@ export async function getAllConcerts(
     console.log("Making request to API with params:", {
       path: apiPath,
       dateFrom: queryParams.get("dateFrom"),
+      dateTo: queryParams.get("dateTo"),
       allParams: Object.fromEntries(queryParams.entries()),
     });
+    console.log("=== FULL API REQUEST DEBUG ===");
+    console.log("Final API path:", apiPath);
+    console.log(
+      "All query parameters:",
+      Object.fromEntries(queryParams.entries())
+    );
 
     // Make the request using makeRequest with the relative path
     const response = await makeRequest<ApiConcert>(apiPath, {

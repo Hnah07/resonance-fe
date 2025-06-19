@@ -13,7 +13,10 @@ import { LuX } from "react-icons/lu";
 import { cn } from "@/lib/utils";
 
 interface GenreBadgesProps {
-  genres: string[];
+  genres: (
+    | string
+    | { id?: string; name: string; type?: string; image_url?: string }
+  )[];
   className?: string;
   showTitle?: boolean;
 }
@@ -24,12 +27,44 @@ export function GenreBadges({
   showTitle = true,
 }: GenreBadgesProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  console.log("GenreBadges - Received props:", {
+    genres,
+    genresType: typeof genres,
+    genresIsArray: Array.isArray(genres),
+    genresLength: genres?.length,
+    genresContent: JSON.stringify(genres),
+  });
+
+  // Safety check: ensure genres are strings
+  const safeGenres = Array.isArray(genres)
+    ? genres.map((genre) => {
+        console.log("GenreBadges - Processing genre:", {
+          genre,
+          type: typeof genre,
+          isObject: typeof genre === "object",
+          hasName: genre && typeof genre === "object" && "name" in genre,
+        });
+
+        if (typeof genre === "string") return genre;
+        if (genre && typeof genre === "object" && "name" in genre) {
+          return (genre as { name: string }).name;
+        }
+        return "Unknown Genre";
+      })
+    : [];
+
+  console.log("GenreBadges - Safe genres:", {
+    safeGenres,
+    safeGenresContent: JSON.stringify(safeGenres),
+  });
+
   const {
     visibleItems: visibleGenres,
     hiddenItems: hiddenGenres,
     containerRef: genresContainerRef,
     badgeRef: genreBadgeRef,
-  } = useBadgeCalculation({ items: genres });
+  } = useBadgeCalculation({ items: safeGenres });
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -60,7 +95,7 @@ export function GenreBadges({
                   </AlertDialogCancel>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {genres.map((genre) => (
+                  {safeGenres.map((genre) => (
                     <span
                       key={genre}
                       className="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-xs bg-gradient-to-r from-accent-pink/20 to-accent-cyan/20 text-accent-pink border-accent-pink/30"

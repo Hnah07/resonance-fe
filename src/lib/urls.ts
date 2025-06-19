@@ -7,19 +7,42 @@
  */
 export const getFullUrl = (relativePath: string): string => {
   const apiHost = process.env.NEXT_PUBLIC_API_HOST;
+
   if (!apiHost) {
     console.warn("NEXT_PUBLIC_API_HOST is not defined, using relative path");
     return relativePath;
   }
 
-  // Add /storage/ prefix for event images if not already present
-  const path = relativePath.startsWith("/storage/")
-    ? relativePath
-    : relativePath.startsWith("events/")
-    ? `/storage/${relativePath}`
-    : relativePath;
+  // Clean the relative path - remove any leading slashes that might cause issues
+  let cleanPath = relativePath;
+  if (cleanPath.startsWith("/storage/")) {
+    cleanPath = cleanPath.substring(1); // Remove leading slash
+  }
 
-  return `https://${apiHost}${path}`;
+  // Add /storage/ prefix for event images if not already present
+  const path = cleanPath.startsWith("storage/")
+    ? `/${cleanPath}`
+    : cleanPath.startsWith("events/")
+    ? `/storage/${cleanPath}`
+    : cleanPath.startsWith("/")
+    ? cleanPath
+    : `/${cleanPath}`;
+
+  // Check if we're on mobile and use proxy for better compatibility
+  const isMobile =
+    typeof window !== "undefined" &&
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+
+  if (isMobile) {
+    // Use the proxy for mobile devices to avoid CORS issues
+    const proxyUrl = `/api/proxy-image?path=${encodeURIComponent(path)}`;
+    return proxyUrl;
+  }
+
+  const fullUrl = `https://${apiHost}${path}`;
+  return fullUrl;
 };
 
 /**

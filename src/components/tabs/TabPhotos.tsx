@@ -1,181 +1,374 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { makeClientRequest } from "@/lib/api";
+import { toast } from "sonner";
+import { X } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { LuMapPin, LuCalendar } from "react-icons/lu";
-import { formatEventDate } from "@/lib/helpers";
 import { getFullUrl } from "@/lib/urls";
 
-const checkIns = [
-  {
-    user: {
-      id: "1",
-      name: "John Doe",
-      username: "johndoe",
-      image: "/placeholder-avatar-user.jpg",
-    },
-    concert: {
-      id: "1",
-      event: "Metallica World Tour 2024",
-      location: {
-        id: "1",
-        name: "Sportpaleis",
-      },
-      city: "Antwerp",
-      country: "Belgium",
-      image: "/placeholder-concert.jpg",
-      date: "2024-03-15",
-      rating: 5,
-      artists: ["Metallica", "Five Finger Death Punch"],
-      genres: ["Metal", "Heavy Metal"],
-    },
-    checkIn: {
-      id: "1",
-      date: "2024-03-15",
-      comment:
-        "Incredible show! The energy was amazing and the setlist was perfect. James Hetfield's voice was on point!",
-      likes: 42,
-      comments: [],
-    },
-  },
-  {
-    user: {
-      id: "1",
-      name: "John Doe",
-      username: "johndoe",
-      image: "/placeholder-avatar-user.jpg",
-    },
-    concert: {
-      id: "2",
-      event: "Tomorrowland 2024",
-      location: {
-        id: "2",
-        name: "De Schorre",
-      },
-      city: "Boom",
-      country: "Belgium",
-      image: "/summer-festival.jpg",
-      date: "2024-02-20",
-      rating: 4,
-      artists: [
-        "Johan Gielen",
-        "Martin Garrix",
-        "David Guetta",
-        "Armin van Buuren",
-      ],
-      genres: ["EDM", "House", "Trance"],
-    },
-    checkIn: {
-      id: "2",
-      date: "2024-02-20",
-      comment:
-        "Best festival experience ever! The production was mind-blowing and the atmosphere was electric.",
-      likes: 89,
-      comments: [],
-    },
-  },
-];
+// Add formatDate utility function
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
 
-export function TabPhotos() {
-  const [loadedImages, setLoadedImages] = useState<{ [key: string]: boolean }>(
-    {}
-  );
-  const [selectedCheckIn, setSelectedCheckIn] = useState<
-    (typeof checkIns)[0] | null
-  >(null);
+// Interface for own profile check-ins (nested structure)
+interface OwnProfileCheckIn {
+  user: {
+    id: string;
+    name?: string;
+    username: string;
+    image?: string;
+  };
+  concert: {
+    id: string;
+    event: string;
+    location: {
+      id: string;
+      name: string;
+    };
+    city: string;
+    country: string;
+    image: string;
+    date: string;
+    rating: number;
+    artists: string[];
+    genres: string[];
+  };
+  checkIn: {
+    id: string;
+    date: string;
+    time: string;
+    comment: string;
+    likes: number;
+    comments: Array<{
+      id: string;
+      user: {
+        id: string;
+        name: string;
+        image?: string;
+      };
+      text: string;
+      date: string;
+      time: string;
+    }>;
+    photos: Array<{
+      id: string;
+      url: string;
+      caption: string | null;
+    }>;
+  };
+}
 
-  const handleImageLoad = (src: string) => {
-    setLoadedImages((prev) => ({ ...prev, [src]: true }));
+// Interface for other users' check-ins (flat structure)
+interface UserCheckIn {
+  id: string;
+  user: {
+    id: string;
+    name?: string;
+    username: string;
+    image?: string;
+  };
+  concert: {
+    id: string;
+    event: string;
+    location: {
+      id: string;
+      name: string;
+    };
+    city: string;
+    country: string;
+    image: string;
+    date: string;
+    rating: number;
+    artists: string[];
+    genres: string[];
+  };
+  date: string;
+  time: string;
+  comment: string;
+  likes: number;
+  comments: Array<{
+    id: string;
+    user: {
+      id: string;
+      name: string;
+      image?: string;
+    };
+    text: string;
+    date: string;
+    time: string;
+  }>;
+  photos: Array<{
+    id: string;
+    url: string;
+    caption: string | null;
+  }>;
+}
+
+// Union type for both structures
+type CheckIn = OwnProfileCheckIn | UserCheckIn;
+
+interface TabPhotosProps {
+  isActive: boolean;
+  userId?: string;
+  username?: string;
+}
+
+export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Helper function to check if it's own profile
+  const isOwnProfile = !username && !userId;
+
+  // Helper function to get check-in ID
+  const getCheckInId = (checkIn: CheckIn): string => {
+    return isOwnProfile
+      ? (checkIn as OwnProfileCheckIn).checkIn.id
+      : (checkIn as UserCheckIn).id;
   };
 
-  return (
-    <div className="container mx-auto p-4">
-      <div className="grid grid-cols-4 gap-2 sm:gap-4">
-        {checkIns.map((checkIn, index) => {
-          const fullImageUrl = getFullUrl(checkIn.concert.image);
-          return (
-            <div
-              key={checkIn.checkIn.id}
-              className="aspect-square bg-muted rounded-lg overflow-hidden relative group cursor-pointer"
-              onClick={() => setSelectedCheckIn(checkIn)}
-            >
-              {/* Loading skeleton */}
-              {!loadedImages[fullImageUrl] && (
-                <div className="absolute inset-0 bg-muted animate-pulse" />
-              )}
-              <Image
-                src={fullImageUrl}
-                alt={checkIn.concert.event}
-                fill
-                className={`
-                  object-cover transition-all duration-500
-                  ${
-                    loadedImages[fullImageUrl]
-                      ? "opacity-100 scale-100"
-                      : "opacity-0 scale-95"
-                  }
-                  group-hover:scale-105
-                `}
-                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                onLoad={() => handleImageLoad(fullImageUrl)}
-                priority={index < 2}
-              />
-            </div>
-          );
-        })}
-      </div>
+  // Helper function to get photos
+  const getPhotos = (checkIn: CheckIn) => {
+    return isOwnProfile
+      ? (checkIn as OwnProfileCheckIn).checkIn.photos
+      : (checkIn as UserCheckIn).photos;
+  };
 
-      <Dialog
-        open={!!selectedCheckIn}
-        onOpenChange={() => setSelectedCheckIn(null)}
-      >
-        <DialogContent className="w-[95vw] max-w-[425px] p-4 sm:p-6">
-          <DialogHeader className="mb-2">
-            <DialogTitle className="text-lg sm:text-xl">
-              {selectedCheckIn?.concert.event}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="relative w-full h-[200px] sm:h-[250px] mb-4">
-            <Image
-              src={
-                selectedCheckIn
-                  ? getFullUrl(selectedCheckIn.concert.image)
-                  : "/placeholder-concert.jpg"
+  // Helper function to get comment
+  const getComment = (checkIn: CheckIn) => {
+    return isOwnProfile
+      ? (checkIn as OwnProfileCheckIn).checkIn.comment
+      : (checkIn as UserCheckIn).comment;
+  };
+
+  useEffect(() => {
+    const fetchCheckIns = async () => {
+      if (!isActive) {
+        console.log("[TabPhotos] Tab is not active, skipping fetch");
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const endpoint = username
+          ? `/api/users/${username}/check-ins`
+          : userId
+          ? `/api/users/${userId}/check-ins`
+          : "/api/profile/check-ins";
+        console.log("[TabPhotos] Fetching check-ins from endpoint:", endpoint);
+
+        const response = await makeClientRequest<CheckIn>(endpoint);
+        console.log("[TabPhotos] Raw API response:", {
+          hasData: "data" in response,
+          dataType: typeof response.data,
+          isArray: Array.isArray(response.data),
+          responseKeys: Object.keys(response),
+          meta: "meta" in response ? response.meta : undefined,
+          isOwnProfile,
+          fullResponse: JSON.stringify(response, null, 2),
+        });
+
+        // Extract the check-ins data from the response
+        const checkInsData = Array.isArray(response.data)
+          ? response.data
+          : [response.data];
+
+        console.log(
+          "[TabPhotos] First check-in details:",
+          checkInsData[0]
+            ? {
+                checkInId: getCheckInId(checkInsData[0]),
+                hasPhotos: !!getPhotos(checkInsData[0]),
+                photosArray: getPhotos(checkInsData[0])?.map((p) => ({
+                  id: p.id,
+                  url: p.url,
+                  fullUrl: p.url.startsWith("http")
+                    ? p.url
+                    : `https://resonance-be.ddev.site/${p.url.replace(
+                        /^\//,
+                        ""
+                      )}`,
+                  caption: p.caption,
+                })),
+                photosLength: getPhotos(checkInsData[0])?.length,
+                checkInKeys: Object.keys(checkInsData[0]),
+                isOwnProfile,
+                fullCheckIn: JSON.stringify(checkInsData[0], null, 2),
               }
-              alt={selectedCheckIn?.concert.event || "Concert image"}
-              fill
-              className="object-cover rounded-lg"
-              sizes="(max-width: 425px) 95vw, 425px"
+            : null
+        );
+
+        // Filter check-ins that have photos
+        const checkInsWithPhotos = checkInsData.filter((checkIn) => {
+          const photos = getPhotos(checkIn);
+          const hasPhotos = photos && photos.length > 0;
+          if (!hasPhotos) {
+            console.log("[TabPhotos] Check-in without photos:", {
+              checkInId: getCheckInId(checkIn),
+              concertName: checkIn.concert.event,
+              checkInKeys: Object.keys(checkIn),
+              photosField: photos,
+              isOwnProfile,
+              fullCheckIn: JSON.stringify(checkIn, null, 2),
+            });
+          }
+          return hasPhotos;
+        });
+
+        // Process photo URLs to ensure they're absolute
+        const processedCheckIns = checkInsWithPhotos.map((checkIn) => {
+          const photos = getPhotos(checkIn);
+          const processedPhotos = photos?.map((photo) => ({
+            ...photo,
+            url: getFullUrl(photo.url),
+          }));
+
+          if (isOwnProfile) {
+            return {
+              ...checkIn,
+              checkIn: {
+                ...(checkIn as OwnProfileCheckIn).checkIn,
+                photos: processedPhotos,
+              },
+            } as OwnProfileCheckIn;
+          } else {
+            return {
+              ...checkIn,
+              photos: processedPhotos,
+            } as UserCheckIn;
+          }
+        });
+
+        console.log("[TabPhotos] Final filtered check-ins:", {
+          total: processedCheckIns.length,
+          isOwnProfile,
+          checkIns: processedCheckIns.map((ci) => ({
+            checkInId: getCheckInId(ci),
+            concertName: ci.concert.event,
+            photosCount: getPhotos(ci)?.length,
+            photos: getPhotos(ci)?.map((p) => ({
+              id: p.id,
+              url: p.url,
+              hasCaption: !!p.caption,
+            })),
+          })),
+        });
+
+        setCheckIns(processedCheckIns);
+      } catch (err) {
+        console.error("[TabPhotos] Error fetching check-ins:", err);
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load photos"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCheckIns();
+  }, [isActive, userId, username]);
+
+  return (
+    <div className="space-y-6">
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, index) => (
+            <div
+              key={index}
+              className="aspect-square bg-muted animate-pulse rounded-lg"
             />
+          ))}
+        </div>
+      ) : checkIns.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No photos found</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {checkIns.map((checkIn) =>
+            getPhotos(checkIn)?.map((photo) => (
+              <div
+                key={photo.id}
+                className="relative aspect-square group cursor-pointer"
+                onClick={() => setSelectedCheckIn(checkIn)}
+              >
+                <Image
+                  src={photo.url}
+                  alt={photo.caption || "Concert photo"}
+                  fill
+                  className="object-cover rounded-lg transition-opacity duration-200 group-hover:opacity-90"
+                  onLoad={() => {
+                    setLoadedImages((prev) => new Set(prev).add(photo.url));
+                  }}
+                />
+                {!loadedImages.has(photo.url) && (
+                  <div className="absolute inset-0 bg-muted animate-pulse rounded-lg" />
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Photo Modal */}
+      {selectedCheckIn && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedCheckIn(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full bg-background rounded-lg overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedCheckIn(null)}
+              className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+              <div className="relative aspect-square">
+                {getPhotos(selectedCheckIn)?.[0] && (
+                  <Image
+                    src={getPhotos(selectedCheckIn)![0].url}
+                    alt={
+                      getPhotos(selectedCheckIn)![0].caption || "Concert photo"
+                    }
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {selectedCheckIn.concert.event}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCheckIn.concert.location.name},{" "}
+                    {selectedCheckIn.concert.city}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatDate(selectedCheckIn.concert.date)}
+                  </p>
+                </div>
+                {getComment(selectedCheckIn) && (
+                  <p className="text-sm">{getComment(selectedCheckIn)}</p>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <LuCalendar className="w-4 h-4 flex-shrink-0" />
-              {formatEventDate(selectedCheckIn?.concert.date || "")}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <LuMapPin className="w-4 h-4 flex-shrink-0" />
-              {selectedCheckIn?.concert.location.name},{" "}
-              {selectedCheckIn?.concert.city},{" "}
-              {selectedCheckIn?.concert.country}
-            </div>
-            <div className="pt-1">
-              <p className="text-sm text-muted-foreground font-medium mb-1">
-                Review:
-              </p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                {selectedCheckIn?.checkIn.comment}
-              </p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }

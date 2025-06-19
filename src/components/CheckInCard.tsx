@@ -7,10 +7,10 @@ import { ArtistBadges } from "@/components/ArtistBadges";
 import { StarRating, formatRelativeTime } from "@/lib/helpers";
 import { ExpandableImage } from "@/components/ExpandableImage";
 import { CheckInComment } from "@/components/CheckInComment";
-import Image from "next/image";
 import { useState } from "react";
 import { toggleCheckInLike } from "@/lib/api";
 import { toast } from "sonner";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface CheckInCardProps {
   user: {
@@ -32,7 +32,6 @@ interface CheckInCardProps {
     date: string;
     rating: number;
     artists: string[];
-    genres: string[];
   };
   checkIn: {
     id: string;
@@ -52,10 +51,10 @@ interface CheckInCardProps {
       date: string;
       time: string;
     }>;
-    photos?: Array<{
+    photos: Array<{
       id: string;
       url: string;
-      caption: string;
+      caption: string | null;
     }>;
   };
 }
@@ -105,30 +104,27 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Link
-            href={`/profile/${user.id}`}
-            className="hover:opacity-80 transition-opacity"
+            href={`/profile/${user.username}`}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <Image
-              src={user.image || "/placeholder-avatar-user.jpg"}
-              alt={user.name || user.username}
-              width={40}
-              height={40}
-              className="w-10 h-10 rounded-full object-cover border-2 border-[#03D1FE]/20"
-            />
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.image} />
+              <AvatarFallback>
+                {user.name?.charAt(0) || user.username.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-slate-800 dark:text-white">
+                {user.name || "Anonymous"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                @{user.username}
+              </span>
+            </div>
           </Link>
-          <div>
-            <Link
-              href={`/profile/${user.id}`}
-              className="hover:opacity-80 transition-opacity"
-            >
-              <h3 className="font-semibold text-slate-800 dark:text-white">
-                {user.name || user.username}
-              </h3>
-            </Link>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {formatRelativeTime(checkIn.date, checkIn.time)}
-            </p>
-          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {formatRelativeTime(checkIn.date, checkIn.time)}
+          </p>
         </div>
       </div>
 
@@ -137,16 +133,18 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         <div className="flex items-center justify-between">
           <div>
             <h4 className="font-bold text-lg text-slate-800 dark:text-white">
-              {concert.event}
+              {concert.event || "Unknown Event"}
             </h4>
             <div className="flex items-center gap-2">
               <LuMapPin className="text-sm text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                {concert.location.name}, {concert.city}, {concert.country}
+                {concert.location?.name || "Unknown Location"},{" "}
+                {concert.city || "Unknown City"},{" "}
+                {concert.country || "Unknown Country"}
               </p>
             </div>
           </div>
-          <StarRating rating={concert.rating} />
+          <StarRating rating={concert.rating || 0} />
         </div>
       </div>
 
@@ -155,13 +153,46 @@ function CheckInCard({ user, concert, checkIn }: CheckInCardProps) {
         <ArtistBadges title="Artists" artists={concert.artists} />
       </div>
 
-      {/* Concert Image - Only show if there's a real image */}
-      {concert.image && concert.image !== "/placeholder-concert.jpg" && (
-        <div className="relative w-full h-[300px]">
-          <ExpandableImage
-            src={concert.image}
-            alt={`${concert.event} concert`}
-          />
+      {/* Check-in Photos */}
+      {checkIn.photos && checkIn.photos.length > 0 && (
+        <div className="relative w-full">
+          {checkIn.photos.length === 1 ? (
+            <div className="relative w-full h-[300px]">
+              <ExpandableImage
+                src={checkIn.photos[0].url}
+                alt={
+                  checkIn.photos[0].caption ||
+                  `${concert.event || "Concert"} photo`
+                }
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-1">
+              {checkIn.photos.slice(0, 4).map((photo, index) => (
+                <div
+                  key={photo.id}
+                  className={`relative ${
+                    index === 0 ? "col-span-2 h-[300px]" : "h-[150px]"
+                  }`}
+                >
+                  <ExpandableImage
+                    src={photo.url}
+                    alt={
+                      photo.caption ||
+                      `${concert.event || "Concert"} photo ${index + 1}`
+                    }
+                  />
+                  {index === 3 && checkIn.photos.length > 4 && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="text-white text-lg font-semibold">
+                        +{checkIn.photos.length - 4} more
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

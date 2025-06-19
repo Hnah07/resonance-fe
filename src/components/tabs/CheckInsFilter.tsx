@@ -24,8 +24,14 @@ interface CheckInsFilterProps {
   onArtistChange: (value: string) => void;
   onLocationChange: (value: string) => void;
   onCountryChange: (value: string) => void;
-  artists?: string[];
-  genres?: string[];
+  artists?: (
+    | string
+    | { id?: string; name: string; type?: string; image_url?: string }
+  )[];
+  genres?: (
+    | string
+    | { id?: string; name: string; type?: string; image_url?: string }
+  )[];
   locations?: string[];
   isLoading?: boolean;
 }
@@ -51,7 +57,7 @@ function FilterContent({
   locations = [],
   isLoading,
 }: CheckInsFilterProps) {
-  console.log("FilterContent received genres:", genres);
+  console.log("FilterContent received genres count:", genres.length);
 
   if (isLoading) {
     return (
@@ -75,11 +81,15 @@ function FilterContent({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Artists</SelectItem>
-            {artists.map((artist) => (
-              <SelectItem key={artist} value={artist}>
-                {artist}
-              </SelectItem>
-            ))}
+            {artists.map((artist) => {
+              const artistName =
+                typeof artist === "string" ? artist : "Unknown Artist";
+              return (
+                <SelectItem key={artistName} value={artistName}>
+                  {artistName}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -131,10 +141,11 @@ function FilterContent({
           <SelectContent>
             <SelectItem value="all">All Genres</SelectItem>
             {genres.map((genre) => {
-              console.log("Rendering genre option:", genre);
+              const genreName =
+                typeof genre === "string" ? genre : "Unknown Genre";
               return (
-                <SelectItem key={genre} value={genre}>
-                  {genre}
+                <SelectItem key={genreName} value={genreName}>
+                  {genreName}
                 </SelectItem>
               );
             })}
