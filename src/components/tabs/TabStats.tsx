@@ -133,7 +133,7 @@ export function TabStats({ isActive, userId, username }: TabStatsProps) {
           <CardHeader>
             <CardTitle>Followers</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             <div className="text-2xl font-bold">{stats.followers_count}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               {stats.followers.map((follower) => (
@@ -179,7 +179,7 @@ export function TabStats({ isActive, userId, username }: TabStatsProps) {
           <CardHeader>
             <CardTitle>Following</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             <div className="text-2xl font-bold">{stats.following_count}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               {stats.following.map((following) => (
@@ -228,16 +228,17 @@ export function TabStats({ isActive, userId, username }: TabStatsProps) {
         <CardHeader>
           <CardTitle>Monthly Concerts</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[320px]">
-            <ChartContainer config={chartConfig}>
+        <CardContent className="p-4 sm:p-6">
+          <div className="h-[280px] sm:h-[320px]">
+            <ChartContainer config={chartConfig} className="w-full h-full">
               <BarChart data={stats.monthly_attendance}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="month"
                   angle={-45}
                   textAnchor="end"
-                  height={60}
+                  height={40}
+                  className="text-xs"
                 />
                 <YAxis />
                 <ChartTooltip
@@ -259,9 +260,9 @@ export function TabStats({ isActive, userId, username }: TabStatsProps) {
         <CardHeader>
           <CardTitle>Genre Distribution</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ChartContainer config={chartConfig}>
+        <CardContent className="p-4 sm:p-6">
+          <div className="h-[260px] sm:h-[300px]">
+            <ChartContainer config={chartConfig} className="w-full h-full">
               <PieChart>
                 <Pie
                   data={stats.genre_distribution}
@@ -269,7 +270,8 @@ export function TabStats({ isActive, userId, username }: TabStatsProps) {
                   nameKey="genre"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
+                  outerRadius={80}
+                  className="text-xs"
                   label={({ genre, count }) => `${genre}: ${count}`}
                 >
                   {stats.genre_distribution.map((entry, index) => (
@@ -308,7 +310,7 @@ export function TabStats({ isActive, userId, username }: TabStatsProps) {
         <CardHeader>
           <CardTitle>Top Venues</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <div className="space-y-2">
             {stats.top_venues.map((venue) => (
               <div
@@ -330,7 +332,7 @@ export function TabStats({ isActive, userId, username }: TabStatsProps) {
         <CardHeader>
           <CardTitle>Top Artists</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {stats.top_artists.map((artist) => (
               <div

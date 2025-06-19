@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "/og-image.jpg", // You'll need to add this image
+        url: "/og-image.png", // You'll need to add this image
         width: 1200,
         height: 630,
         alt: "Resonance - Your Live Music Journey",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Resonance - Your Digital Memory Book for Live Music",
     description:
       "Discover concerts, check in to shows, and relive your live music moments.",
-    images: ["/og-image.jpg"], // You'll need to add this image
+    images: ["/og-image.png"], // You'll need to add this image
   },
 };
 
