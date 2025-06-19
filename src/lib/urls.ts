@@ -3,7 +3,7 @@
  * This allows for easy switching between environments and future CDN integration.
  *
  * @param relativePath - The relative path (e.g., "events/xyz.png" or "/storage/checkin-photos/xyz.png")
- * @returns The proxy URL (e.g., "/api/proxy-image-simple?path=%2Fstorage%2Fevents%2Fxyz.png")
+ * @returns The proxy URL (e.g., "/api/proxy-image?path=%2Fstorage%2Fevents%2Fxyz.png")
  */
 export const getFullUrl = (relativePath: string): string => {
   // If the path is already a full URL, extract the path and use proxy
@@ -15,9 +15,7 @@ export const getFullUrl = (relativePath: string): string => {
       const url = new URL(relativePath);
       const path = url.pathname;
       // Use proxy for the extracted path
-      const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(
-        path
-      )}`;
+      const proxyUrl = `/api/proxy-image?path=${encodeURIComponent(path)}`;
       return proxyUrl;
     } catch (error) {
       console.error("Failed to parse URL:", relativePath, error);
@@ -46,9 +44,7 @@ export const getFullUrl = (relativePath: string): string => {
 
   // Always use proxy for external images to avoid CORS issues and ensure consistent behavior
   // This prevents the backend URL from being exposed directly to the client
-  const proxyUrl = `/api/proxy-image-simple?path=${encodeURIComponent(
-    finalPath
-  )}`;
+  const proxyUrl = `/api/proxy-image?path=${encodeURIComponent(finalPath)}`;
   return proxyUrl;
 };
 
