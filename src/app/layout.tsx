@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   title: "Resonance",
   description: "Your Digital Memory Book for Live Music",
   manifest: "/manifest.json",
+  metadataBase: new URL(
+    `https://${process.env.NEXT_PUBLIC_BASE_URL || "resonance-lake.vercel.app"}`
+  ),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Resonance",
     description: "Your Digital Memory Book for Live Music",
@@ -38,10 +44,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Resonance",
     description: "Your Digital Memory Book for Live Music",
+    images: ["/og-image.png"],
   },
-  metadataBase: new URL(
-    `https://${process.env.NEXT_PUBLIC_BASE_URL || "resonance-lake.vercel.app"}`
-  ),
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
