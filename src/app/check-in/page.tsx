@@ -1,8 +1,21 @@
+import { Metadata } from "next";
 import AddConcertCard from "@/components/AddConcertCard";
 import { PageHeader } from "@/components/PageHeader";
 import SuggestionCard from "@/components/SuggestionCard";
 import { Input } from "@/components/ui/input";
 import { LuSearch } from "react-icons/lu";
+
+export const metadata: Metadata = {
+  title: "Check In - Resonance",
+  description:
+    "Check in to concerts and share your live music experiences. Track your concert history and discover new shows.",
+  openGraph: {
+    title: "Check In - Resonance",
+    description:
+      "Check in to your favorite concerts and share your live music moments.",
+    type: "website",
+  },
+};
 
 const CheckInPage = () => {
   return (

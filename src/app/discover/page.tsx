@@ -1,9 +1,25 @@
+import { Metadata } from "next";
 import { Suspense } from "react";
 import { getAllConcerts } from "@/queries/concerts";
 import { mapConcertFromApi } from "@/lib/mappers";
 import { ConcertList } from "@/components/ConcertList";
 import { DiscoverFilters } from "@/components/DiscoverFilters";
 import CardSkeleton from "@/components/CardSkeleton";
+
+export const metadata: Metadata = {
+  title: "Discover Concerts - Resonance",
+  description:
+    "Find upcoming concerts, explore different genres, and discover new artists. Filter by location, date, and music preferences.",
+  alternates: {
+    canonical: "/discover",
+  },
+  openGraph: {
+    title: "Discover Concerts - Resonance",
+    description:
+      "Find upcoming concerts, explore different genres, and discover new artists.",
+    type: "website",
+  },
+};
 
 // Use ISR with a short revalidation period
 export const revalidate = 60; // Cache for 60 seconds, then revalidate in the background
