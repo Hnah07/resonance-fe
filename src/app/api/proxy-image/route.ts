@@ -5,10 +5,18 @@ import crypto from "crypto";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  console.log("=== PROXY IMAGE ROUTE CALLED ===");
+  console.log("Request URL:", request.url);
+  console.log("Request method:", request.method);
+  console.log("Environment:", process.env.NODE_ENV);
+
   const { searchParams } = new URL(request.url);
   const imagePath = searchParams.get("path");
 
+  console.log("Image path from query:", imagePath);
+
   if (!imagePath) {
+    console.log("No image path provided, returning 400");
     return NextResponse.json(
       { error: "Image path is required" },
       { status: 400 }
