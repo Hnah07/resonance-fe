@@ -5,6 +5,7 @@ import { makeClientRequest } from "@/lib/api";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 import Image from "next/image";
+import { getFullUrl } from "@/lib/urls";
 
 // Add formatDate utility function
 const formatDate = (dateString: string) => {
@@ -227,12 +228,7 @@ export function TabPhotos({ isActive, userId, username }: TabPhotosProps) {
           const photos = getPhotos(checkIn);
           const processedPhotos = photos?.map((photo) => ({
             ...photo,
-            url: photo.url.startsWith("http")
-              ? photo.url
-              : `https://resonance-be.ddev.site/${photo.url.replace(
-                  /^\//,
-                  ""
-                )}`,
+            url: getFullUrl(photo.url),
           }));
 
           if (isOwnProfile) {
