@@ -267,7 +267,7 @@ export function ProfileContent() {
                 @{user.username || "user"}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground text-center">
               {user.bio || "No bio yet"}
             </p>
             <div className="flex gap-2">

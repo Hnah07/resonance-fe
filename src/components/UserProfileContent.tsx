@@ -383,7 +383,9 @@ export function UserProfileContent({ username }: UserProfileContentProps) {
           </span>
         </div>
         {profile.bio && (
-          <p className="text-sm text-muted-foreground">{profile.bio}</p>
+          <p className="text-sm text-muted-foreground text-center">
+            {profile.bio}
+          </p>
         )}
         {(profile.city || profile.country_name) && (
           <div className="flex gap-2">
