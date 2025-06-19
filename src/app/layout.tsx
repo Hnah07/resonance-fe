@@ -60,6 +60,10 @@ export const metadata: Metadata = {
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
   },
+  other: {
+    "og:site_name": "Resonance",
+    "og:url": "https://resonance-lake.vercel.app",
+  },
 };
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => {
