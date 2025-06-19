@@ -28,15 +28,17 @@ export const getFullUrl = (relativePath: string): string => {
     ? cleanPath
     : `/${cleanPath}`;
 
-  // Check if we're on mobile and use proxy for better compatibility
+  // Check if we're in production or on mobile and use proxy for better compatibility
   const isMobile =
     typeof window !== "undefined" &&
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent
     );
 
-  if (isMobile) {
-    // Use the proxy for mobile devices to avoid CORS issues
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // Use proxy for mobile devices and in production to avoid CORS issues
+  if (isMobile || isProduction) {
     const proxyUrl = `/api/proxy-image?path=${encodeURIComponent(path)}`;
     return proxyUrl;
   }
