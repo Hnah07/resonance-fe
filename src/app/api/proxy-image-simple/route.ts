@@ -31,10 +31,6 @@ export async function GET(request: NextRequest) {
     } else if (normalizedPath.startsWith("events/")) {
       // Database format: "events/filename.jpg" -> "/storage/events/filename.jpg"
       normalizedPath = `/storage/${normalizedPath}`;
-    } else if (normalizedPath.startsWith("checkin-photos/")) {
-      // This shouldn't happen since checkin photos are stored with storage prefix
-      // But just in case, add the storage prefix
-      normalizedPath = `/storage/${normalizedPath}`;
     } else {
       // Fallback: assume it needs storage prefix
       normalizedPath = `/storage/${normalizedPath}`;
@@ -55,7 +51,9 @@ export async function GET(request: NextRequest) {
       console.error(
         "Backend returned error:",
         response.status,
-        response.statusText
+        response.statusText,
+        "URL:",
+        fullUrl
       );
 
       // Try to get the error text
