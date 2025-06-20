@@ -76,6 +76,11 @@ export function CheckInDrawer({ concert, onSubmit }: CheckInDrawerProps) {
     }
   };
 
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <Drawer open={isOpen} onOpenChange={setIsOpen}>
       <DrawerTrigger asChild>
@@ -91,12 +96,16 @@ export function CheckInDrawer({ concert, onSubmit }: CheckInDrawerProps) {
           Check In
         </GradientButton>
       </DrawerTrigger>
-      <DrawerContent className="h-[90vh]">
+      <DrawerContent
+        className="h-[90vh] touch-none"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DrawerHeader>
           <DrawerTitle>Check In</DrawerTitle>
         </DrawerHeader>
 
-        <div className="px-4 space-y-6 overflow-y-auto flex-1">
+        <div className="px-4 space-y-6 overflow-y-auto flex-1 touch-auto">
           {/* Concert Info (Read-only) */}
           <div className="space-y-2">
             <h3 className="font-semibold text-lg">
@@ -197,7 +206,7 @@ export function CheckInDrawer({ concert, onSubmit }: CheckInDrawerProps) {
         </div>
 
         {isAuthenticated && (
-          <DrawerFooter>
+          <DrawerFooter className="touch-auto">
             <Button onClick={handleSubmit}>Check In</Button>
             <DrawerClose asChild>
               <Button variant="outline">Cancel</Button>

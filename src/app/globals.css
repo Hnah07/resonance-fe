@@ -152,3 +152,39 @@ body {
     --chart-5: oklch(0.645 0.246 16.439);
   }
 }
+
+/* PWA-specific fixes */
+@media (display-mode: standalone) {
+  /* Ensure modals and drawers appear above PWA UI */
+  [data-slot="drawer-overlay"] {
+    z-index: 9999 !important;
+  }
+
+  [data-slot="drawer-content"] {
+    z-index: 10000 !important;
+  }
+
+  /* Prevent touch events from going through */
+  [data-slot="drawer-overlay"] {
+    touch-action: none;
+  }
+
+  [data-slot="drawer-content"] {
+    touch-action: pan-y;
+  }
+}
+
+/* Mobile-specific touch improvements */
+@media (max-width: 768px) {
+  [data-slot="drawer-content"] {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Prevent body scroll when drawer is open */
+  body[data-drawer-open="true"] {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+  }
+}
